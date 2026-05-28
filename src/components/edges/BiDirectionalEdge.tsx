@@ -3,19 +3,21 @@ import type { EdgeProps } from 'reactflow'
 
 const MARKER_ID = 'bidir-arrowhead'
 
-export function BiDirectionalEdgeMarkerDef() {
+export function BiDirectionalEdgeMarkerDef({ bright }: { bright?: boolean } = {}) {
   return (
     <defs>
-      <marker
-        id={`${MARKER_ID}-dim`}
-        markerWidth="8"
-        markerHeight="8"
-        refX="7"
-        refY="4"
-        orient="auto"
-      >
-        <path d="M0,0 L0,8 L8,4 z" fill="rgba(148,163,184,0.55)" />
-      </marker>
+      {!bright && (
+        <marker
+          id={`${MARKER_ID}-dim`}
+          markerWidth="8"
+          markerHeight="8"
+          refX="7"
+          refY="4"
+          orient="auto"
+        >
+          <path d="M0,0 L0,8 L8,4 z" fill="rgba(148,163,184,0.55)" />
+        </marker>
+      )}
       <marker
         id={`${MARKER_ID}-bright`}
         markerWidth="8"

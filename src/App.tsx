@@ -7,6 +7,7 @@ import ReactFlow, {
 import { NarrativeCardNode } from './components/NarrativeCardNode'
 import { NarrativeEdgeComponent } from './components/edges/NarrativeEdge'
 import { BiDirectionalEdge, BiDirectionalEdgeMarkerDef } from './components/edges/BiDirectionalEdge'
+import { HighlightOverlay } from './components/edges/HighlightOverlay'
 import { NarrativeBodyPanel } from './components/NarrativeBodyPanel'
 import { ContextPanel } from './components/ContextPanel'
 import { CardEditorFlyout } from './components/CardEditorFlyout'
@@ -328,6 +329,7 @@ function BoardCanvas() {
           className="reactflow-dark"
         >
           <Background color="#3f3f46" gap={26} />
+          <HighlightOverlay containerEl={boardCanvasRef.current} />
         </ReactFlow>
         {(multiSelectMode || selectionBox) && (
           <div className={`selection-surface ${multiSelectMode ? 'selection-surface--active' : ''}`}>
