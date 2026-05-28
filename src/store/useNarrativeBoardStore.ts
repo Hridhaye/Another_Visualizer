@@ -143,12 +143,12 @@ function createSnapshot(state: NarrativeBoardState): HistorySnapshot {
   }
 }
 
-function upsertReferenceText(currentText: string, codeToAdd: string): string {
+function toggleReferenceText(currentText: string, code: string): string {
   const refs = parseReferences(currentText)
-  if (refs.includes(codeToAdd)) {
-    return currentText
+  if (refs.includes(code)) {
+    return refs.filter((ref) => ref !== code).join(', ')
   }
-  return [...refs, codeToAdd].join(', ')
+  return [...refs, code].join(', ')
 }
 
 function removeReferenceText(currentText: string, codeToRemove: string): string {
@@ -374,7 +374,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         return state
       }
 
-      const nextReferences = upsertReferenceText(
+      const nextReferences = toggleReferenceText(
         sourceNode.data.referencesText,
         targetNode.data.code
       )

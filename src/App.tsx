@@ -58,12 +58,17 @@ function BoardCanvas() {
     []
   )
 
-  const handleNodeClick: NodeMouseHandler = (_event, node) => {
-    setSelectedNode(node.id)
-
-    if (connectionSourceNodeId && connectionSourceNodeId !== node.id) {
-      createReferenceConnection(connectionSourceNodeId, node.id)
+  const handleNodeClick: NodeMouseHandler = (event, node) => {
+    if (connectionSourceNodeId) {
+      event.preventDefault()
+      event.stopPropagation()
+      if (connectionSourceNodeId !== node.id) {
+        createReferenceConnection(connectionSourceNodeId, node.id)
+      }
+      return
     }
+
+    setSelectedNode(node.id)
   }
 
   useEffect(() => {
