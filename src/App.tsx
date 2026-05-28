@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import ReactFlow, {
   Background,
   ReactFlowProvider,
@@ -240,19 +239,6 @@ function BoardCanvas() {
 
   return (
     <div className="board-root">
-      {showContextPanel && createPortal(
-        <ContextPanel
-          node={activeNode}
-          allNodes={nodes}
-          slipTypes={slipTypes}
-          isLinkSource={connectionSourceNodeId === activeNode.id}
-          onUpdate={updateNode}
-          onDelete={deleteCard}
-          onClose={closeContextPanel}
-          onToggleLink={() => setConnectionSourceNode(connectionSourceNodeId === activeNode.id ? null : activeNode.id)}
-        />,
-        document.body
-      )}
       <NarrativeBodyPanel />
       <CardEditorFlyout />
       <Sidebar
@@ -325,6 +311,18 @@ function BoardCanvas() {
               />
             )}
           </div>
+        )}
+        {showContextPanel && (
+          <ContextPanel
+            node={activeNode}
+            allNodes={nodes}
+            slipTypes={slipTypes}
+            isLinkSource={connectionSourceNodeId === activeNode.id}
+            onUpdate={updateNode}
+            onDelete={deleteCard}
+            onClose={closeContextPanel}
+            onToggleLink={() => setConnectionSourceNode(connectionSourceNodeId === activeNode.id ? null : activeNode.id)}
+          />
         )}
         <div className="history-bar" role="toolbar" aria-label="History controls">
           {groupsPanelOpen && selectedNodeIds.length > 1 && (
