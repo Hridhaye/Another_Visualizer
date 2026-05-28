@@ -106,7 +106,7 @@ export function PuzzleReorderPanel() {
   }
 
   function onDragStart(section: SectionKey, index: number) {
-    dragRef.current = { section, index }
+    dragRef.current = { section, fromIndex: index }
   }
 
   function onDragEnter(section: SectionKey, index: number) {
