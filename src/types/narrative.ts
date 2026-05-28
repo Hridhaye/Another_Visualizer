@@ -9,6 +9,29 @@ export const PUZZLE_TYPES = [
 
 export type PuzzleType = (typeof PUZZLE_TYPES)[number]
 
+export function getPuzzleLabel(puzzleType: PuzzleType): string {
+  switch (puzzleType) {
+    case 'fill':
+      return 'Fill'
+    case 'reorder':
+      return 'Reorder'
+    case 'matching':
+      return 'Matching'
+    case 'none':
+    default:
+      return 'No puzzle'
+  }
+}
+
+export function getPuzzleDisplayText(puzzleType: PuzzleType, puzzleSummary = ''): string {
+  if (puzzleType === 'none') {
+    return ''
+  }
+
+  const summary = puzzleSummary.trim()
+  return summary ? `${getPuzzleLabel(puzzleType)}: ${summary}` : getPuzzleLabel(puzzleType)
+}
+
 export type SlipType = {
   id: string
   name: string
@@ -30,6 +53,7 @@ export type CardData = {
   slipGivenTypeIds: string[]
   referencesText: string
   puzzleType: PuzzleType
+  puzzleSummary?: string
 }
 
 export type NarrativeNode = Node<CardData>

@@ -69,6 +69,27 @@ describe('AI narrative DSL', () => {
     expect(text).toContain('SLIP_GIVEN: Red Slip ×2, Green Slip')
   })
 
+  it('exports puzzle type plus summary text for visual indicators', () => {
+    const text = exportAIFormat([
+      {
+        id: 'a',
+        data: {
+          code: 'AA01',
+          title: 'First',
+          summary: '',
+          body: '',
+          slipTypeId: 'blue',
+          slipGivenTypeIds: [],
+          referencesText: '',
+          puzzleType: 'matching',
+          puzzleSummary: 'Who left the door closed that night?'
+        }
+      }
+    ] as never, [])
+
+    expect(text).toContain('PUZZLE: Matching: Who left the door closed that night?')
+  })
+
   it('parses CARD_SLIP and SLIP_GIVEN with ×N count', () => {
     const raw = `
 @CARD AA01

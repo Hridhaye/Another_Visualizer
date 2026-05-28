@@ -32,8 +32,13 @@ export function validateAIFormat(blocks: AIBlock[], existingNodes: NarrativeNode
       return { ok: false, error: `Card ${block.code} is missing a TITLE value.` }
     }
 
-    if (block.puzzle && !PUZZLE_TYPES.includes(block.puzzle.toLowerCase() as (typeof PUZZLE_TYPES)[number])) {
-      return { ok: false, error: `Card ${block.code} has an invalid PUZZLE type.` }
+    if (block.puzzle) {
+      const raw = block.puzzle.trim()
+      const candidate = raw.match(/^([A-Za-z]+)\s*:\s*(.*)$/i)?.[1] ?? raw
+
+      if (!PUZZLE_TYPES.includes(candidate.toLowerCase() as (typeof PUZZLE_TYPES)[number])) {
+        return { ok: false, error: `Card ${block.code} has an invalid PUZZLE type.` }
+      }
     }
   }
 

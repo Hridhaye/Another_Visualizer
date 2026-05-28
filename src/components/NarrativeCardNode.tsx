@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { Handle, Position, type NodeProps } from 'reactflow'
 
 import { getSlipColor, useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
-import type { CardData } from '../types/narrative'
+import { getPuzzleDisplayText, type CardData } from '../types/narrative'
 
 const LONG_PRESS_MS = 400
 const DRIFT_PX = 8
@@ -29,6 +29,8 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const isHighlighted = highlightedNodeIds.includes(id)
   const isPendingTarget = !!connectionSourceNodeId && !isLinkSource
   const nodeGroups = groups.filter((group) => group.nodeIds.includes(id))
+  const hasPuzzle = data.puzzleType !== 'none'
+  const puzzleText = getPuzzleDisplayText(data.puzzleType, data.puzzleSummary)
 
   const divRef = useRef<HTMLDivElement | null>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -258,6 +260,12 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
           </div>
         )
       })()}
+
+      {hasPuzzle && (
+        <div className="card-puzzle" title={puzzleText}>
+          <span className="card-puzzle__badge">{puzzleText}</span>
+        </div>
+      )}
 
       {nodeGroups.length > 0 && (
         <div className="card-groups">

@@ -12,6 +12,35 @@
   min-width: 0;
   height: 100%;
   touch-action: none;
+  overflow: auto;
+}
+
+/* Custom scrollbar styling */
+.board-canvas::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.board-canvas::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.board-canvas::-webkit-scrollbar-thumb {
+  background: rgba(113, 113, 122, 0.4);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.board-canvas::-webkit-scrollbar-thumb:hover {
+  background: rgba(113, 113, 122, 0.6);
+  background-clip: padding-box;
+}
+
+/* Firefox scrollbar */
+.board-canvas {
+  scrollbar-color: rgba(113, 113, 122, 0.4) transparent;
+  scrollbar-width: thin;
 }
 
 .history-bar {

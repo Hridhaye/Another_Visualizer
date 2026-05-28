@@ -206,13 +206,24 @@ export function CardEditorFlyout() {
             {PUZZLE_TYPES.map((pt) => (
               <button
                 key={pt}
-                onClick={() => { updateNode(node.id, { puzzleType: pt }); closeEditorField() }}
+                onClick={() => {
+                  updateNode(node.id, { puzzleType: pt, puzzleSummary: pt === 'none' ? '' : node.data.puzzleSummary ?? '' })
+                }}
                 className={`cef-list__item ${node.data.puzzleType === pt ? 'cef-list__item--active' : ''}`}
               >
                 {pt.charAt(0).toUpperCase() + pt.slice(1)}
                 {node.data.puzzleType === pt && <span className="cef-list__check">✓</span>}
               </button>
             ))}
+            <p className="cef-slip-given__hint" style={{ marginTop: 12 }}>Puzzle Summary</p>
+            <textarea
+              ref={inputRef as React.Ref<HTMLTextAreaElement>}
+              value={node.data.puzzleSummary ?? ''}
+              onChange={(e) => updateNode(node.id, { puzzleSummary: e.target.value })}
+              rows={3}
+              placeholder="Who left the door closed that night?"
+              className="cef-textarea"
+            />
           </div>
         )}
       </div>

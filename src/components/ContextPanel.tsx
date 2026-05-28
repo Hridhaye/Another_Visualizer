@@ -191,12 +191,22 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
               {PUZZLE_TYPES.map((pt) => (
                 <button
                   key={pt}
-                  onClick={() => { onUpdate(node.id, { puzzleType: pt }); setActiveField(null) }}
+                  onClick={() => {
+                    onUpdate(node.id, { puzzleType: pt, puzzleSummary: pt === 'none' ? '' : node.data.puzzleSummary ?? '' })
+                  }}
                   className={`context-panel__slip-item${node.data.puzzleType === pt ? ' context-panel__slip-item--active' : ''}`}
                 >
                   {pt.charAt(0).toUpperCase() + pt.slice(1)}
                 </button>
               ))}
+              <label className="context-panel__label" style={{ marginTop: 12 }}>Puzzle Summary</label>
+              <textarea
+                value={node.data.puzzleSummary ?? ''}
+                onChange={(e) => onUpdate(node.id, { puzzleSummary: e.target.value })}
+                rows={3}
+                placeholder="Who left the door closed that night?"
+                className="context-panel__input context-panel__input--textarea"
+              />
             </div>
           )}
         </div>

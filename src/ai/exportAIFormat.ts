@@ -1,4 +1,4 @@
-import type { NarrativeNode, SlipType } from '../types/narrative'
+import { getPuzzleDisplayText, type NarrativeNode, type SlipType } from '../types/narrative'
 
 function findSlipName(slipTypes: SlipType[], slipTypeId: string): string {
   const match = slipTypes.find((entry) => entry.id === slipTypeId)
@@ -49,8 +49,9 @@ export function exportAIFormat(nodes: NarrativeNode[], slipTypes: SlipType[] = [
         lines.push(`SLIP_GIVEN: ${slipGiven}`)
       }
 
-      if (node.data.puzzleType) {
-        lines.push(`PUZZLE: ${node.data.puzzleType}`)
+      const puzzleText = getPuzzleDisplayText(node.data.puzzleType, node.data.puzzleSummary)
+      if (puzzleText) {
+        lines.push(`PUZZLE: ${puzzleText}`)
       }
 
       if (node.data.summary.trim()) {

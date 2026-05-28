@@ -32,6 +32,20 @@ function normalizePuzzleType(value: string): (typeof PUZZLE_TYPES)[number] {
     : 'none'
 }
 
+function normalizePuzzle(value: string): { puzzleType: (typeof PUZZLE_TYPES)[number]; puzzleSummary: string } {
+  const raw = value.trim()
+
+  if (!raw || /^none$/i.test(raw)) {
+    return { puzzleType: 'none', puzzleSummary: '' }
+  }
+
+  const match = raw.match(/^([A-Za-z]+)\s*:\s*(.*)$/i)
+  const puzzleType = normalizePuzzleType(match?.[1] ?? raw)
+  const puzzleSummary = match?.[2]?.trim() ?? ''
+
+  return { puzzleType, puzzleSummary }
+}
+
 export function importAIFormat(rawText: string, existingNodes: NarrativeNode[], slipTypes: SlipType[]): AIImportResult {
   const blocks = parseAIBlocks(rawText)
   const validation = validateAIFormat(blocks, existingNodes)
@@ -62,7 +76,8 @@ export function importAIFormat(rawText: string, existingNodes: NarrativeNode[], 
             ? resolveSlipGivenTypeIds(slipTypes, block.slipGiven)
             : (existing.data.slipGivenTypeIds ?? []),
           referencesText: block.references.join(', '),
-          puzzleType: normalizePuzzleType(block.puzzle || existing.data.puzzleType)
+          puzzleType: normalizePuzzle(block.puzzle || existing.data.puzzleType).puzzleType,
+          puzzleSummary: normalizePuzzle(block.puzzle || existing.data.puzzleType).puzzleSummary
         }
       }
 
@@ -86,7 +101,8 @@ export function importAIFormat(rawText: string, existingNodes: NarrativeNode[], 
         slipTypeId: resolveSlipTypeId(slipTypes, block.slip || 'blue'),
         slipGivenTypeIds: resolveSlipGivenTypeIds(slipTypes, block.slipGiven),
         referencesText: block.references.join(', '),
-        puzzleType: normalizePuzzleType(block.puzzle || 'none')
+        puzzleType: normalizePuzzle(block.puzzle || 'none').puzzleType,
+        puzzleSummary: normalizePuzzle(block.puzzle || 'none').puzzleSummary
       }
     }
 
