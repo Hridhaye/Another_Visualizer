@@ -39,7 +39,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
           : `0 0 0 2px rgba(255,255,255,0.04), inset 0 0 80px ${slipColor}22`
       }}
       onClick={() => {
-        if (selected && !connectionSourceNodeId) {
+        if (!connectionSourceNodeId) {
           openContextPanel()
         }
       }}
