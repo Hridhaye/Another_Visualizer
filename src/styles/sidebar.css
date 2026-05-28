@@ -17,6 +17,25 @@
   overflow: hidden;
 }
 
+@media (max-width: 1024px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1100;
+    width: min(88vw, 320px);
+    box-shadow: 18px 0 40px rgba(0, 0, 0, 0.45);
+  }
+
+  .sidebar--collapsed {
+    width: 0;
+    border-right: none;
+    transform: translateX(-100%);
+    box-shadow: none;
+  }
+}
+
 /* ── Header ──────────────────────────────────────────────────────────── */
 .sidebar__header {
   position: sticky;

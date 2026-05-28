@@ -1,5 +1,6 @@
 .card-shell {
   width: 460px;
+  touch-action: manipulation;
   max-width: 460px;
   min-height: 150px;
   padding: 24px;
@@ -168,4 +169,28 @@
 
 .card-shell.has-puzzle {
   min-height: 200px;
+}
+
+@media (max-width: 980px) {
+  .card-shell {
+    width: min(92vw, 340px);
+    max-width: 92vw;
+    min-height: 120px;
+    padding: 16px;
+  }
+
+  .card-code {
+    font-size: 13px;
+  }
+
+  .card-title {
+    font-size: 18px;
+    padding: 0 56px;
+  }
+
+  .card-summary {
+    margin-top: 10px;
+    font-size: 15px;
+    line-height: 1.5;
+  }
 }

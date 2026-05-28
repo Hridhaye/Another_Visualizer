@@ -268,15 +268,89 @@
   white-space: nowrap;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1280px) {
   .history-bar {
-    bottom: 12px;
-    padding: 8px 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: calc(100vw - 16px);
+    padding: 8px 10px;
+    border-radius: 18px;
+  }
+
+  .history-bar__divider {
+    display: none;
   }
 
   .history-bar__btn {
-    padding: 9px 16px;
-    font-size: 13px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .history-bar {
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    transform: none;
+    width: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
+    justify-content: flex-start;
+  }
+
+  .history-bar__btn {
+    flex: 0 0 auto;
+  }
+
+  .context-panel {
+    left: 8px;
+    right: 8px;
+    width: auto;
+    transform: none;
+    align-items: stretch;
+  }
+
+  .context-panel__bar {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    padding: 10px 12px;
+  }
+
+  .context-panel__identity {
+    flex: 1 1 100%;
+    max-width: none;
+    border-right: none;
+    margin-right: 0;
+    padding-bottom: 6px;
+  }
+
+  .context-panel__bar .history-bar__btn {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 0;
+  }
+
+  .context-panel__popover {
+    width: min(96vw, 34rem);
+    max-height: 82vh;
+  }
+
+  .narrative-body-panel {
+    width: min(100vw, 48rem);
+    max-width: 100vw;
+    max-height: 100dvh;
+  }
+}
+
+@media (max-width: 900px) {
+  .matching-pick-banner {
+    left: 8px;
+    right: 8px;
+    transform: none;
+    width: auto;
+    flex-wrap: wrap;
+    white-space: normal;
   }
 }
 
@@ -336,6 +410,8 @@
   top: 0;
   right: 0;
   bottom: 0;
+  max-height: 100dvh;
+  min-height: 0;
   z-index: 1200;
   width: min(48rem, 92vw);
   display: flex;
@@ -455,6 +531,8 @@
 .puzzle-fill-panel {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .puzzle-fill-panel__type-badge {
@@ -555,7 +633,9 @@
 
 /* ── Word Bank ────────────────────────────────────────────────────────── */
 .puzzle-fill-panel__word-bank-section {
-  flex-shrink: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   border-top: 1px solid #27272a;
   padding: 14px 20px 18px;
   display: flex;
