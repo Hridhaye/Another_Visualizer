@@ -47,6 +47,14 @@ export function PuzzleReorderPanel() {
     return () => window.removeEventListener('keydown', onKey)
   }, [puzzleBodyOpen, closePuzzleBody])
 
+  useEffect(() => {
+    if (editingId && editRef.current) {
+      editRef.current.focus()
+      const len = editRef.current.value.length
+      editRef.current.setSelectionRange(len, len)
+    }
+  }, [editingId])
+
   if (!puzzleBodyOpen || !node || !hasSingleSelection) return null
   if (node.data.puzzleType !== 'reorder') return null
 
@@ -84,17 +92,8 @@ export function PuzzleReorderPanel() {
   function startEdit(box: ReorderBox) {
     setEditingId(box.id)
     setEditText(box.text)
-    // focus is handled via useEffect on editRef
+    // focus is handled via the editRef useEffect above
   }
-
-  useEffect(() => {
-    if (editingId && editRef.current) {
-      editRef.current.focus()
-      // place cursor at end
-      const len = editRef.current.value.length
-      editRef.current.setSelectionRange(len, len)
-    }
-  }, [editingId])
 
   // ── Drag helpers ──────────────────────────────────────────────────────
 
