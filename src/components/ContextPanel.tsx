@@ -64,7 +64,7 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
       onClick={(e) => e.stopPropagation()}
     >
       {activeField && (
-        <div className="mb-2 w-80 rounded-xl border border-zinc-700/80 bg-zinc-900/95 p-3 shadow-2xl backdrop-blur-sm">
+        <div className="mb-3 w-[min(92vw,26rem)] rounded-2xl border border-zinc-700/80 bg-zinc-900/95 p-4 shadow-2xl backdrop-blur-sm">
           {(activeField === 'code' || activeField === 'title') && (
             <input
               autoFocus
@@ -90,7 +90,7 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
             <div className="flex flex-col gap-2">
               <button
                 onClick={(e) => { e.stopPropagation(); onToggleLink() }}
-                className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
+                className={`min-h-11 w-full rounded-xl px-4 py-2.5 text-left text-sm font-semibold transition-colors ${
                   isLinkSource
                     ? 'bg-blue-700 text-blue-100 hover:bg-blue-600'
                     : 'bg-zinc-800 text-zinc-200 hover:bg-zinc-700'
@@ -187,12 +187,12 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
         </div>
       )}
 
-      <div className="flex items-center gap-1.5 rounded-xl border border-zinc-700/80 bg-zinc-900/95 px-3 py-2 shadow-xl backdrop-blur-sm">
+      <div className="flex max-w-[min(92vw,42rem)] flex-wrap items-center gap-2 rounded-2xl border border-zinc-700/80 bg-zinc-900/95 px-3 py-3 shadow-xl backdrop-blur-sm">
         {BUTTONS.map(({ field, label }) => (
           <button
             key={field}
             onClick={() => toggleField(field)}
-            className={`whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+            className={`min-h-11 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
               activeField === field
                 ? 'bg-zinc-100 text-zinc-900'
                 : 'text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100'
@@ -202,18 +202,18 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
           </button>
         ))}
 
-        <div className="mx-1 h-5 w-px bg-zinc-700" />
+        <div className="mx-1 hidden h-6 w-px bg-zinc-700 sm:block" />
 
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(node.id) }}
-          className="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-red-300 transition-colors hover:bg-red-950 hover:text-red-200"
+          className="min-h-11 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold text-red-300 transition-colors hover:bg-red-950 hover:text-red-200"
         >
           Delete
         </button>
 
         <button
           onClick={onClose}
-          className="shrink-0 rounded-md p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+          className="min-h-11 shrink-0 rounded-lg px-3 py-2 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
