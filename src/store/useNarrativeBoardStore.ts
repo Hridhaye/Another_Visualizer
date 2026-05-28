@@ -433,10 +433,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   },
 
   setSelectedNode: (nodeId) => {
-    set((state) => ({
-      selectedNodeId: nodeId,
-      contextPanelOpen: nodeId === state.selectedNodeId ? state.contextPanelOpen : false
-    }))
+    set({ selectedNodeId: nodeId })
   },
 
   clearSelection: () => {
