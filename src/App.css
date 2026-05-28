@@ -871,6 +871,8 @@
   border: none;
   outline: none;
   resize: none;
+  overflow: hidden;
+  field-sizing: content;
   font-family: inherit;
   font-size: 13px;
   line-height: 1.55;

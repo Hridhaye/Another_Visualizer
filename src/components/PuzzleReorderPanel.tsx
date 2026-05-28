@@ -26,8 +26,9 @@ export function PuzzleReorderPanel() {
 
   const reorder: ReorderPuzzleContent = node?.data.puzzleReorderContent ?? emptyReorder()
 
-  // track which box id is being edited inline
+  // track which box id is being edited inline, and in which section
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingSection, setEditingSection] = useState<SectionKey | null>(null)
   const [editText, setEditText] = useState('')
   const editRef = useRef<HTMLTextAreaElement | null>(null)
 
@@ -36,7 +37,7 @@ export function PuzzleReorderPanel() {
   const [dropTarget, setDropTarget] = useState<{ section: SectionKey; index: number } | null>(null)
 
   useEffect(() => {
-    if (!puzzleBodyOpen) setEditingId(null)
+    if (!puzzleBodyOpen) { setEditingId(null); setEditingSection(null) }
   }, [puzzleBodyOpen])
 
   useEffect(() => {
@@ -49,9 +50,12 @@ export function PuzzleReorderPanel() {
 
   useEffect(() => {
     if (editingId && editRef.current) {
-      editRef.current.focus()
-      const len = editRef.current.value.length
-      editRef.current.setSelectionRange(len, len)
+      const el = editRef.current
+      el.style.height = 'auto'
+      el.style.height = el.scrollHeight + 'px'
+      el.focus()
+      const len = el.value.length
+      el.setSelectionRange(len, len)
     }
   }, [editingId])
 
@@ -76,7 +80,7 @@ export function PuzzleReorderPanel() {
   }
 
   function deleteBox(id: string) {
-    if (editingId === id) setEditingId(null)
+    if (editingId === id) { setEditingId(null); setEditingSection(null) }
     save({
       boxes: reorder.boxes.filter((b) => b.id !== id),
       scrambledOrder: reorder.scrambledOrder.filter((bid) => bid !== id),
@@ -87,10 +91,12 @@ export function PuzzleReorderPanel() {
   function commitEdit(id: string) {
     save({ boxes: reorder.boxes.map((b) => b.id === id ? { ...b, text: editText } : b) })
     setEditingId(null)
+    setEditingSection(null)
   }
 
-  function startEdit(box: ReorderBox) {
+  function startEdit(box: ReorderBox, section: SectionKey) {
     setEditingId(box.id)
+    setEditingSection(section)
     setEditText(box.text)
     // focus is handled via the editRef useEffect above
   }
@@ -162,23 +168,26 @@ export function PuzzleReorderPanel() {
               >
                 <span className="puzzle-reorder-panel__box-handle" aria-hidden>⠿</span>
 
-                {editingId === box.id ? (
+                {editingId === box.id && editingSection === section ? (
                   <textarea
                     ref={editRef}
                     value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
+                    onChange={(e) => {
+                      setEditText(e.target.value)
+                      e.target.style.height = 'auto'
+                      e.target.style.height = e.target.scrollHeight + 'px'
+                    }}
                     onBlur={() => commitEdit(box.id)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit(box.id) }
-                      if (e.key === 'Escape') { setEditingId(null) }
+                      if (e.key === 'Escape') { setEditingId(null); setEditingSection(null) }
                     }}
-                    rows={2}
                     className="puzzle-reorder-panel__box-input"
                   />
                 ) : (
                   <span
                     className="puzzle-reorder-panel__box-text"
-                    onDoubleClick={() => startEdit(box)}
+                    onDoubleClick={() => startEdit(box, section)}
                     title="Double-click to edit"
                   >
                     {box.text || <span className="puzzle-reorder-panel__box-placeholder">empty — double-click to edit</span>}
