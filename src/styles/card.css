@@ -6,7 +6,7 @@
   box-sizing: border-box;
   border-radius: 18px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, z-index 0s;
   overflow: visible;
 }
 
@@ -17,13 +17,7 @@
 }
 
 .card-shell.card-highlighted {
-  outline: 3px solid rgba(251, 191, 36, 0.75);
-  outline-offset: 2px;
-}
-
-.card-shell.card-selected.card-highlighted {
-  outline: 3px solid rgba(251, 191, 36, 0.75);
-  outline-offset: 2px;
+  z-index: 10;
 }
 
 .card-shell:hover {
