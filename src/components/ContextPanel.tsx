@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useViewport } from 'reactflow'
+import { createPortal } from 'react-dom'
 import { parseReferences } from '../graph/buildEdgesFromReferences'
 import { PUZZLE_TYPES, type CardData, type NarrativeNode, type SlipType } from '../types/narrative'
 
@@ -98,9 +99,9 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
 
   return (
     <>
-      {activeField === 'body' && (
+      {activeField === 'body' && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed right-6 top-6 z-[120] nodrag nowheel pointer-events-auto h-[min(86vh,52rem)] w-[min(42rem,calc(100vw-2rem))] rounded-xl border border-zinc-700 bg-zinc-950 p-4 shadow-[0_25px_60px_rgba(0,0,0,0.8)]"
+          className="fixed right-6 top-6 z-[1200] nodrag nowheel pointer-events-auto h-[min(86vh,52rem)] w-[min(44rem,calc(100vw-2rem))] rounded-xl border border-zinc-700 bg-zinc-950 p-4 shadow-[0_25px_60px_rgba(0,0,0,0.8)]"
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
@@ -161,7 +162,8 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
             }}
             className="h-[calc(100%-5.5rem)] w-full overflow-y-auto rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 font-mono text-xs leading-5 text-zinc-100 outline-none focus:border-zinc-500"
           />
-        </div>
+        </div>,
+        document.body
       )}
 
       <div
