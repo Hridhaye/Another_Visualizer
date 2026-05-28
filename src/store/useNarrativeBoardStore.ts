@@ -941,7 +941,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
 
   openNarrativeBody: () => {
     set((state) => ({
-      narrativeBodyOpen: state.selectedNodeIds.length === 1
+      narrativeBodyOpen: state.selectedNodeIds.length === 1,
+      puzzleBodyOpen: false
     }))
   },
 
@@ -951,7 +952,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
 
   openPuzzleBody: () => {
     set((state) => ({
-      puzzleBodyOpen: state.selectedNodeIds.length === 1
+      puzzleBodyOpen: state.selectedNodeIds.length === 1,
+      narrativeBodyOpen: false
     }))
   },
 
