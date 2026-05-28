@@ -272,15 +272,21 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
         </div>
       )}
 
-      {data.referencesText && (
-        <div className="mt-4 border-t border-zinc-700 pt-3 text-sm text-zinc-400">
-          References: {data.referencesText}
-        </div>
-      )}
-
-      {hasPuzzle && (
-        <div className="card-puzzle" title={puzzleText}>
-          <span className="card-puzzle__badge">{puzzleText}</span>
+      {(data.referencesText || hasPuzzle) && (
+        <div className="mt-5 border-t border-zinc-700 pt-4">
+          {data.referencesText && (
+            <div className={`text-sm text-zinc-400 ${hasPuzzle ? 'mb-3' : ''}`}>
+              <span className="text-zinc-500 uppercase text-[10px] font-bold" style={{ letterSpacing: '0.05em' }}>
+                References:
+              </span>{' '}
+              {data.referencesText}
+            </div>
+          )}
+          {hasPuzzle && (
+            <div className="card-puzzle" title={puzzleText}>
+              <span className="card-puzzle__badge">{puzzleText}</span>
+            </div>
+          )}
         </div>
       )}
 
