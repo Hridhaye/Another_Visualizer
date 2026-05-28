@@ -15,42 +15,47 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const updateNode = useNarrativeBoardStore((state) => state.updateNode)
   const deleteCard = useNarrativeBoardStore((state) => state.deleteCard)
   const setConnectionSourceNode = useNarrativeBoardStore((state) => state.setConnectionSourceNode)
-  const setLinkDrag = useNarrativeBoardStore((state) => state.setLinkDrag)
   const createReferenceConnection = useNarrativeBoardStore((state) => state.createReferenceConnection)
-  const linkDragSourceId = useNarrativeBoardStore((state) => state.linkDragSourceId)
-  const linkDragTargetId = useNarrativeBoardStore((state) => state.linkDragTargetId)
   const nodes = useNarrativeBoardStore((state) => state.nodes)
   const thisNode = nodes.find((n) => n.id === id)
 
   const slipColor = getSlipColor(slipTypes, data.slipTypeId)
   const isLinkSource = connectionSourceNodeId === id
   const isSelected = selectedNodeId === id
+  const isPendingTarget = !!connectionSourceNodeId && !isLinkSource
   const showContextPanel = isSelected && contextPanelOpen && !!thisNode
-  const isDragSource = linkDragSourceId === id
-  const isDragTarget = linkDragTargetId === id
 
   function handleClick(e: React.MouseEvent) {
     if (e.altKey) {
-      if (linkDragSourceId === null) {
-        // First alt+click: set this card as the link source
-        setLinkDrag(id, null)
-      } else if (linkDragSourceId !== id) {
-        // Second alt+click on a different card: complete the link
-        createReferenceConnection(linkDragSourceId, id)
-        setLinkDrag(null, null)
+      e.preventDefault()
+      e.stopPropagation()
+
+      if (!connectionSourceNodeId) {
+        // First alt+click — set this card as the link source
+        setConnectionSourceNode(id)
+      } else if (connectionSourceNodeId === id) {
+        // Alt+click the source again — cancel
+        setConnectionSourceNode(null)
       } else {
-        // Alt+click the source card again: cancel
-        setLinkDrag(null, null)
+        // Second alt+click on a different card — make the link then clear
+        createReferenceConnection(connectionSourceNodeId, id)
+        setConnectionSourceNode(null)
       }
       return
     }
-    if (connectionSourceNodeId) return
+
+    // Normal click — cancel any pending link mode, open context panel
+    if (connectionSourceNodeId) {
+      setConnectionSourceNode(null)
+      return
+    }
+
     openContextPanel()
   }
 
   let extraShadow = ''
-  if (isDragSource) extraShadow = ', 0 0 0 3px rgba(99,102,241,0.85)'
-  else if (isDragTarget) extraShadow = ', 0 0 0 3px rgba(34,197,94,0.85)'
+  if (isLinkSource) extraShadow = ', 0 0 0 3px rgba(99,102,241,0.85)'
+  else if (isPendingTarget) extraShadow = ', 0 0 0 2px rgba(99,102,241,0.3)'
 
   return (
     <div
@@ -63,7 +68,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
         boxShadow: isSelected
           ? `0 0 0 2px rgba(59,130,246,0.45), 0 12px 34px rgba(0,0,0,0.5), inset 0 0 80px ${slipColor}22${extraShadow}`
           : `0 0 0 2px rgba(255,255,255,0.04), inset 0 0 80px ${slipColor}22${extraShadow}`,
-        cursor: isDragSource ? 'crosshair' : undefined,
+        cursor: connectionSourceNodeId && !isLinkSource ? 'crosshair' : undefined,
       }}
       onClick={handleClick}
     >
@@ -95,21 +100,9 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
         </div>
       )}
 
-      {isDragSource && (
-        <div className="absolute -top-7 left-1/2 z-50 -translate-x-1/2 whitespace-nowrap rounded-md border border-indigo-700/60 bg-indigo-950/90 px-2.5 py-1 text-[10px] font-semibold text-indigo-300 shadow-lg">
-          {linkDragTargetId ? 'Release to link' : 'Drag to a card…'}
-        </div>
-      )}
-
-      {isDragTarget && (
-        <div className="absolute inset-0 pointer-events-none rounded-[inherit] ring-2 ring-emerald-400/70" />
-      )}
-
       {isLinkSource && (
-        <div className="absolute -top-4 right-4 z-50">
-          <div className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-300 shadow-lg">
-            Click another card to connect
-          </div>
+        <div className="absolute -top-7 left-1/2 z-50 -translate-x-1/2 whitespace-nowrap rounded-md border border-indigo-700/60 bg-indigo-950/90 px-2.5 py-1 text-[10px] font-semibold text-indigo-300 shadow-lg">
+          Alt + click another card to link
         </div>
       )}
 

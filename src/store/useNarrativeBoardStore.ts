@@ -90,8 +90,6 @@ type NarrativeBoardState = {
   contextPanelOpen: boolean
   narrativeBodyOpen: boolean
   activeEditorField: EditorField
-  linkDragSourceId: string | null
-  linkDragTargetId: string | null
   canUndo: boolean
   canRedo: boolean
   historyPast: HistorySnapshot[]
@@ -132,7 +130,6 @@ type NarrativeBoardActions = {
   closeNarrativeBody: () => void
   openEditorField: (field: EditorField) => void
   closeEditorField: () => void
-  setLinkDrag: (sourceId: string | null, targetId: string | null) => void
   cycleMinimapState: () => void
   setViewport: (viewport: SerializedViewport) => void
   setMetadata: (metadata: SerializedMetadata) => void
@@ -186,8 +183,6 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   contextPanelOpen: false,
   narrativeBodyOpen: false,
   activeEditorField: null,
-  linkDragSourceId: null,
-  linkDragTargetId: null,
   canUndo: false,
   canRedo: false,
   historyPast: [],
@@ -645,10 +640,6 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
 
   closeEditorField: () => {
     set({ activeEditorField: null })
-  },
-
-  setLinkDrag: (sourceId, targetId) => {
-    set({ linkDragSourceId: sourceId, linkDragTargetId: targetId })
   },
 
   cycleMinimapState: () => {

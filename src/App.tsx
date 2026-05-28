@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import ReactFlow, {
   Background,
   Controls,
@@ -23,7 +23,6 @@ function BoardCanvas() {
   const slipTypes = useNarrativeBoardStore((state) => state.slipTypes)
   const sidebarCollapsed = useNarrativeBoardStore((state) => state.sidebarCollapsed)
   const sectionsOpen = useNarrativeBoardStore((state) => state.sectionsOpen)
-  const connectionSourceNodeId = useNarrativeBoardStore((state) => state.connectionSourceNodeId)
   const minimapVisible = useNarrativeBoardStore((state) => state.minimapVisible)
   const minimapCollapsed = useNarrativeBoardStore((state) => state.minimapCollapsed)
 
@@ -40,7 +39,6 @@ function BoardCanvas() {
   const toggleSection = useNarrativeBoardStore((state) => state.toggleSection)
   const setMetadata = useNarrativeBoardStore((state) => state.setMetadata)
   const addSlipType = useNarrativeBoardStore((state) => state.addSlipType)
-  const createReferenceConnection = useNarrativeBoardStore((state) => state.createReferenceConnection)
   const cycleMinimapState = useNarrativeBoardStore((state) => state.cycleMinimapState)
   const setViewport = useNarrativeBoardStore((state) => state.setViewport)
   const metadata = useNarrativeBoardStore((state) => state.metadata)
@@ -50,8 +48,6 @@ function BoardCanvas() {
   const undo = useNarrativeBoardStore((state) => state.undo)
   const redo = useNarrativeBoardStore((state) => state.redo)
 
-  const [altHeld, setAltHeld] = useState(false)
-
   const nodeTypes = useMemo(
     () => ({
       narrativeCard: NarrativeCardNode
@@ -59,24 +55,15 @@ function BoardCanvas() {
     []
   )
 
-  const handleNodeClick: NodeMouseHandler = (event, node) => {
-    if (connectionSourceNodeId) {
-      event.preventDefault()
-      event.stopPropagation()
-      if (connectionSourceNodeId !== node.id) {
-        createReferenceConnection(connectionSourceNodeId, node.id)
-      }
-      return
-    }
-
+  const handleNodeClick: NodeMouseHandler = (_event, node) => {
     setSelectedNode(node.id)
   }
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Alt') setAltHeld(true)
-
-      if (!event.ctrlKey || event.altKey) return
+      if (!event.ctrlKey || event.altKey) {
+        return
+      }
 
       const key = event.key.toLowerCase()
       if (key === 'z' && !event.shiftKey) {
@@ -84,26 +71,15 @@ function BoardCanvas() {
         undo()
         return
       }
+
       if (key === 'z' && event.shiftKey) {
         event.preventDefault()
         redo()
       }
     }
 
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.key === 'Alt') setAltHeld(false)
-    }
-
-    const handleBlur = () => setAltHeld(false)
-
     window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
-    window.addEventListener('blur', handleBlur)
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
-      window.removeEventListener('blur', handleBlur)
-    }
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [undo, redo])
 
   return (
@@ -127,13 +103,11 @@ function BoardCanvas() {
         onProjectNameChange={(value) => setMetadata({ ...metadata, projectName: value, updatedAt: metadata.updatedAt })}
       />
 
-      <div className="board-canvas" style={{ cursor: altHeld ? 'crosshair' : undefined }}>
+      <div className="board-canvas">
         <ReactFlow
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
-          nodesDraggable={!altHeld}
-          elementsSelectable={!connectionSourceNodeId}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
