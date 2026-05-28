@@ -369,8 +369,8 @@ function BoardCanvas() {
         )}
         {matchingPickMode && (
           <div className="matching-pick-banner">
-            <span className="matching-pick-banner__text">Click a card to add it to the puzzle</span>
-            <button onClick={cancelMatchingPickMode} className="matching-pick-banner__cancel">Cancel</button>
+            <span className="matching-pick-banner__text">Click cards to add them to the puzzle</span>
+            <button onClick={cancelMatchingPickMode} className="matching-pick-banner__done">Done</button>
           </div>
         )}
         {showContextPanel && (

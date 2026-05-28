@@ -1105,20 +1105,20 @@
   color: #c4b5fd;
 }
 
-.matching-pick-banner__cancel {
-  border: 1px solid #3f3f46;
+.matching-pick-banner__done {
+  border: 1px solid rgba(139, 92, 246, 0.5);
   border-radius: 6px;
-  background: #18181b;
-  color: #a1a1aa;
+  background: rgba(139, 92, 246, 0.15);
+  color: #c4b5fd;
   font-size: 12px;
-  padding: 4px 10px;
+  padding: 4px 12px;
   cursor: pointer;
   transition: background-color 120ms ease, color 120ms ease;
 }
 
-.matching-pick-banner__cancel:hover {
-  background: #27272a;
-  color: #fafafa;
+.matching-pick-banner__done:hover {
+  background: rgba(139, 92, 246, 0.28);
+  color: #ede9fe;
 }
 
 /* ── Card pick-mode states ────────────────────────────────────────────── */

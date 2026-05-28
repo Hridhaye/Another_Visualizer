@@ -1036,6 +1036,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       matchingPickMode: true,
       matchingPickSourceNodeId: sourceNodeId,
       puzzleBodyOpen: false,
+      contextPanelOpen: false,
+      activeEditorField: null,
     })
   },
 
@@ -1047,43 +1049,40 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     const sourceNode = state.nodes.find((n) => n.id === sourceNodeId)
     if (!sourceNode) return
 
-    // Don't allow picking the source card itself
-    if (pickedNodeId === sourceNodeId) {
-      set({ matchingPickMode: false, matchingPickSourceNodeId: null, puzzleBodyOpen: true })
-      return
-    }
+    // Ignore clicks on the source card itself — stay in pick mode
+    if (pickedNodeId === sourceNodeId) return
 
     const existing = sourceNode.data.puzzleMatchingContent ?? { questionHtml: '', cards: [] }
-    // Don't add duplicates
+    // Ignore duplicates — stay in pick mode
     const alreadyAdded = existing.cards.some((c) => c.nodeId === pickedNodeId)
-    if (!alreadyAdded) {
-      const newCard: MatchingCard = { nodeId: pickedNodeId, isSolution: false, representativeLine: '' }
-      const updatedNodes = state.nodes.map((n) => {
-        if (n.id !== sourceNodeId) return n
-        return { ...n, data: { ...n.data, puzzleMatchingContent: { ...existing, cards: [...existing.cards, newCard] } } }
-      })
-      set({
-        historyPast: [...state.historyPast, createSnapshot(state)],
-        historyFuture: [],
-        canUndo: true,
-        canRedo: false,
-        nodes: updatedNodes,
-        edges: buildEdgesFromReferences(updatedNodes),
-        groups: normalizeGroups(state.groups, updatedNodes),
-        hasUnsavedChanges: true,
-        matchingPickMode: false,
-        matchingPickSourceNodeId: null,
-        puzzleBodyOpen: true,
-        selectedNodeId: sourceNodeId,
-        selectedNodeIds: [sourceNodeId],
-      })
-    } else {
-      set({ matchingPickMode: false, matchingPickSourceNodeId: null, puzzleBodyOpen: true })
-    }
+    if (alreadyAdded) return
+
+    const newCard: MatchingCard = { nodeId: pickedNodeId, isSolution: false, representativeLine: '' }
+    const updatedNodes = state.nodes.map((n) => {
+      if (n.id !== sourceNodeId) return n
+      return { ...n, data: { ...n.data, puzzleMatchingContent: { ...existing, cards: [...existing.cards, newCard] } } }
+    })
+    // Stay in pick mode after each pick
+    set({
+      historyPast: [...state.historyPast, createSnapshot(state)],
+      historyFuture: [],
+      canUndo: true,
+      canRedo: false,
+      nodes: updatedNodes,
+      edges: buildEdgesFromReferences(updatedNodes),
+      groups: normalizeGroups(state.groups, updatedNodes),
+      hasUnsavedChanges: true,
+    })
   },
 
   cancelMatchingPickMode: () => {
-    set({ matchingPickMode: false, matchingPickSourceNodeId: null, puzzleBodyOpen: true })
+    const sourceNodeId = get().matchingPickSourceNodeId
+    set({
+      matchingPickMode: false,
+      matchingPickSourceNodeId: null,
+      puzzleBodyOpen: true,
+      ...(sourceNodeId ? { selectedNodeId: sourceNodeId, selectedNodeIds: [sourceNodeId] } : {}),
+    })
   },
 
   undo: () => {
