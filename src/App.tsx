@@ -5,6 +5,8 @@ import ReactFlow, {
 } from 'reactflow'
 
 import { NarrativeCardNode } from './components/NarrativeCardNode'
+import { NarrativeEdgeComponent } from './components/edges/NarrativeEdge'
+import { BiDirectionalEdge } from './components/edges/BiDirectionalEdge'
 import { NarrativeBodyPanel } from './components/NarrativeBodyPanel'
 import { ContextPanel } from './components/ContextPanel'
 import { CardEditorFlyout } from './components/CardEditorFlyout'
@@ -79,6 +81,26 @@ function BoardCanvas() {
       narrativeCard: NarrativeCardNode
     }),
     []
+  )
+
+  const edgeTypes = useMemo(
+    () => ({
+      narrativeEdge: NarrativeEdgeComponent,
+      bidirectional: BiDirectionalEdge,
+    }),
+    []
+  )
+
+  const decoratedEdges = useMemo(
+    () =>
+      edges.map((edge) => ({
+        ...edge,
+        data: {
+          ...edge.data,
+          isOutgoingFromSelected: selectedNodeId !== null && edge.source === selectedNodeId,
+        },
+      })),
+    [edges, selectedNodeId]
   )
 
   const performMarqueeSelection = useCallback((box: {
@@ -267,8 +289,9 @@ function BoardCanvas() {
       >
         <ReactFlow
           nodes={nodes}
-          edges={edges}
+          edges={decoratedEdges}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
