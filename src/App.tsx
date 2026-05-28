@@ -65,12 +65,13 @@ function BoardCanvas() {
     const cardY = node.positionAbsolute?.y ?? node.position.y
     const cardWidth = node.width ?? 420
 
-    const projected = reactFlow.project({
+    // Convert flow coordinates to screen coordinates
+    const screenPos = reactFlow.flowToScreenPosition({
       x: cardX + cardWidth + 12,
-      y: cardY + 8
+      y: cardY
     })
 
-    setContextPanelPosition({ x: projected.x, y: projected.y })
+    setContextPanelPosition({ x: screenPos.x, y: screenPos.y })
 
     if (connectionSourceNodeId && connectionSourceNodeId !== node.id) {
       createReferenceConnection(connectionSourceNodeId, node.id)
