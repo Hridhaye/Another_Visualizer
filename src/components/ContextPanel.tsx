@@ -61,18 +61,20 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
 
   return (
     <div
-      className="nodrag nowheel absolute z-50"
+      className="absolute z-50 pointer-events-none"
       style={{
         bottom: 'calc(100% + 10px)',
         left: '50%',
         transform: `translateX(-50%) scale(${zoomScale})`,
         transformOrigin: 'bottom center'
       }}
-      onMouseDown={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
     >
       {activeField && (
-        <div className="mb-2 w-[min(92vw,26rem)] rounded-xl border border-zinc-700 bg-zinc-950 p-4 shadow-[0_25px_60px_rgba(0,0,0,0.8)]">
+        <div
+          className="nodrag nowheel pointer-events-auto mb-2 w-[min(92vw,26rem)] rounded-xl border border-zinc-700 bg-zinc-950 p-4 shadow-[0_25px_60px_rgba(0,0,0,0.8)]"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
           {(activeField === 'code' || activeField === 'title') && (
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{activeField}</label>
@@ -202,7 +204,11 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
         </div>
       )}
 
-      <div className="flex items-center gap-1.5 rounded-2xl border border-zinc-700 bg-zinc-950 p-4 shadow-[0_25px_60px_rgba(0,0,0,0.8)]">
+      <div
+        className="nodrag nowheel pointer-events-auto flex items-center gap-1.5 rounded-2xl border border-zinc-700 bg-zinc-950 p-4 shadow-[0_25px_60px_rgba(0,0,0,0.8)]"
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
         {BUTTONS.map(({ field, label }) => (
           <button
             key={field}
