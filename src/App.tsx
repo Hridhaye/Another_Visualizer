@@ -294,6 +294,16 @@ function BoardCanvas() {
       <PuzzleReorderPanel />
       <PuzzleMatchingPanel />
       <CardEditorFlyout />
+      <button
+        type="button"
+        className={`mobile-sidebar-toggle${sidebarCollapsed ? ' mobile-sidebar-toggle--visible' : ''}`}
+        onClick={toggleSidebar}
+        aria-label="Open sidebar"
+        aria-expanded={!sidebarCollapsed}
+      >
+        ☰
+      </button>
+
       <Sidebar
         collapsed={sidebarCollapsed}
         sectionsOpen={sectionsOpen}

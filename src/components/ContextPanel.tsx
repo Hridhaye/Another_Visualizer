@@ -119,7 +119,6 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
             <div className="context-panel__field">
               <label className="context-panel__label">Title</label>
               <input
-                autoFocus
                 value={node.data.title}
                 onChange={(e) => onUpdate(node.id, { title: e.target.value })}
                 className="context-panel__input"
@@ -131,7 +130,6 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
             <div className="context-panel__field">
               <label className="context-panel__label">This card's code</label>
               <input
-                autoFocus
                 value={node.data.code}
                 onChange={(e) => onUpdate(node.id, { code: e.target.value })}
                 className="context-panel__input"
@@ -197,7 +195,6 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
             <div className="context-panel__field">
               <label className="context-panel__label">Summary</label>
               <textarea
-                autoFocus
                 value={node.data.summary}
                 onChange={(e) => onUpdate(node.id, { summary: e.target.value })}
                 rows={4}
@@ -286,7 +283,6 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
                   </div>
                 )}
                 <input
-                  autoFocus
                   value={tagSearch}
                   onChange={(e) => setTagSearch(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') createAndAssign() }}
