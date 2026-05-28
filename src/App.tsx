@@ -42,9 +42,7 @@ function BoardCanvas() {
   const toggleSidebar = useNarrativeBoardStore((state) => state.toggleSidebar)
   const toggleSection = useNarrativeBoardStore((state) => state.toggleSection)
   const setContextPanelPosition = useNarrativeBoardStore((state) => state.setContextPanelPosition)
-  const setConnectionSourceNode = useNarrativeBoardStore((state) => state.setConnectionSourceNode)
   const setMetadata = useNarrativeBoardStore((state) => state.setMetadata)
-  const openFullEditor = useNarrativeBoardStore((state) => state.openFullEditor)
   const addSlipType = useNarrativeBoardStore((state) => state.addSlipType)
   const createReferenceConnection = useNarrativeBoardStore((state) => state.createReferenceConnection)
   const cycleMinimapState = useNarrativeBoardStore((state) => state.cycleMinimapState)
@@ -133,13 +131,8 @@ function BoardCanvas() {
               selectedNode={selectedNode}
               slipTypes={slipTypes}
               contextPanelPosition={contextPanelPosition}
-              connectionSourceNodeId={connectionSourceNodeId}
               onClose={clearSelection}
               onUpdate={updateNode}
-              onToggleLinkMode={(nodeId) => {
-                setConnectionSourceNode(connectionSourceNodeId === nodeId ? null : nodeId)
-              }}
-              onOpenFullEditor={openFullEditor}
             />
           )}
         </div>
