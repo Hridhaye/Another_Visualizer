@@ -107,10 +107,6 @@ function BoardCanvas() {
         projectName={metadata.projectName}
         updatedAt={metadata.updatedAt}
         hasUnsavedChanges={hasUnsavedChanges}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        onUndo={undo}
-        onRedo={redo}
         onProjectNameChange={(value) => setMetadata({ ...metadata, projectName: value, updatedAt: metadata.updatedAt })}
         onUpdateNode={updateNode}
       />
@@ -141,6 +137,25 @@ function BoardCanvas() {
             onCycleState={cycleMinimapState}
           />
         </ReactFlow>
+        <div className="history-bar" role="toolbar" aria-label="History controls">
+          <button
+            onClick={undo}
+            disabled={!canUndo}
+            className="history-bar__btn"
+            aria-label="Undo"
+          >
+            Undo
+          </button>
+          <div className="history-bar__divider" />
+          <button
+            onClick={redo}
+            disabled={!canRedo}
+            className="history-bar__btn"
+            aria-label="Redo"
+          >
+            Redo
+          </button>
+        </div>
       </div>
     </div>
   )

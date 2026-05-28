@@ -22,10 +22,6 @@ type SidebarProps = {
   projectName: string
   updatedAt: string
   hasUnsavedChanges: boolean
-  canUndo: boolean
-  canRedo: boolean
-  onUndo: () => void
-  onRedo: () => void
   onProjectNameChange: (value: string) => void
 }
 
@@ -66,10 +62,6 @@ export function Sidebar({
   projectName,
   updatedAt,
   hasUnsavedChanges,
-  canUndo,
-  canRedo,
-  onUndo,
-  onRedo,
   onProjectNameChange
 }: SidebarProps) {
   return (
@@ -109,11 +101,7 @@ export function Sidebar({
               projectName={projectName}
               updatedAt={updatedAt}
               hasUnsavedChanges={hasUnsavedChanges}
-              canUndo={canUndo}
-              canRedo={canRedo}
               onAddCard={onAddCard}
-              onUndo={onUndo}
-              onRedo={onRedo}
               onSaveProject={onSaveProject}
               onLoadProject={onLoadProject}
               onImportAIFormat={onImportAIFormat}
