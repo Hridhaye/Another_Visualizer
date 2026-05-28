@@ -15,7 +15,7 @@ type ContextPanelProps = {
   onToggleLink: () => void
 }
 
-type ActiveField = 'code' | 'title' | 'summary' | 'references' | 'slipType' | 'puzzleType' | null
+type ActiveField = 'code' | 'title' | 'summary' | 'references' | 'slipType' | 'slipGiven' | 'puzzleType' | null
 
 const BUTTONS: { field: ActiveField | 'body'; label: string }[] = [
   { field: 'code',       label: 'Code' },
@@ -23,7 +23,8 @@ const BUTTONS: { field: ActiveField | 'body'; label: string }[] = [
   { field: 'summary',    label: 'Summary' },
   { field: 'body',       label: 'Narrative Body' },
   { field: 'references', label: 'Reference' },
-  { field: 'slipType',   label: 'Slip' },
+  { field: 'slipType',   label: 'Card Slip' },
+  { field: 'slipGiven',  label: 'Slip Given' },
   { field: 'puzzleType', label: 'Puzzle' },
 ]
 
@@ -157,7 +158,7 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
 
           {activeField === 'slipType' && (
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Select Slip Type</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Card Slip</label>
               {slipTypes.map((slip) => (
                 <button
                   key={slip.id}
@@ -172,6 +173,41 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
               ))}
             </div>
           )}
+
+          {activeField === 'slipGiven' && (() => {
+            const given = node.data.slipGivenTypeIds ?? []
+            const counts = slipTypes.map((slip) => ({
+              slip,
+              count: given.filter((id) => id === slip.id).length
+            }))
+            function setCount(slipId: string, delta: number) {
+              const current = given.filter((id) => id === slipId).length
+              const next = Math.max(0, current + delta)
+              const without = given.filter((id) => id !== slipId)
+              onUpdate(node.id, { slipGivenTypeIds: [...without, ...Array(next).fill(slipId)] })
+            }
+            return (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Slip Given</label>
+                {counts.map(({ slip, count }) => (
+                  <div key={slip.id} className="flex items-center gap-2 rounded-md px-2 py-1 text-xs">
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: slip.color }} />
+                    <span className={`flex-1 ${count > 0 ? 'text-zinc-100' : 'text-zinc-400'}`}>{slip.name}</span>
+                    <button
+                      onClick={() => setCount(slip.id, -1)}
+                      disabled={count === 0}
+                      className="flex h-6 w-6 items-center justify-center rounded text-zinc-300 hover:bg-zinc-700 disabled:opacity-30"
+                    >−</button>
+                    <span className="w-4 text-center text-zinc-200">{count}</span>
+                    <button
+                      onClick={() => setCount(slip.id, 1)}
+                      className="flex h-6 w-6 items-center justify-center rounded text-zinc-300 hover:bg-zinc-700"
+                    >+</button>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
 
           {activeField === 'puzzleType' && (
             <div className="flex flex-col gap-1.5">

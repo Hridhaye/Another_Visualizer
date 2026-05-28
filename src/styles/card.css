@@ -94,6 +94,12 @@
   align-items: center;
 }
 
+.card-slip-given__entry {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .card-slip-given__dot {
   display: inline-block;
   width: 18px;
@@ -102,6 +108,13 @@
   border: 2px solid rgba(255, 255, 255, 0.25);
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
   flex-shrink: 0;
+}
+
+.card-slip-given__count {
+  font-size: 11px;
+  font-weight: 700;
+  color: #a1a1aa;
+  letter-spacing: 0.02em;
 }
 
 .card-groups {

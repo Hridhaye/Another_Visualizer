@@ -166,26 +166,24 @@ export function CardEditorFlyout() {
 
         {activeEditorField === 'slipGiven' && (
           <div className="cef-slip-given">
-            <p className="cef-slip-given__hint">Select all slip types this card gives out. Multiple allowed.</p>
-            <div className="cef-list">
+            <p className="cef-slip-given__hint">Set how many of each slip type this card gives out.</p>
+            <div className="cef-slip-given__rows">
               {slipTypes.map((slip) => {
-                const current = node.data.slipGivenTypeIds ?? []
-                const isSelected = current.includes(slip.id)
+                const given = node.data.slipGivenTypeIds ?? []
+                const count = given.filter((id) => id === slip.id).length
+                function adjust(delta: number) {
+                  const next = Math.max(0, count + delta)
+                  const without = given.filter((id) => id !== slip.id)
+                  updateNode(node.id, { slipGivenTypeIds: [...without, ...Array(next).fill(slip.id)] })
+                }
                 return (
-                  <button
-                    key={slip.id}
-                    onClick={() => {
-                      const next = isSelected
-                        ? current.filter((id) => id !== slip.id)
-                        : [...current, slip.id]
-                      updateNode(node.id, { slipGivenTypeIds: next })
-                    }}
-                    className={`cef-list__item ${isSelected ? 'cef-list__item--active' : ''}`}
-                  >
+                  <div key={slip.id} className="cef-slip-given__row">
                     <span className="cef-list__dot" style={{ background: slip.color }} />
-                    {slip.name}
-                    {isSelected && <span className="cef-list__check">✓</span>}
-                  </button>
+                    <span className={`cef-slip-given__name ${count > 0 ? 'cef-slip-given__name--active' : ''}`}>{slip.name}</span>
+                    <button className="cef-slip-given__stepper" onClick={() => adjust(-1)} disabled={count === 0}>−</button>
+                    <span className="cef-slip-given__count">{count}</span>
+                    <button className="cef-slip-given__stepper" onClick={() => adjust(1)}>+</button>
+                  </div>
                 )
               })}
             </div>

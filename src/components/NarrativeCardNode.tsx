@@ -263,24 +263,25 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
 
       <div className="card-summary">{data.summary}</div>
 
-      {(data.slipGivenTypeIds ?? []).length > 0 && (
-        <div className="card-slip-given">
-          <span className="card-slip-given__label">Slip Given</span>
-          <div className="card-slip-given__dots">
-            {(data.slipGivenTypeIds ?? []).map((slipId, index) => {
-              const slip = slipTypes.find((s) => s.id === slipId)
-              return slip ? (
-                <span
-                  key={`${slipId}-${index}`}
-                  className="card-slip-given__dot"
-                  style={{ background: slip.color }}
-                  title={slip.name}
-                />
-              ) : null
-            })}
+      {(data.slipGivenTypeIds ?? []).length > 0 && (() => {
+        const given = data.slipGivenTypeIds ?? []
+        const entries = slipTypes
+          .map((slip) => ({ slip, count: given.filter((id) => id === slip.id).length }))
+          .filter(({ count }) => count > 0)
+        return (
+          <div className="card-slip-given">
+            <span className="card-slip-given__label">Slip Given</span>
+            <div className="card-slip-given__dots">
+              {entries.map(({ slip, count }) => (
+                <span key={slip.id} className="card-slip-given__entry" title={`${slip.name} ×${count}`}>
+                  <span className="card-slip-given__dot" style={{ background: slip.color }} />
+                  {count > 1 && <span className="card-slip-given__count">×{count}</span>}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {nodeGroups.length > 0 && (
         <div className="card-groups">
