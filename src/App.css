@@ -390,13 +390,43 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 6px 10px;
-  border: 1px solid rgba(113, 113, 122, 0.5);
-  border-radius: 999px;
-  background: rgba(15, 15, 18, 0.88);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  padding: 8px 12px;
+  border: 1px solid rgba(113, 113, 122, 0.35);
+  border-top: 2px solid rgba(139, 92, 246, 0.7);
+  border-radius: 16px;
+  background: rgba(18, 18, 24, 0.95);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.08);
   pointer-events: auto;
+  white-space: nowrap;
+}
+
+.context-panel__identity {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 0 10px 0 4px;
+  margin-right: 4px;
+  border-right: 1px solid rgba(113, 113, 122, 0.4);
+  flex-shrink: 0;
+  max-width: 14rem;
+  overflow: hidden;
+}
+
+.context-panel__identity-code {
+  font-family: monospace;
+  font-size: 10px;
+  color: rgba(139, 92, 246, 0.9);
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.context-panel__identity-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e4e4e7;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -408,6 +438,11 @@
 .context-panel__btn--link-active {
   background: rgba(99, 102, 241, 0.22) !important;
   color: #c7d2fe !important;
+}
+
+.context-panel__bar .history-bar__btn {
+  padding: 7px 13px;
+  font-size: 12px;
 }
 
 .context-panel__close {

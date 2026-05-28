@@ -203,6 +203,11 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
       )}
 
       <div className="context-panel__bar">
+        <div className="context-panel__identity">
+          <span className="context-panel__identity-code">{node.data.code}</span>
+          <span className="context-panel__identity-title">{node.data.title}</span>
+        </div>
+
         {BUTTONS.map(({ field, label }) => (
           <button
             key={field}
