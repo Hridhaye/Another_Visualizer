@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import ReactFlow, {
   Background,
-  Controls,
   ReactFlowProvider,
 } from 'reactflow'
 
