@@ -13,6 +13,11 @@
   height: 100%;
 }
 
+/* Allow context panel to overflow the ReactFlow node wrapper */
+.react-flow__node {
+  overflow: visible !important;
+}
+
 .reactflow-dark {
   background:
     radial-gradient(circle at 15% 10%, rgba(37, 99, 235, 0.14), transparent 45%),
