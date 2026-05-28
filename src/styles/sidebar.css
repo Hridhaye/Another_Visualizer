@@ -346,6 +346,16 @@
   background: rgba(20, 184, 166, 0.18);
 }
 
+.card-editor__btn--link-active {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.45);
+  color: #a5b4fc;
+}
+
+.card-editor__btn--link-active:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.2);
+}
+
 .card-editor__btn--body.card-editor__btn--active {
   background: rgba(99, 102, 241, 0.12);
   border-color: rgba(99, 102, 241, 0.4);

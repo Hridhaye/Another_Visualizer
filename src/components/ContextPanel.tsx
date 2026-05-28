@@ -18,13 +18,13 @@ type ContextPanelProps = {
 type ActiveField = 'code' | 'title' | 'summary' | 'references' | 'slipType' | 'puzzleType' | null
 
 const BUTTONS: { field: ActiveField | 'body'; label: string }[] = [
-  { field: 'code', label: 'Code' },
-  { field: 'title', label: 'Title' },
-  { field: 'summary', label: 'Summary' },
-  { field: 'body', label: 'Narrative Body' },
+  { field: 'code',       label: 'Code' },
+  { field: 'title',      label: 'Title' },
+  { field: 'summary',    label: 'Summary' },
+  { field: 'body',       label: 'Narrative Body' },
   { field: 'references', label: 'Reference' },
-  { field: 'slipType', label: 'Slip' },
-  { field: 'puzzleType', label: 'Puzzle' }
+  { field: 'slipType',   label: 'Slip' },
+  { field: 'puzzleType', label: 'Puzzle' },
 ]
 
 export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate, onDelete, onClose, onToggleLink }: ContextPanelProps) {
@@ -37,12 +37,8 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
 
   function toggleField(field: ActiveField | 'body') {
     if (field === 'body') {
-      if (narrativeBodyOpen) {
-        closeNarrativeBody()
-      } else {
-        openNarrativeBody()
-        setActiveField(null)
-      }
+      narrativeBodyOpen ? closeNarrativeBody() : openNarrativeBody()
+      setActiveField(null)
       return
     }
     setActiveField((prev) => (prev === field ? null : field))
@@ -52,16 +48,12 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
   const currentRefs = parseReferences(node.data.referencesText)
 
   function addRef(code: string) {
-    const next = currentRefs.includes(code)
-      ? currentRefs
-      : [...currentRefs, code]
+    const next = currentRefs.includes(code) ? currentRefs : [...currentRefs, code]
     onUpdate(node.id, { referencesText: next.join(', ') })
   }
 
   function removeRef(code: string) {
-    onUpdate(node.id, {
-      referencesText: currentRefs.filter((r) => r !== code).join(', ')
-    })
+    onUpdate(node.id, { referencesText: currentRefs.filter((r) => r !== code).join(', ') })
   }
 
   const otherNodes = allNodes.filter((n) => n.id !== node.id)
@@ -116,30 +108,14 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
 
           {activeField === 'references' && (
             <div className="flex flex-col gap-3">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">References & Linking</label>
-              <button
-                onClick={(e) => { e.stopPropagation(); onToggleLink() }}
-                className={`flex h-9 w-full items-center justify-center rounded-lg px-4 text-xs font-bold transition-colors ${
-                  isLinkSource
-                    ? 'bg-blue-700 text-blue-100 hover:bg-blue-600'
-                    : 'bg-zinc-800 text-zinc-200 hover:bg-zinc-700'
-                }`}
-              >
-                {isLinkSource ? 'Cancel card-link mode' : 'Link by clicking a card'}
-              </button>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">References</label>
 
               {currentRefs.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {currentRefs.map((code) => (
-                    <span
-                      key={code}
-                      className="flex items-center gap-1 rounded-md bg-zinc-700 px-2 py-1 text-xs text-zinc-200"
-                    >
+                    <span key={code} className="flex items-center gap-1 rounded-md bg-zinc-700 px-2 py-1 text-xs text-zinc-200">
                       {code}
-                      <button
-                        onClick={() => removeRef(code)}
-                        className="text-zinc-400 hover:text-zinc-100"
-                      >x</button>
+                      <button onClick={() => removeRef(code)} className="text-zinc-400 hover:text-zinc-100">×</button>
                     </span>
                   ))}
                 </div>
@@ -165,9 +141,7 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
                         onClick={() => { addRef(n.data.code); setRefSearch('') }}
                         disabled={already}
                         className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${
-                          already
-                            ? 'cursor-default text-zinc-600'
-                            : 'text-zinc-200 hover:bg-zinc-700'
+                          already ? 'cursor-default text-zinc-600' : 'text-zinc-200 hover:bg-zinc-700'
                         }`}
                       >
                         <span className="font-mono text-xs text-zinc-400">{n.data.code}</span>
@@ -237,7 +211,21 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
           </button>
         ))}
 
-        <div className="mx-1 hidden h-5 w-px bg-zinc-800 sm:block" />
+        <div className="mx-1 h-5 w-px bg-zinc-800" />
+
+        {/* Link button — top-level, not buried in References */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleLink() }}
+          className={`h-9 whitespace-nowrap rounded-lg px-4 text-xs font-bold uppercase tracking-wider transition-all ${
+            isLinkSource
+              ? 'bg-indigo-600 text-indigo-100 shadow-lg hover:bg-indigo-500'
+              : 'text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100'
+          }`}
+        >
+          {isLinkSource ? 'Cancel Link' : 'Link'}
+        </button>
+
+        <div className="mx-1 h-5 w-px bg-zinc-800" />
 
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(node.id) }}

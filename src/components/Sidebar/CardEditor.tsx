@@ -26,6 +26,8 @@ export function CardEditor() {
   const closeEditorField = useNarrativeBoardStore((s) => s.closeEditorField)
   const openNarrativeBody = useNarrativeBoardStore((s) => s.openNarrativeBody)
   const closeNarrativeBody = useNarrativeBoardStore((s) => s.closeNarrativeBody)
+  const connectionSourceNodeId = useNarrativeBoardStore((s) => s.connectionSourceNodeId)
+  const setConnectionSourceNode = useNarrativeBoardStore((s) => s.setConnectionSourceNode)
 
   const node = nodes.find((n) => n.id === selectedNodeId) ?? null
   const hasSelection = !!node
@@ -110,6 +112,30 @@ export function CardEditor() {
             </button>
           )
         })}
+
+        {/* Link button — always visible, top-level */}
+        {(() => {
+          const isLinkSource = hasSelection && connectionSourceNodeId === selectedNodeId
+          return (
+            <button
+              disabled={!hasSelection}
+              onClick={() => {
+                if (!hasSelection) return
+                setConnectionSourceNode(isLinkSource ? null : selectedNodeId)
+              }}
+              className={[
+                'card-editor__btn',
+                isLinkSource ? 'card-editor__btn--link-active' : '',
+                !hasSelection ? 'card-editor__btn--disabled' : '',
+              ].filter(Boolean).join(' ')}
+            >
+              <span className="card-editor__btn-label">{isLinkSource ? 'Cancel Link' : 'Link'}</span>
+              {hasSelection && !isLinkSource && (
+                <span className="card-editor__btn-hint">alt+click or long-press</span>
+              )}
+            </button>
+          )
+        })()}
       </div>
     </div>
   )
