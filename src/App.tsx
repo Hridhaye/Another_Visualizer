@@ -1,121 +1,120 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useMemo } from 'react'
+import ReactFlow, { Background, Controls, ReactFlowProvider, type NodeMouseHandler } from 'reactflow'
+
+import { ContextPanel } from './components/ContextPanel'
+import { MinimapControls } from './components/MinimapControls'
+import { NarrativeCardNode } from './components/NarrativeCardNode'
+import { Sidebar } from './components/Sidebar/Sidebar'
+import { useNarrativeBoardStore } from './store/useNarrativeBoardStore'
 import './App.css'
+import './styles/card.css'
+import 'reactflow/dist/style.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const nodes = useNarrativeBoardStore((state) => state.nodes)
+  const edges = useNarrativeBoardStore((state) => state.edges)
+  const selectedNodeId = useNarrativeBoardStore((state) => state.selectedNodeId)
+  const slipTypes = useNarrativeBoardStore((state) => state.slipTypes)
+  const sidebarCollapsed = useNarrativeBoardStore((state) => state.sidebarCollapsed)
+  const sectionsOpen = useNarrativeBoardStore((state) => state.sectionsOpen)
+  const contextPanelPosition = useNarrativeBoardStore((state) => state.contextPanelPosition)
+  const connectionSourceNodeId = useNarrativeBoardStore((state) => state.connectionSourceNodeId)
+  const minimapVisible = useNarrativeBoardStore((state) => state.minimapVisible)
+  const minimapCollapsed = useNarrativeBoardStore((state) => state.minimapCollapsed)
+
+  const onNodesChange = useNarrativeBoardStore((state) => state.onNodesChange)
+  const onEdgesChange = useNarrativeBoardStore((state) => state.onEdgesChange)
+  const onConnect = useNarrativeBoardStore((state) => state.onConnect)
+  const addCard = useNarrativeBoardStore((state) => state.addCard)
+  const updateNode = useNarrativeBoardStore((state) => state.updateNode)
+  const exportProject = useNarrativeBoardStore((state) => state.exportProject)
+  const setSelectedNode = useNarrativeBoardStore((state) => state.setSelectedNode)
+  const clearSelection = useNarrativeBoardStore((state) => state.clearSelection)
+  const toggleSidebar = useNarrativeBoardStore((state) => state.toggleSidebar)
+  const toggleSection = useNarrativeBoardStore((state) => state.toggleSection)
+  const setContextPanelPosition = useNarrativeBoardStore((state) => state.setContextPanelPosition)
+  const setConnectionSourceNode = useNarrativeBoardStore((state) => state.setConnectionSourceNode)
+  const openFullEditor = useNarrativeBoardStore((state) => state.openFullEditor)
+  const addSlipType = useNarrativeBoardStore((state) => state.addSlipType)
+  const createReferenceConnection = useNarrativeBoardStore((state) => state.createReferenceConnection)
+  const cycleMinimapState = useNarrativeBoardStore((state) => state.cycleMinimapState)
+
+  const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? null
+  const nodeTypes = useMemo(
+    () => ({
+      narrativeCard: NarrativeCardNode
+    }),
+    []
+  )
+
+  const handleNodeClick: NodeMouseHandler = (event, node) => {
+    setSelectedNode(node.id)
+    setContextPanelPosition({ x: event.clientX, y: event.clientY })
+
+    if (connectionSourceNodeId && connectionSourceNodeId !== node.id) {
+      createReferenceConnection(connectionSourceNodeId, node.id)
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <ReactFlowProvider>
+      <div className="board-root">
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          sectionsOpen={sectionsOpen}
+          selectedNode={selectedNode}
+          slipTypes={slipTypes}
+          onToggleSidebar={toggleSidebar}
+          onToggleSection={toggleSection}
+          onAddCard={addCard}
+          onExportProject={exportProject}
+          onAddSlipType={addSlipType}
+          onUpdateNode={updateNode}
+        />
 
-      <div className="ticks"></div>
+        <div className="board-canvas">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeClick={handleNodeClick}
+            onPaneClick={clearSelection}
+            fitView
+            fitViewOptions={{ padding: 0.15 }}
+            minZoom={0.2}
+            maxZoom={1.8}
+            className="reactflow-dark"
+          >
+            <Background color="#3f3f46" gap={26} />
+            <Controls />
+            <MinimapControls
+              minimapVisible={minimapVisible}
+              minimapCollapsed={minimapCollapsed}
+              slipTypes={slipTypes}
+              onCycleState={cycleMinimapState}
+            />
+          </ReactFlow>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+          {selectedNode && (
+            <ContextPanel
+              selectedNode={selectedNode}
+              slipTypes={slipTypes}
+              contextPanelPosition={contextPanelPosition}
+              connectionSourceNodeId={connectionSourceNodeId}
+              onClose={clearSelection}
+              onUpdate={updateNode}
+              onToggleLinkMode={(nodeId) => {
+                setConnectionSourceNode(connectionSourceNodeId === nodeId ? null : nodeId)
+              }}
+              onOpenFullEditor={openFullEditor}
+            />
+          )}
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      </div>
+    </ReactFlowProvider>
   )
 }
 
