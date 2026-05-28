@@ -169,7 +169,10 @@ function BoardCanvas() {
       !!target.closest('.narrative-body-panel')
 
     const startedOnCard = !!target.closest('[data-card-id]')
-    const shouldStart = multiSelectMode ? !startedOnUi : !startedOnUi && !startedOnCard
+    const shouldStart =
+      multiSelectMode
+        ? !startedOnUi
+        : (event.shiftKey && !startedOnUi && !startedOnCard)
 
     if (!shouldStart) {
       return
@@ -177,7 +180,7 @@ function BoardCanvas() {
 
     dragSelectionRef.current = {
       pointerId: event.pointerId,
-      baseIds: multiSelectMode || event.ctrlKey || event.metaKey ? selectedNodeIds : [],
+      baseIds: (multiSelectMode || event.ctrlKey || event.metaKey) ? selectedNodeIds : [],
       additive: multiSelectMode || event.ctrlKey || event.metaKey
     }
 
@@ -275,6 +278,11 @@ function BoardCanvas() {
             {multiSelectMode && (
               <div className="selection-surface__hint">
                 Drag across cards to select multiple
+              </div>
+            )}
+            {!multiSelectMode && selectionBox && (
+              <div className="selection-surface__hint">
+                Shift+drag to select cards
               </div>
             )}
             {selectionBox && (
