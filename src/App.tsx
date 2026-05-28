@@ -305,7 +305,6 @@ function BoardCanvas() {
           className="reactflow-dark"
         >
           <Background color="#3f3f46" gap={26} />
-          <Controls />
           <MinimapControls
             minimapVisible={minimapVisible}
             minimapCollapsed={minimapCollapsed}
