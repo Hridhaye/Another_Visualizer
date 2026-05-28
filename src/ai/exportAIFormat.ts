@@ -1,4 +1,5 @@
 import { getPuzzleDisplayText, type NarrativeNode, type SlipType } from '../types/narrative'
+import { effectiveGivenSlipIds } from '../graph/buildEdgesFromReferences'
 
 function findSlipName(slipTypes: SlipType[], slipTypeId: string): string {
   const match = slipTypes.find((entry) => entry.id === slipTypeId)
@@ -44,7 +45,7 @@ export function exportAIFormat(nodes: NarrativeNode[], slipTypes: SlipType[] = [
         lines.push(`CARD_SLIP: ${slipName}`)
       }
 
-      const slipGiven = formatSlipGiven(slipTypes, node.data.slipGivenTypeIds ?? [])
+      const slipGiven = formatSlipGiven(slipTypes, effectiveGivenSlipIds(node, sorted))
       if (slipGiven) {
         lines.push(`SLIP_GIVEN: ${slipGiven}`)
       }

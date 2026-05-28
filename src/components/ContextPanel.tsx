@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { parseReferences } from '../graph/buildEdgesFromReferences'
+import { autoGivenSlipIds, parseReferences } from '../graph/buildEdgesFromReferences'
 import { PUZZLE_TYPES, type CardData, type NarrativeNode, type SlipType } from '../types/narrative'
 import { useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
 
@@ -14,14 +14,13 @@ type ContextPanelProps = {
   onToggleLink: () => void
 }
 
-type ActiveField = 'code' | 'title' | 'summary' | 'references' | 'slipType' | 'slipGiven' | 'puzzleType' | null
+type ActiveField = 'codeRefs' | 'title' | 'summary' | 'slipType' | 'slipGiven' | 'puzzleType' | null
 
 const BUTTONS: { field: ActiveField | 'body'; label: string }[] = [
-  { field: 'code',       label: 'Code' },
+  { field: 'codeRefs',   label: 'Code & Refs' },
   { field: 'title',      label: 'Title' },
   { field: 'summary',    label: 'Summary' },
   { field: 'body',       label: 'Body' },
-  { field: 'references', label: 'Refs' },
   { field: 'slipType',   label: 'Card Slip' },
   { field: 'slipGiven',  label: 'Given Slip' },
   { field: 'puzzleType', label: 'Puzzle' },
@@ -48,6 +47,7 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
   }
 
   const currentRefs = parseReferences(node.data.referencesText)
+  const slipForms = node.data.referenceSlipForms ?? []
 
   function addRef(code: string) {
     const next = currentRefs.includes(code) ? currentRefs : [...currentRefs, code]
@@ -55,7 +55,17 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
   }
 
   function removeRef(code: string) {
-    onUpdate(node.id, { referencesText: currentRefs.filter((r) => r !== code).join(', ') })
+    onUpdate(node.id, {
+      referencesText: currentRefs.filter((r) => r !== code).join(', '),
+      referenceSlipForms: slipForms.filter((c) => c !== code)
+    })
+  }
+
+  function toggleSlipForm(code: string) {
+    const next = slipForms.includes(code)
+      ? slipForms.filter((c) => c !== code)
+      : [...slipForms, code]
+    onUpdate(node.id, { referenceSlipForms: next })
   }
 
   const otherNodes = allNodes.filter((n) => n.id !== node.id)
@@ -75,46 +85,55 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
     >
       {activeField && (
         <div className="context-panel__popover">
-          {(activeField === 'code' || activeField === 'title') && (
+          {activeField === 'title' && (
             <div className="context-panel__field">
-              <label className="context-panel__label">{activeField}</label>
+              <label className="context-panel__label">Title</label>
               <input
                 autoFocus
-                value={activeField === 'code' ? node.data.code : node.data.title}
-                onChange={(e) => onUpdate(node.id, { [activeField]: e.target.value })}
+                value={node.data.title}
+                onChange={(e) => onUpdate(node.id, { title: e.target.value })}
                 className="context-panel__input"
               />
             </div>
           )}
 
-          {activeField === 'summary' && (
+          {activeField === 'codeRefs' && (
             <div className="context-panel__field">
-              <label className="context-panel__label">Summary</label>
-              <textarea
+              <label className="context-panel__label">This card's code</label>
+              <input
                 autoFocus
-                value={node.data.summary}
-                onChange={(e) => onUpdate(node.id, { summary: e.target.value })}
-                rows={4}
-                className="context-panel__input context-panel__input--textarea"
+                value={node.data.code}
+                onChange={(e) => onUpdate(node.id, { code: e.target.value })}
+                className="context-panel__input"
               />
-            </div>
-          )}
-
-          {activeField === 'references' && (
-            <div className="context-panel__field">
-              <label className="context-panel__label">References</label>
+              <label className="context-panel__label" style={{ marginTop: 12 }}>References</label>
               {currentRefs.length > 0 && (
                 <div className="context-panel__ref-tags">
-                  {currentRefs.map((code) => (
-                    <span key={code} className="context-panel__ref-tag">
-                      {code}
-                      <button onClick={() => removeRef(code)} className="context-panel__ref-remove">×</button>
-                    </span>
-                  ))}
+                  {currentRefs.map((code) => {
+                    const target = otherNodes.find((n) => n.data.code === code)
+                    const slipForm = slipForms.includes(code)
+                    const targetSlip = target ? slipTypes.find((s) => s.id === target.data.slipTypeId) : undefined
+                    return (
+                      <span key={code} className={`context-panel__ref-tag${slipForm ? ' context-panel__ref-tag--slip-form' : ''}`}>
+                        <span className="context-panel__ref-tag-title">{target?.data.title || code}</span>
+                        <span className="context-panel__ref-tag-code">{code}</span>
+                        <button
+                          onClick={() => toggleSlipForm(code)}
+                          className={`context-panel__ref-slip-toggle${slipForm ? ' context-panel__ref-slip-toggle--on' : ''}`}
+                          title={slipForm
+                            ? `Gives ${targetSlip?.name ?? 'its'} slip — click to stop`
+                            : `Also give this card's slip type${targetSlip ? ` (${targetSlip.name})` : ''}`}
+                        >
+                          {targetSlip && <span className="context-panel__slip-dot" style={{ backgroundColor: targetSlip.color }} />}
+                          {slipForm ? 'slip ✓' : 'slip'}
+                        </button>
+                        <button onClick={() => removeRef(code)} className="context-panel__ref-remove">×</button>
+                      </span>
+                    )
+                  })}
                 </div>
               )}
               <input
-                autoFocus
                 value={refSearch}
                 onChange={(e) => setRefSearch(e.target.value)}
                 placeholder="Search by code or title…"
@@ -144,6 +163,19 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
             </div>
           )}
 
+          {activeField === 'summary' && (
+            <div className="context-panel__field">
+              <label className="context-panel__label">Summary</label>
+              <textarea
+                autoFocus
+                value={node.data.summary}
+                onChange={(e) => onUpdate(node.id, { summary: e.target.value })}
+                rows={4}
+                className="context-panel__input context-panel__input--textarea"
+              />
+            </div>
+          )}
+
           {activeField === 'slipType' && (
             <div className="context-panel__field">
               <label className="context-panel__label">Card Slip</label>
@@ -162,9 +194,11 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
 
           {activeField === 'slipGiven' && (() => {
             const given = node.data.slipGivenTypeIds ?? []
+            const autoIds = autoGivenSlipIds(node, allNodes)
             const counts = slipTypes.map((slip) => ({
               slip,
-              count: given.filter((id) => id === slip.id).length
+              count: given.filter((id) => id === slip.id).length,
+              auto: autoIds.filter((id) => id === slip.id).length
             }))
             function setCount(slipId: string, delta: number) {
               const current = given.filter((id) => id === slipId).length
@@ -175,10 +209,13 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
             return (
               <div className="context-panel__field">
                 <label className="context-panel__label">Slip Given</label>
-                {counts.map(({ slip, count }) => (
+                {counts.map(({ slip, count, auto }) => (
                   <div key={slip.id} className="context-panel__slip-given-row">
                     <span className="context-panel__slip-dot" style={{ backgroundColor: slip.color }} />
-                    <span className={`context-panel__slip-name${count > 0 ? ' context-panel__slip-name--active' : ''}`}>{slip.name}</span>
+                    <span className={`context-panel__slip-name${count + auto > 0 ? ' context-panel__slip-name--active' : ''}`}>
+                      {slip.name}
+                      {auto > 0 && <span className="context-panel__slip-auto" title="From referenced cards"> +{auto} ref</span>}
+                    </span>
                     <button onClick={() => setCount(slip.id, -1)} disabled={count === 0} className="context-panel__stepper">−</button>
                     <span className="context-panel__stepper-val">{count}</span>
                     <button onClick={() => setCount(slip.id, 1)} className="context-panel__stepper">+</button>

@@ -9,6 +9,22 @@ export function parseReferences(referencesText: string): string[] {
     .filter(Boolean)
 }
 
+/**
+ * Slip ids auto-added to a card via toggled-on reference slip forms: for each
+ * referenced code whose slip form is on, the referenced card's current slip type.
+ */
+export function autoGivenSlipIds(node: NarrativeNode, allNodes: NarrativeNode[]): string[] {
+  const forms = node.data.referenceSlipForms ?? []
+  return forms
+    .map((code) => allNodes.find((n) => n.data.code === code)?.data.slipTypeId)
+    .filter((id): id is string => Boolean(id))
+}
+
+/** Manual given slips plus the auto-added slips derived from toggled references. */
+export function effectiveGivenSlipIds(node: NarrativeNode, allNodes: NarrativeNode[]): string[] {
+  return [...(node.data.slipGivenTypeIds ?? []), ...autoGivenSlipIds(node, allNodes)]
+}
+
 export function buildEdgesFromReferences(
   nodes: NarrativeNode[]
 ): NarrativeEdge[] {

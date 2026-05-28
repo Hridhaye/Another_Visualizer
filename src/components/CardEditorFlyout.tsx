@@ -1,14 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { useNarrativeBoardStore, type EditorField } from '../store/useNarrativeBoardStore'
 import { PUZZLE_TYPES } from '../types/narrative'
-import { parseReferences } from '../graph/buildEdgesFromReferences'
+import { autoGivenSlipIds, parseReferences } from '../graph/buildEdgesFromReferences'
 import { useState } from 'react'
 
 const FIELD_LABELS: Record<NonNullable<EditorField>, string> = {
-  code: 'Code',
+  codeRefs: 'Code & References',
   title: 'Title',
   summary: 'Summary',
-  references: 'References',
   slipType: 'Card Slip',
   slipGiven: 'Slip Given',
   puzzleType: 'Puzzle Type'
@@ -54,6 +53,8 @@ export function CardEditorFlyout() {
       n.data.title.toLowerCase().includes(searchLower)
   )
 
+  const slipForms = node.data.referenceSlipForms ?? []
+
   function addRef(code: string) {
     if (!node) return
     const next = currentRefs.includes(code) ? currentRefs : [...currentRefs, code]
@@ -62,7 +63,18 @@ export function CardEditorFlyout() {
 
   function removeRef(code: string) {
     if (!node) return
-    updateNode(node.id, { referencesText: currentRefs.filter((r) => r !== code).join(', ') })
+    updateNode(node.id, {
+      referencesText: currentRefs.filter((r) => r !== code).join(', '),
+      referenceSlipForms: slipForms.filter((c) => c !== code)
+    })
+  }
+
+  function toggleSlipForm(code: string) {
+    if (!node) return
+    const next = slipForms.includes(code)
+      ? slipForms.filter((c) => c !== code)
+      : [...slipForms, code]
+    updateNode(node.id, { referenceSlipForms: next })
   }
 
   return (
@@ -85,40 +97,57 @@ export function CardEditorFlyout() {
       </div>
 
       <div className="card-editor-flyout__body">
-        {(activeEditorField === 'code' || activeEditorField === 'title') && (
+        {activeEditorField === 'title' && (
           <input
             ref={inputRef as React.Ref<HTMLInputElement>}
-            value={activeEditorField === 'code' ? node.data.code : node.data.title}
-            onChange={(e) => updateNode(node.id, { [activeEditorField]: e.target.value })}
+            value={node.data.title}
+            onChange={(e) => updateNode(node.id, { title: e.target.value })}
             className="cef-input"
             spellCheck={false}
           />
         )}
 
-        {activeEditorField === 'summary' && (
-          <textarea
-            ref={inputRef as React.Ref<HTMLTextAreaElement>}
-            value={node.data.summary}
-            onChange={(e) => updateNode(node.id, { summary: e.target.value })}
-            className="cef-textarea"
-            rows={5}
-          />
-        )}
-
-        {activeEditorField === 'references' && (
+        {activeEditorField === 'codeRefs' && (
           <div className="cef-refs">
+            <p className="cef-slip-given__hint">This card's code</p>
+            <input
+              ref={inputRef as React.Ref<HTMLInputElement>}
+              value={node.data.code}
+              onChange={(e) => updateNode(node.id, { code: e.target.value })}
+              className="cef-input"
+              spellCheck={false}
+            />
+
+            <p className="cef-slip-given__hint" style={{ marginTop: 16 }}>References to other cards</p>
             {currentRefs.length > 0 && (
               <div className="cef-refs__chips">
-                {currentRefs.map((code) => (
-                  <span key={code} className="cef-chip">
-                    {code}
-                    <button onClick={() => removeRef(code)} className="cef-chip__remove">×</button>
-                  </span>
-                ))}
+                {currentRefs.map((code) => {
+                  const target = otherNodes.find((n) => n.data.code === code)
+                  const slipForm = slipForms.includes(code)
+                  const targetSlip = target ? slipTypes.find((s) => s.id === target.data.slipTypeId) : undefined
+                  return (
+                    <span key={code} className={`cef-chip ${slipForm ? 'cef-chip--slip-form' : ''}`}>
+                      <span className="cef-chip__title">{target?.data.title || code}</span>
+                      <span className="cef-chip__code">{code}</span>
+                      <button
+                        onClick={() => toggleSlipForm(code)}
+                        className={`cef-chip__slip-toggle ${slipForm ? 'cef-chip__slip-toggle--on' : ''}`}
+                        title={slipForm
+                          ? `Gives ${targetSlip?.name ?? 'its'} slip — click to stop`
+                          : `Also give this card's slip type${targetSlip ? ` (${targetSlip.name})` : ''}`}
+                      >
+                        {targetSlip && (
+                          <span className="cef-list__dot" style={{ background: targetSlip.color }} />
+                        )}
+                        {slipForm ? 'slip ✓' : 'slip'}
+                      </button>
+                      <button onClick={() => removeRef(code)} className="cef-chip__remove">×</button>
+                    </span>
+                  )
+                })}
               </div>
             )}
             <input
-              ref={inputRef as React.Ref<HTMLInputElement>}
               value={refSearch}
               onChange={(e) => setRefSearch(e.target.value)}
               placeholder="Search by code or title…"
@@ -148,6 +177,16 @@ export function CardEditorFlyout() {
           </div>
         )}
 
+        {activeEditorField === 'summary' && (
+          <textarea
+            ref={inputRef as React.Ref<HTMLTextAreaElement>}
+            value={node.data.summary}
+            onChange={(e) => updateNode(node.id, { summary: e.target.value })}
+            className="cef-textarea"
+            rows={5}
+          />
+        )}
+
         {activeEditorField === 'slipType' && (
           <div className="cef-list">
             {slipTypes.map((slip) => (
@@ -167,6 +206,7 @@ export function CardEditorFlyout() {
         {activeEditorField === 'slipGiven' && (() => {
           const nodeId = node.id
           const given = node.data.slipGivenTypeIds ?? []
+          const autoIds = autoGivenSlipIds(node, nodes)
           function adjust(slipId: string, count: number, delta: number) {
             const next = Math.max(0, count + delta)
             const without = given.filter((id) => id !== slipId)
@@ -174,14 +214,18 @@ export function CardEditorFlyout() {
           }
           return (
           <div className="cef-slip-given">
-            <p className="cef-slip-given__hint">Set how many of each slip type this card gives out.</p>
+            <p className="cef-slip-given__hint">Set how many of each slip type this card gives out. Slips from referenced cards (slip form on) are added automatically.</p>
             <div className="cef-slip-given__rows">
               {slipTypes.map((slip) => {
                 const count = given.filter((id) => id === slip.id).length
+                const auto = autoIds.filter((id) => id === slip.id).length
                 return (
                   <div key={slip.id} className="cef-slip-given__row">
                     <span className="cef-list__dot" style={{ background: slip.color }} />
-                    <span className={`cef-slip-given__name ${count > 0 ? 'cef-slip-given__name--active' : ''}`}>{slip.name}</span>
+                    <span className={`cef-slip-given__name ${count + auto > 0 ? 'cef-slip-given__name--active' : ''}`}>
+                      {slip.name}
+                      {auto > 0 && <span className="cef-slip-given__auto" title="From referenced cards"> +{auto} ref</span>}
+                    </span>
                     <button className="cef-slip-given__stepper" onClick={() => adjust(slip.id, count, -1)} disabled={count === 0}>−</button>
                     <span className="cef-slip-given__count">{count}</span>
                     <button className="cef-slip-given__stepper" onClick={() => adjust(slip.id, count, 1)}>+</button>

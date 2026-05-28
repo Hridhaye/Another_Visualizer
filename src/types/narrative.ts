@@ -98,6 +98,8 @@ export type CardData = {
   slipTypeId: string
   slipGivenTypeIds: string[]
   referencesText: string
+  /** Reference codes whose "slip form" is toggled on: the referenced card's slip type is auto-added to this card's given slips. */
+  referenceSlipForms?: string[]
   puzzleType: PuzzleType
   puzzleSummary?: string
   puzzleFillContent?: FillPuzzleContent

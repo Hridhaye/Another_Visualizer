@@ -748,6 +748,52 @@
 
 .cef-chip__remove:hover { color: #5eead4; }
 
+.cef-chip__title {
+  font-weight: 600;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cef-chip__code {
+  opacity: 0.6;
+  font-size: 9px;
+}
+
+.cef-chip--slip-form {
+  background: rgba(20, 184, 166, 0.28);
+  border-color: rgba(20, 184, 166, 0.6);
+}
+
+.cef-chip__slip-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.2);
+  color: #9aa6a3;
+  border-radius: 999px;
+  padding: 1px 6px;
+  font-size: 9px;
+  cursor: pointer;
+  transition: all 100ms ease;
+}
+
+.cef-chip__slip-toggle:hover { color: #cdeee8; }
+
+.cef-chip__slip-toggle--on {
+  background: rgba(20, 184, 166, 0.45);
+  border-color: rgba(94, 234, 212, 0.7);
+  color: #eafffb;
+}
+
+.cef-slip-given__auto {
+  font-size: 9px;
+  color: #5eead4;
+  opacity: 0.85;
+}
+
 .cef-refs__list {
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.07);

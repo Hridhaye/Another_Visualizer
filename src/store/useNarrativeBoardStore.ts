@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type EditorField = 'code' | 'title' | 'summary' | 'references' | 'slipType' | 'slipGiven' | 'puzzleType' | null
+export type EditorField = 'codeRefs' | 'title' | 'summary' | 'slipType' | 'slipGiven' | 'puzzleType' | null
 import {
   applyEdgeChanges,
   applyNodeChanges,
@@ -378,6 +378,9 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
               referencesText: removeReferenceText(
                 node.data.referencesText,
                 targetNode.data.code
+              ),
+              referenceSlipForms: (node.data.referenceSlipForms ?? []).filter(
+                (code) => code !== targetNode.data.code
               )
             }
           }
@@ -424,6 +427,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
           slipTypeId: 'green',
           slipGivenTypeIds: [],
           referencesText: '',
+          referenceSlipForms: [],
           puzzleType: 'none'
         }
       }

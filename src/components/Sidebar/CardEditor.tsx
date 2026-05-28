@@ -7,10 +7,9 @@ type EditorButtonDef = {
 }
 
 const EDITOR_BUTTONS: EditorButtonDef[] = [
-  { field: 'code', label: 'Code', hint: (value) => value },
+  { field: 'codeRefs', label: 'Code & Refs', hint: (value) => value },
   { field: 'title', label: 'Title', hint: (value) => value || '-' },
   { field: 'summary', label: 'Summary', hint: (value) => value ? value.slice(0, 32) + (value.length > 32 ? '...' : '') : '-' },
-  { field: 'references', label: 'References', hint: (value) => value || 'none' },
   { field: 'slipType', label: 'Card Slip', hint: () => '' },
   { field: 'slipGiven', label: 'Slip Given', hint: () => '' },
   { field: 'puzzleType', label: 'Puzzle', hint: (value) => value || 'none' },
@@ -41,14 +40,14 @@ export function CardEditor() {
     }
 
     switch (field) {
-      case 'code':
-        return node.data.code
+      case 'codeRefs': {
+        const refCount = node.data.referencesText.split(',').map((r) => r.trim()).filter(Boolean).length
+        return refCount > 0 ? `${node.data.code} · ${refCount} ref${refCount > 1 ? 's' : ''}` : node.data.code
+      }
       case 'title':
         return node.data.title ? node.data.title.slice(0, 28) + (node.data.title.length > 28 ? '...' : '') : '-'
       case 'summary':
         return node.data.summary ? node.data.summary.slice(0, 28) + (node.data.summary.length > 28 ? '...' : '') : '-'
-      case 'references':
-        return node.data.referencesText || 'none'
       case 'slipType': {
         const slip = slipTypes.find((item) => item.id === node.data.slipTypeId)
         return slip?.name ?? '-'
