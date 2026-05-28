@@ -76,6 +76,20 @@ export type ReorderPuzzleContent = {
   solutionOrder: string[]
 }
 
+export type MatchingCard = {
+  /** node id of the referenced card */
+  nodeId: string
+  /** whether this card is a solution card */
+  isSolution: boolean
+  /** representative line the author writes for solution cards; may be empty */
+  representativeLine: string
+}
+
+export type MatchingPuzzleContent = {
+  questionHtml: string
+  cards: MatchingCard[]
+}
+
 export type CardData = {
   code: string
   title: string
@@ -88,6 +102,7 @@ export type CardData = {
   puzzleSummary?: string
   puzzleFillContent?: FillPuzzleContent
   puzzleReorderContent?: ReorderPuzzleContent
+  puzzleMatchingContent?: MatchingPuzzleContent
 }
 
 export type NarrativeNode = Node<CardData>

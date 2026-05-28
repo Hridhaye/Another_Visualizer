@@ -10,6 +10,7 @@ import { BiDirectionalEdge, BiDirectionalEdgeMarkerDef } from './components/edge
 import { NarrativeBodyPanel } from './components/NarrativeBodyPanel'
 import { PuzzleFillPanel } from './components/PuzzleFillPanel'
 import { PuzzleReorderPanel } from './components/PuzzleReorderPanel'
+import { PuzzleMatchingPanel } from './components/PuzzleMatchingPanel'
 import { ContextPanel } from './components/ContextPanel'
 import { CardEditorFlyout } from './components/CardEditorFlyout'
 import { Sidebar } from './components/Sidebar/Sidebar'
@@ -61,6 +62,8 @@ function BoardCanvas() {
   const setConnectionSourceNode = useNarrativeBoardStore((state) => state.setConnectionSourceNode)
   const multiSelectMode = useNarrativeBoardStore((state) => state.multiSelectMode)
   const setMultiSelectMode = useNarrativeBoardStore((state) => state.setMultiSelectMode)
+  const matchingPickMode = useNarrativeBoardStore((state) => state.matchingPickMode)
+  const cancelMatchingPickMode = useNarrativeBoardStore((state) => state.cancelMatchingPickMode)
   const groups = useNarrativeBoardStore((state) => state.groups)
   const createGroupFromSelection = useNarrativeBoardStore((state) => state.createGroupFromSelection)
   const toggleSelectionInGroup = useNarrativeBoardStore((state) => state.toggleSelectionInGroup)
@@ -290,6 +293,7 @@ function BoardCanvas() {
       <NarrativeBodyPanel />
       <PuzzleFillPanel />
       <PuzzleReorderPanel />
+      <PuzzleMatchingPanel />
       <CardEditorFlyout />
       <Sidebar
         collapsed={sidebarCollapsed}
@@ -361,6 +365,12 @@ function BoardCanvas() {
                 }}
               />
             )}
+          </div>
+        )}
+        {matchingPickMode && (
+          <div className="matching-pick-banner">
+            <span className="matching-pick-banner__text">Click a card to add it to the puzzle</span>
+            <button onClick={cancelMatchingPickMode} className="matching-pick-banner__cancel">Cancel</button>
           </div>
         )}
         {showContextPanel && (

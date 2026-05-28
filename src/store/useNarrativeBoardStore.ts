@@ -17,6 +17,7 @@ import { importAIFormat } from '../ai/importAIFormat'
 import type {
   CardGroup,
   CardData,
+  MatchingCard,
   NarrativeEdge,
   NarrativeNode,
   SectionKey,
@@ -103,6 +104,8 @@ type NarrativeBoardState = {
   multiSelectMode: boolean
   highlightedNodeIds: string[]
   activeGroupId: string | null
+  matchingPickMode: boolean
+  matchingPickSourceNodeId: string | null
 }
 
 type HistorySnapshot = {
@@ -160,6 +163,9 @@ type NarrativeBoardActions = {
   setMultiSelectMode: (enabled: boolean) => void
   setHighlight: (nodeIds: string[]) => void
   clearHighlight: () => void
+  enterMatchingPickMode: (sourceNodeId: string) => void
+  confirmMatchingPick: (pickedNodeId: string) => void
+  cancelMatchingPickMode: () => void
 }
 
 export type NarrativeBoardStore = NarrativeBoardState & NarrativeBoardActions
@@ -306,6 +312,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   multiSelectMode: false,
   highlightedNodeIds: [],
   activeGroupId: null,
+  matchingPickMode: false,
+  matchingPickSourceNodeId: null,
   metadata: {
     projectName: 'Mystery Board',
     createdAt: new Date().toISOString(),
@@ -1021,6 +1029,61 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
 
   clearHighlight: () => {
     set({ highlightedNodeIds: [] })
+  },
+
+  enterMatchingPickMode: (sourceNodeId) => {
+    set({
+      matchingPickMode: true,
+      matchingPickSourceNodeId: sourceNodeId,
+      puzzleBodyOpen: false,
+    })
+  },
+
+  confirmMatchingPick: (pickedNodeId) => {
+    const state = get()
+    const sourceNodeId = state.matchingPickSourceNodeId
+    if (!sourceNodeId) return
+
+    const sourceNode = state.nodes.find((n) => n.id === sourceNodeId)
+    if (!sourceNode) return
+
+    // Don't allow picking the source card itself
+    if (pickedNodeId === sourceNodeId) {
+      set({ matchingPickMode: false, matchingPickSourceNodeId: null, puzzleBodyOpen: true })
+      return
+    }
+
+    const existing = sourceNode.data.puzzleMatchingContent ?? { questionHtml: '', cards: [] }
+    // Don't add duplicates
+    const alreadyAdded = existing.cards.some((c) => c.nodeId === pickedNodeId)
+    if (!alreadyAdded) {
+      const newCard: MatchingCard = { nodeId: pickedNodeId, isSolution: false, representativeLine: '' }
+      const updatedNodes = state.nodes.map((n) => {
+        if (n.id !== sourceNodeId) return n
+        return { ...n, data: { ...n.data, puzzleMatchingContent: { ...existing, cards: [...existing.cards, newCard] } } }
+      })
+      set({
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
+        nodes: updatedNodes,
+        edges: buildEdgesFromReferences(updatedNodes),
+        groups: normalizeGroups(state.groups, updatedNodes),
+        hasUnsavedChanges: true,
+        matchingPickMode: false,
+        matchingPickSourceNodeId: null,
+        puzzleBodyOpen: true,
+        selectedNodeId: sourceNodeId,
+        selectedNodeIds: [sourceNodeId],
+      })
+    } else {
+      set({ matchingPickMode: false, matchingPickSourceNodeId: null, puzzleBodyOpen: true })
+    }
+  },
+
+  cancelMatchingPickMode: () => {
+    set({ matchingPickMode: false, matchingPickSourceNodeId: null, puzzleBodyOpen: true })
   },
 
   undo: () => {

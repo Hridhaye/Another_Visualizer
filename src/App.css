@@ -899,6 +899,242 @@
   color: #fca5a5;
 }
 
+/* ── Puzzle Matching Panel ───────────────────────────────────────────── */
+.puzzle-matching-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.puzzle-matching-panel__question {
+  flex-shrink: 0;
+  min-height: 80px;
+  max-height: 30vh;
+  border-bottom: 1px solid #27272a;
+}
+
+.puzzle-matching-panel__question:empty::before {
+  content: attr(data-placeholder);
+  color: #52525b;
+  pointer-events: none;
+}
+
+.puzzle-matching-panel__cards-section {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.puzzle-matching-panel__section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.puzzle-matching-panel__section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #71717a;
+  flex: 1;
+}
+
+.puzzle-matching-panel__pick-btn {
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #18181b;
+  color: #a1a1aa;
+  font-size: 12px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+  white-space: nowrap;
+}
+
+.puzzle-matching-panel__pick-btn:hover {
+  background: #27272a;
+  color: #fafafa;
+}
+
+.puzzle-matching-panel__empty {
+  font-size: 12px;
+  color: #52525b;
+  font-style: italic;
+}
+
+.puzzle-matching-panel__card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.puzzle-matching-panel__card-row {
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  background: #18181b;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 120ms ease;
+}
+
+.puzzle-matching-panel__card-row--solution {
+  border-color: rgba(139, 92, 246, 0.45);
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.puzzle-matching-panel__card-info {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.puzzle-matching-panel__card-code {
+  font-family: monospace;
+  font-size: 11px;
+  color: #71717a;
+  flex-shrink: 0;
+}
+
+.puzzle-matching-panel__card-title {
+  font-size: 13px;
+  color: #e4e4e7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.puzzle-matching-panel__card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.puzzle-matching-panel__solution-btn {
+  border: 1px solid #3f3f46;
+  border-radius: 5px;
+  background: #18181b;
+  color: #a1a1aa;
+  font-size: 11px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.puzzle-matching-panel__solution-btn:hover {
+  background: #27272a;
+  color: #fafafa;
+}
+
+.puzzle-matching-panel__solution-btn--active {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.5);
+  color: #c4b5fd;
+}
+
+.puzzle-matching-panel__remove-btn {
+  border: none;
+  background: transparent;
+  color: #52525b;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 3px;
+  cursor: pointer;
+  transition: color 120ms ease;
+  margin-left: auto;
+}
+
+.puzzle-matching-panel__remove-btn:hover {
+  color: #fca5a5;
+}
+
+.puzzle-matching-panel__rep-line {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  color: #e4e4e7;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.55;
+  padding: 6px 10px;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 120ms ease;
+}
+
+.puzzle-matching-panel__rep-line:focus {
+  border-color: rgba(139, 92, 246, 0.55);
+}
+
+.puzzle-matching-panel__rep-line::placeholder {
+  color: #52525b;
+}
+
+/* ── Matching pick-mode banner ────────────────────────────────────────── */
+.matching-pick-banner {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  background: rgba(13, 15, 24, 0.96);
+  border: 1px solid rgba(139, 92, 246, 0.55);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+  white-space: nowrap;
+  animation: narrative-panel-slide-in 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.matching-pick-banner__text {
+  font-size: 13px;
+  color: #c4b5fd;
+}
+
+.matching-pick-banner__cancel {
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #18181b;
+  color: #a1a1aa;
+  font-size: 12px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.matching-pick-banner__cancel:hover {
+  background: #27272a;
+  color: #fafafa;
+}
+
+/* ── Card pick-mode states ────────────────────────────────────────────── */
+.card-pick-source {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.card-pick-target {
+  cursor: crosshair !important;
+}
+
+.card-pick-target:hover .card-shell {
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.7) !important;
+}
+
 /* ── Context Panel ───────────────────────────────────────────────────── */
 .context-panel {
   display: flex;

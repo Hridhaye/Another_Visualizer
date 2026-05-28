@@ -20,6 +20,9 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const toggleNodeSelection = useNarrativeBoardStore((state) => state.toggleNodeSelection)
   const highlightedNodeIds = useNarrativeBoardStore((state) => state.highlightedNodeIds)
   const activeGroupId = useNarrativeBoardStore((state) => state.activeGroupId)
+  const matchingPickMode = useNarrativeBoardStore((state) => state.matchingPickMode)
+  const matchingPickSourceNodeId = useNarrativeBoardStore((state) => state.matchingPickSourceNodeId)
+  const confirmMatchingPick = useNarrativeBoardStore((state) => state.confirmMatchingPick)
   const activeGroup = activeGroupId ? groups.find((g) => g.id === activeGroupId) ?? null : null
   const isGroupSelected = !!activeGroup?.nodeIds.includes(id)
 
@@ -31,7 +34,9 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const nodeGroups = groups.filter((group) => group.nodeIds.includes(id))
   const hasPuzzle = data.puzzleType !== 'none'
   const puzzleText = getPuzzleDisplayText(data.puzzleType, data.puzzleSummary)
-  const cardClassName = `card-shell relative ${isSelected ? 'card-selected' : ''} ${isHighlighted ? 'card-highlighted' : ''} ${hasPuzzle ? 'has-puzzle' : ''}`
+  const isPickSource = matchingPickMode && matchingPickSourceNodeId === id
+  const isPickTarget = matchingPickMode && matchingPickSourceNodeId !== id
+  const cardClassName = `card-shell relative ${isSelected ? 'card-selected' : ''} ${isHighlighted ? 'card-highlighted' : ''} ${hasPuzzle ? 'has-puzzle' : ''} ${isPickSource ? 'card-pick-source' : ''} ${isPickTarget ? 'card-pick-target' : ''}`
 
   const divRef = useRef<HTMLDivElement | null>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -143,6 +148,13 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   }
 
   function handleClick(event: React.MouseEvent) {
+    if (matchingPickMode) {
+      event.preventDefault()
+      event.stopPropagation()
+      confirmMatchingPick(id)
+      return
+    }
+
     if (event.altKey) {
       event.preventDefault()
       event.stopPropagation()
