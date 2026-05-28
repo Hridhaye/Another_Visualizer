@@ -38,6 +38,8 @@ function BoardCanvas() {
   const toggleSection = useNarrativeBoardStore((state) => state.toggleSection)
   const setMetadata = useNarrativeBoardStore((state) => state.setMetadata)
   const addSlipType = useNarrativeBoardStore((state) => state.addSlipType)
+  const renameSlipType = useNarrativeBoardStore((state) => state.renameSlipType)
+  const deleteSlipType = useNarrativeBoardStore((state) => state.deleteSlipType)
   const cycleMinimapState = useNarrativeBoardStore((state) => state.cycleMinimapState)
   const setViewport = useNarrativeBoardStore((state) => state.setViewport)
   const metadata = useNarrativeBoardStore((state) => state.metadata)
@@ -244,6 +246,8 @@ function BoardCanvas() {
         onLoadProject={loadProject}
         onImportAIFormat={applyAIFormatImport}
         onAddSlipType={addSlipType}
+        onRenameSlipType={renameSlipType}
+        onDeleteSlipType={deleteSlipType}
         projectName={metadata.projectName}
         updatedAt={metadata.updatedAt}
         hasUnsavedChanges={hasUnsavedChanges}

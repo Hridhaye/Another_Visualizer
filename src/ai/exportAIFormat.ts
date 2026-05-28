@@ -12,6 +12,22 @@ function formatReferences(value: string): string[] {
     .filter(Boolean)
 }
 
+function formatSlipGiven(slipTypes: SlipType[], slipGivenTypeIds: string[]): string | null {
+  if (slipGivenTypeIds.length === 0) return null
+
+  const countMap = new Map<string, number>()
+  for (const id of slipGivenTypeIds) {
+    countMap.set(id, (countMap.get(id) ?? 0) + 1)
+  }
+
+  const parts: string[] = []
+  for (const [id, count] of countMap) {
+    const name = findSlipName(slipTypes, id)
+    parts.push(count > 1 ? `${name} ×${count}` : name)
+  }
+  return parts.join(', ')
+}
+
 export function exportAIFormat(nodes: NarrativeNode[], slipTypes: SlipType[] = []): string {
   const sorted = [...nodes].sort((left, right) => left.data.code.localeCompare(right.data.code))
 
@@ -25,13 +41,12 @@ export function exportAIFormat(nodes: NarrativeNode[], slipTypes: SlipType[] = [
 
       const slipName = findSlipName(slipTypes, node.data.slipTypeId)
       if (slipName) {
-        lines.push(`SLIP: ${slipName}`)
+        lines.push(`CARD_SLIP: ${slipName}`)
       }
 
-      const givenIds = node.data.slipGivenTypeIds ?? []
-      if (givenIds.length > 0) {
-        const givenNames = givenIds.map((id) => findSlipName(slipTypes, id)).filter(Boolean)
-        lines.push(`SLIP_GIVEN: ${givenNames.join(', ')}`)
+      const slipGiven = formatSlipGiven(slipTypes, node.data.slipGivenTypeIds ?? [])
+      if (slipGiven) {
+        lines.push(`SLIP_GIVEN: ${slipGiven}`)
       }
 
       if (node.data.puzzleType) {

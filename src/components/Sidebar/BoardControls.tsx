@@ -199,7 +199,7 @@ export function BoardControls({
               onChange={(e) => setImportText(e.target.value)}
               rows={12}
               className="w-full rounded-lg border border-zinc-700 bg-zinc-900 p-3 font-mono text-xs text-zinc-200 outline-none focus:border-violet-500"
-              placeholder="@CARD AA01&#10;TITLE: Forest Arrival&#10;..."
+              placeholder="@CARD AA01&#10;TITLE: Forest Arrival&#10;CARD_SLIP: Blue Slip&#10;SLIP_GIVEN: Red Slip ×2, Green Slip&#10;..."
             />
             <div className="mt-3 flex justify-end gap-2">
               <button onClick={() => setShowAIImportModal(false)} className="rounded bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700">Cancel</button>

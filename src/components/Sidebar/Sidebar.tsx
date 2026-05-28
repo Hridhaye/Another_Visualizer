@@ -16,6 +16,8 @@ type SidebarProps = {
   onLoadProject: (file: File) => Promise<void>
   onImportAIFormat: (text: string) => Promise<{ createdCount: number; updatedCount: number }>
   onAddSlipType: (name: string, color: string) => void
+  onRenameSlipType: (id: string, name: string) => void
+  onDeleteSlipType: (id: string) => void
   projectName: string
   updatedAt: string
   hasUnsavedChanges: boolean
@@ -53,6 +55,8 @@ export function Sidebar({
   onLoadProject,
   onImportAIFormat,
   onAddSlipType,
+  onRenameSlipType,
+  onDeleteSlipType,
   projectName,
   updatedAt,
   hasUnsavedChanges,
@@ -105,7 +109,12 @@ export function Sidebar({
             open={sectionsOpen.slipManager}
             onToggle={() => onToggleSection('slipManager')}
           >
-            <SlipManager slipTypes={slipTypes} onAddSlipType={onAddSlipType} />
+            <SlipManager
+              slipTypes={slipTypes}
+              onAddSlipType={onAddSlipType}
+              onRenameSlipType={onRenameSlipType}
+              onDeleteSlipType={onDeleteSlipType}
+            />
           </Section>
 
           <Section

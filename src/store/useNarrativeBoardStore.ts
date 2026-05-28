@@ -125,6 +125,8 @@ type NarrativeBoardActions = {
   updateNode: (nodeId: string, patch: Partial<CardData>) => void
   createReferenceConnection: (sourceNodeId: string, targetNodeId: string) => void
   addSlipType: (name: string, color: string) => void
+  renameSlipType: (id: string, name: string) => void
+  deleteSlipType: (id: string) => void
   createGroupFromSelection: (name: string) => void
   toggleSelectionInGroup: (groupId: string) => void
   selectGroup: (groupId: string) => void
@@ -540,6 +542,53 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       ],
       hasUnsavedChanges: true
     }))
+  },
+
+  renameSlipType: (id, name) => {
+    const trimmedName = name.trim()
+    if (!trimmedName) {
+      return
+    }
+
+    set((state) => ({
+      historyPast: [...state.historyPast, createSnapshot(state)],
+      historyFuture: [],
+      canUndo: true,
+      canRedo: false,
+      slipTypes: state.slipTypes.map((slip) =>
+        slip.id === id ? { ...slip, name: trimmedName } : slip
+      ),
+      hasUnsavedChanges: true
+    }))
+  },
+
+  deleteSlipType: (id) => {
+    set((state) => {
+      if (!state.slipTypes.some((slip) => slip.id === id)) {
+        return state
+      }
+
+      const fallbackId = state.slipTypes.find((slip) => slip.id !== id)?.id ?? ''
+      const updatedNodes = state.nodes.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          slipTypeId: node.data.slipTypeId === id ? fallbackId : node.data.slipTypeId,
+          slipGivenTypeIds: node.data.slipGivenTypeIds.filter((sid) => sid !== id)
+        }
+      }))
+
+      return {
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
+        slipTypes: state.slipTypes.filter((slip) => slip.id !== id),
+        nodes: updatedNodes,
+        edges: buildEdgesFromReferences(updatedNodes),
+        hasUnsavedChanges: true
+      }
+    })
   },
 
   createGroupFromSelection: (name) => {
