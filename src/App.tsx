@@ -12,6 +12,7 @@ import { Sidebar } from './components/Sidebar/Sidebar'
 import { useNarrativeBoardStore } from './store/useNarrativeBoardStore'
 import './App.css'
 import './styles/card.css'
+import './styles/sidebar.css'
 import 'reactflow/dist/style.css'
 
 function BoardCanvas() {

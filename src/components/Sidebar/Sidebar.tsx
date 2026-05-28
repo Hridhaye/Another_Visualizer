@@ -35,13 +35,13 @@ type SectionProps = {
 
 function Section({ title, toneClassName, open, onToggle, children }: SectionProps) {
   return (
-    <div className={`overflow-hidden rounded-xl border ${toneClassName}`}>
-      <button onClick={onToggle} className="flex w-full items-center justify-between px-3 py-2.5 text-left transition-colors hover:bg-white/5">
-        <div className="text-[10px] font-bold uppercase tracking-wider">{title}</div>
-        <div className="text-xs opacity-60">{open ? '−' : '+'}</div>
+    <section className={`sidebar-section ${toneClassName}`}>
+      <button onClick={onToggle} className="sidebar-section__toggle">
+        <div className="sidebar-section__title">{title}</div>
+        <div className="sidebar-section__icon">{open ? '-' : '+'}</div>
       </button>
-      {open ? <div className="border-t border-zinc-800/50">{children}</div> : null}
-    </div>
+      {open ? <div className="sidebar-section__content">{children}</div> : null}
+    </section>
   )
 }
 
@@ -65,39 +65,31 @@ export function Sidebar({
   onProjectNameChange
 }: SidebarProps) {
   return (
-    <div
-      className={
-        collapsed
-          ? 'flex w-[32px] flex-col overflow-hidden border-r border-zinc-800 bg-zinc-900 transition-all duration-300'
-          : 'flex w-[300px] flex-col overflow-y-auto border-r border-zinc-800 bg-zinc-900 transition-all duration-300'
-      }
-    >
-      <div className="sticky top-0 z-10 border-b border-zinc-800 bg-zinc-950/80 px-4 py-3 backdrop-blur-md">
-        <div className="flex items-start justify-between gap-3">
+    <aside className={collapsed ? 'sidebar sidebar--collapsed' : 'sidebar'}>
+      <div className="sidebar__header">
+        <div className="sidebar__header-row">
           {!collapsed && (
-            <div>
-              <h1 className="text-lg font-bold tracking-tight">Mystery Board</h1>
-              <p className="text-[11px] text-zinc-500">
-                Non-linear narrative plotting tool
-              </p>
+            <div className="sidebar__title-wrap">
+              <h1 className="sidebar__title">Mystery Board</h1>
+              <p className="sidebar__subtitle">Non-linear narrative plotting tool</p>
             </div>
           )}
 
           <button
             onClick={onToggleSidebar}
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-zinc-800 text-[10px] transition-colors hover:bg-zinc-700"
+            className="sidebar__collapse-btn"
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {collapsed ? '→' : '←'}
+            {collapsed ? '>' : '<'}
           </button>
         </div>
       </div>
 
       {!collapsed && (
-        <div className="flex flex-col gap-3 p-3">
+        <div className="sidebar__content">
           <Section
             title="Board Controls"
-            toneClassName="border-blue-900/40 bg-blue-950/20 text-blue-300/80"
+            toneClassName="sidebar-section--board"
             open={sectionsOpen.boardControls}
             onToggle={() => {
               onToggleSection('boardControls')
@@ -119,7 +111,7 @@ export function Sidebar({
 
           <Section
             title="Slip Manager"
-            toneClassName="border-purple-900/40 bg-purple-950/10 text-purple-300/80"
+            toneClassName="sidebar-section--slips"
             open={sectionsOpen.slipManager}
             onToggle={() => {
               onToggleSection('slipManager')
@@ -131,7 +123,7 @@ export function Sidebar({
           {selectedNode && (
             <Section
               title="Card Editor"
-              toneClassName="border-emerald-900/40 bg-emerald-950/10 text-emerald-300/80"
+              toneClassName="sidebar-section--editor"
               open={sectionsOpen.cardEditor}
               onToggle={() => {
                 onToggleSection('cardEditor')
@@ -146,6 +138,6 @@ export function Sidebar({
           )}
         </div>
       )}
-    </div>
+    </aside>
   )
 }
