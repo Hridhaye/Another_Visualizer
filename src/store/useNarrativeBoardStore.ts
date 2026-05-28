@@ -78,6 +78,7 @@ type NarrativeBoardState = {
   nodes: NarrativeNode[]
   edges: NarrativeEdge[]
   selectedNodeId: string | null
+  selectedNodeIds: string[]
   slipTypes: SlipType[]
   sidebarCollapsed: boolean
   sectionsOpen: SectionOpenState
@@ -94,12 +95,14 @@ type NarrativeBoardState = {
   canRedo: boolean
   historyPast: HistorySnapshot[]
   historyFuture: HistorySnapshot[]
+  multiSelectMode: boolean
 }
 
 type HistorySnapshot = {
   nodes: NarrativeNode[]
   edges: NarrativeEdge[]
   selectedNodeId: string | null
+  selectedNodeIds: string[]
   slipTypes: SlipType[]
   metadata: SerializedMetadata
   viewport: SerializedViewport
@@ -119,6 +122,8 @@ type NarrativeBoardActions = {
   loadProject: (file: File) => Promise<void>
   applyAIFormatImport: (rawText: string) => Promise<{ createdCount: number; updatedCount: number }>
   setSelectedNode: (nodeId: string | null) => void
+  setSelectedNodes: (nodeIds: string[], primaryNodeId?: string | null) => void
+  toggleNodeSelection: (nodeId: string) => void
   clearSelection: () => void
   toggleSidebar: () => void
   toggleSection: (key: SectionKey) => void
@@ -135,6 +140,8 @@ type NarrativeBoardActions = {
   setMetadata: (metadata: SerializedMetadata) => void
   undo: () => void
   redo: () => void
+  deleteSelectedCards: () => void
+  setMultiSelectMode: (enabled: boolean) => void
 }
 
 export type NarrativeBoardStore = NarrativeBoardState & NarrativeBoardActions
@@ -144,6 +151,7 @@ function createSnapshot(state: NarrativeBoardState): HistorySnapshot {
     nodes: state.nodes.map((node) => ({ ...node, data: { ...node.data }, position: { ...node.position } })),
     edges: state.edges.map((edge) => ({ ...edge })),
     selectedNodeId: state.selectedNodeId,
+    selectedNodeIds: [...state.selectedNodeIds],
     slipTypes: state.slipTypes.map((slip) => ({ ...slip })),
     metadata: { ...state.metadata },
     viewport: { ...state.viewport },
@@ -165,6 +173,81 @@ function removeReferenceText(currentText: string, codeToRemove: string): string 
     .join(', ')
 }
 
+function dedupeNodeIds(nodeIds: string[], nodes: NarrativeNode[]): string[] {
+  const validIds = new Set(nodes.map((node) => node.id))
+  return [...new Set(nodeIds)].filter((nodeId) => validIds.has(nodeId))
+}
+
+function getSelectionState(
+  nodes: NarrativeNode[],
+  nodeIds: string[],
+  primaryNodeId?: string | null
+) {
+  const selectedNodeIds = dedupeNodeIds(nodeIds, nodes)
+  const nextPrimaryId = primaryNodeId && selectedNodeIds.includes(primaryNodeId)
+    ? primaryNodeId
+    : selectedNodeIds[0] ?? null
+
+  return {
+    selectedNodeIds,
+    selectedNodeId: nextPrimaryId
+  }
+}
+
+function removeNodesByIds(state: NarrativeBoardState, nodeIds: string[]) {
+  const idsToDelete = new Set(nodeIds)
+  if (idsToDelete.size === 0) {
+    return null
+  }
+
+  const nodesToDelete = state.nodes.filter((node) => idsToDelete.has(node.id))
+  if (nodesToDelete.length === 0) {
+    return null
+  }
+
+  const codesToDelete = new Set(nodesToDelete.map((node) => node.data.code))
+  const nextNodes = state.nodes
+    .filter((node) => !idsToDelete.has(node.id))
+    .map((node) => ({
+      ...node,
+      data: {
+        ...node.data,
+        referencesText: parseReferences(node.data.referencesText)
+          .filter((ref) => !codesToDelete.has(ref))
+          .join(', ')
+      }
+    }))
+
+  const nextSelection = getSelectionState(
+    nextNodes,
+    state.selectedNodeIds.filter((selectedId) => !idsToDelete.has(selectedId)),
+    state.selectedNodeId && !idsToDelete.has(state.selectedNodeId) ? state.selectedNodeId : null
+  )
+
+  const activeSelectionDeleted =
+    state.selectedNodeIds.some((selectedId) => idsToDelete.has(selectedId)) ||
+    (state.selectedNodeId ? idsToDelete.has(state.selectedNodeId) : false)
+
+  return {
+    nodes: nextNodes,
+    edges: buildEdgesFromReferences(nextNodes),
+    ...nextSelection,
+    connectionSourceNodeId:
+      state.connectionSourceNodeId && idsToDelete.has(state.connectionSourceNodeId)
+        ? null
+        : state.connectionSourceNodeId,
+    contextPanelOpen: activeSelectionDeleted && nextSelection.selectedNodeIds.length !== 1
+      ? false
+      : state.contextPanelOpen,
+    narrativeBodyOpen: activeSelectionDeleted && nextSelection.selectedNodeIds.length !== 1
+      ? false
+      : state.narrativeBodyOpen,
+    activeEditorField: activeSelectionDeleted && nextSelection.selectedNodeIds.length !== 1
+      ? null
+      : state.activeEditorField
+  }
+}
+
 export function getSlipColor(slipTypes: SlipType[], slipTypeId: string): string {
   const slip = slipTypes.find((item) => item.id === slipTypeId)
   return slip ? slip.color : '#52525b'
@@ -174,6 +257,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   nodes: initialNodes,
   edges: buildEdgesFromReferences(initialNodes),
   selectedNodeId: '1',
+  selectedNodeIds: ['1'],
   slipTypes: defaultSlipTypes,
   sidebarCollapsed: false,
   sectionsOpen: initialSectionsOpen,
@@ -187,6 +271,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   canRedo: false,
   historyPast: [],
   historyFuture: [],
+  multiSelectMode: false,
   metadata: {
     projectName: 'Mystery Board',
     createdAt: new Date().toISOString(),
@@ -302,6 +387,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         canRedo: false,
         nodes: [...state.nodes, newNode],
         selectedNodeId: newNode.id,
+        selectedNodeIds: [newNode.id],
         hasUnsavedChanges: true
       }
     })
@@ -309,37 +395,17 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
 
   deleteCard: (nodeId) => {
     set((state) => {
-      const nodeToDelete = state.nodes.find((node) => node.id === nodeId)
-      if (!nodeToDelete) {
+      const nextState = removeNodesByIds(state, [nodeId])
+      if (!nextState) {
         return state
       }
-
-      const nextNodes = state.nodes
-        .filter((node) => node.id !== nodeId)
-        .map((node) => ({
-          ...node,
-          data: {
-            ...node.data,
-            referencesText: removeReferenceText(node.data.referencesText, nodeToDelete.data.code)
-          }
-        }))
-
-      const nextSelectedNodeId =
-        state.selectedNodeId === nodeId ? nextNodes[0]?.id ?? null : state.selectedNodeId
 
       return {
         historyPast: [...state.historyPast, createSnapshot(state)],
         historyFuture: [],
         canUndo: true,
         canRedo: false,
-        nodes: nextNodes,
-        edges: buildEdgesFromReferences(nextNodes),
-        selectedNodeId: nextSelectedNodeId,
-        connectionSourceNodeId:
-          state.connectionSourceNodeId === nodeId ? null : state.connectionSourceNodeId,
-        contextPanelOpen: state.selectedNodeId === nodeId ? false : state.contextPanelOpen,
-        narrativeBodyOpen: state.selectedNodeId === nodeId ? false : state.narrativeBodyOpen,
-        activeEditorField: state.selectedNodeId === nodeId ? null : state.activeEditorField,
+        ...nextState,
         hasUnsavedChanges: true
       }
     })
@@ -512,6 +578,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         },
         viewport: project.viewport || { x: 0, y: 0, zoom: 1 },
         selectedNodeId: nextNodes[0]?.id ?? null,
+        selectedNodeIds: nextNodes[0]?.id ? [nextNodes[0].id] : [],
         connectionSourceNodeId: null,
         historyPast: [],
         historyFuture: [],
@@ -539,6 +606,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         nodes: result.updatedNodes,
         edges: result.updatedEdges,
         selectedNodeId: result.updatedNodes[0]?.id ?? null,
+        selectedNodeIds: result.updatedNodes[0]?.id ? [result.updatedNodes[0].id] : [],
         hasUnsavedChanges: true
       })
 
@@ -553,12 +621,54 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   },
 
   setSelectedNode: (nodeId) => {
-    set({ selectedNodeId: nodeId })
+    set((state) => ({
+      ...getSelectionState(state.nodes, nodeId ? [nodeId] : [], nodeId),
+      contextPanelOpen: nodeId ? state.contextPanelOpen : false,
+      narrativeBodyOpen: nodeId ? state.narrativeBodyOpen : false,
+      activeEditorField: nodeId ? state.activeEditorField : null
+    }))
+  },
+
+  setSelectedNodes: (nodeIds, primaryNodeId = null) => {
+    set((state) => {
+      const nextSelection = getSelectionState(state.nodes, nodeIds, primaryNodeId)
+      const hasSingleSelection = nextSelection.selectedNodeIds.length === 1
+
+      return {
+        ...nextSelection,
+        contextPanelOpen: hasSingleSelection ? state.contextPanelOpen : false,
+        narrativeBodyOpen: hasSingleSelection ? state.narrativeBodyOpen : false,
+        activeEditorField: hasSingleSelection ? state.activeEditorField : null
+      }
+    })
+  },
+
+  toggleNodeSelection: (nodeId) => {
+    set((state) => {
+      const alreadySelected = state.selectedNodeIds.includes(nodeId)
+      const nextIds = alreadySelected
+        ? state.selectedNodeIds.filter((selectedId) => selectedId !== nodeId)
+        : [...state.selectedNodeIds, nodeId]
+      const nextSelection = getSelectionState(
+        state.nodes,
+        nextIds,
+        alreadySelected ? state.selectedNodeId : nodeId
+      )
+      const hasSingleSelection = nextSelection.selectedNodeIds.length === 1
+
+      return {
+        ...nextSelection,
+        contextPanelOpen: hasSingleSelection ? state.contextPanelOpen : false,
+        narrativeBodyOpen: hasSingleSelection ? state.narrativeBodyOpen : false,
+        activeEditorField: hasSingleSelection ? state.activeEditorField : null
+      }
+    })
   },
 
   clearSelection: () => {
     set({
       selectedNodeId: null,
+      selectedNodeIds: [],
       connectionSourceNodeId: null,
       contextPanelOpen: false,
       narrativeBodyOpen: false,
@@ -619,7 +729,9 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   },
 
   openContextPanel: () => {
-    set({ contextPanelOpen: true })
+    set((state) => ({
+      contextPanelOpen: state.selectedNodeIds.length === 1
+    }))
   },
 
   closeContextPanel: () => {
@@ -627,7 +739,9 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   },
 
   openNarrativeBody: () => {
-    set({ narrativeBodyOpen: true })
+    set((state) => ({
+      narrativeBodyOpen: state.selectedNodeIds.length === 1
+    }))
   },
 
   closeNarrativeBody: () => {
@@ -635,7 +749,9 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   },
 
   openEditorField: (field) => {
-    set({ activeEditorField: field })
+    set((state) => ({
+      activeEditorField: state.selectedNodeIds.length === 1 ? field : null
+    }))
   },
 
   closeEditorField: () => {
@@ -664,6 +780,28 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   }
 
   ,
+  deleteSelectedCards: () => {
+    set((state) => {
+      const nextState = removeNodesByIds(state, state.selectedNodeIds)
+      if (!nextState) {
+        return state
+      }
+
+      return {
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
+        ...nextState,
+        hasUnsavedChanges: true
+      }
+    })
+  },
+
+  setMultiSelectMode: (enabled) => {
+    set({ multiSelectMode: enabled })
+  },
+
   undo: () => {
     set((state) => {
       const previous = state.historyPast[state.historyPast.length - 1]
@@ -680,6 +818,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         historyFuture: nextFuture,
         canUndo: nextPast.length > 0,
         canRedo: true,
+        multiSelectMode: false,
         connectionSourceNodeId: null,
         contextPanelOpen: false,
         narrativeBodyOpen: false,
@@ -704,6 +843,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         historyFuture: nextFuture,
         canUndo: true,
         canRedo: nextFuture.length > 0,
+        multiSelectMode: false,
         connectionSourceNodeId: null,
         contextPanelOpen: false,
         narrativeBodyOpen: false,

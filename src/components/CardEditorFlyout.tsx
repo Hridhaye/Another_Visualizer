@@ -17,11 +17,13 @@ export function CardEditorFlyout() {
   const activeEditorField = useNarrativeBoardStore((s) => s.activeEditorField)
   const closeEditorField = useNarrativeBoardStore((s) => s.closeEditorField)
   const selectedNodeId = useNarrativeBoardStore((s) => s.selectedNodeId)
+  const selectedNodeIds = useNarrativeBoardStore((s) => s.selectedNodeIds)
   const nodes = useNarrativeBoardStore((s) => s.nodes)
   const updateNode = useNarrativeBoardStore((s) => s.updateNode)
   const slipTypes = useNarrativeBoardStore((s) => s.slipTypes)
 
   const node = nodes.find((n) => n.id === selectedNodeId) ?? null
+  const hasSingleSelection = selectedNodeIds.length === 1
   const [refSearch, setRefSearch] = useState('')
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
 
@@ -40,7 +42,7 @@ export function CardEditorFlyout() {
     return () => window.removeEventListener('keydown', onKey)
   }, [activeEditorField, closeEditorField])
 
-  if (!activeEditorField || !node) return null
+  if (!activeEditorField || !node || !hasSingleSelection) return null
 
   const currentRefs = parseReferences(node.data.referencesText)
   const searchLower = refSearch.toLowerCase()

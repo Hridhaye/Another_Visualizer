@@ -12,6 +12,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   void selected
   const slipTypes = useNarrativeBoardStore((state) => state.slipTypes)
   const selectedNodeId = useNarrativeBoardStore((state) => state.selectedNodeId)
+  const selectedNodeIds = useNarrativeBoardStore((state) => state.selectedNodeIds)
   const connectionSourceNodeId = useNarrativeBoardStore((state) => state.connectionSourceNodeId)
   const contextPanelOpen = useNarrativeBoardStore((state) => state.contextPanelOpen)
   const openContextPanel = useNarrativeBoardStore((state) => state.openContextPanel)
@@ -20,28 +21,38 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const deleteCard = useNarrativeBoardStore((state) => state.deleteCard)
   const setConnectionSourceNode = useNarrativeBoardStore((state) => state.setConnectionSourceNode)
   const createReferenceConnection = useNarrativeBoardStore((state) => state.createReferenceConnection)
+  const setSelectedNode = useNarrativeBoardStore((state) => state.setSelectedNode)
+  const toggleNodeSelection = useNarrativeBoardStore((state) => state.toggleNodeSelection)
   const nodes = useNarrativeBoardStore((state) => state.nodes)
-  const thisNode = nodes.find((n) => n.id === id)
+  const thisNode = nodes.find((node) => node.id === id)
 
   const slipColor = getSlipColor(slipTypes, data.slipTypeId)
   const isLinkSource = connectionSourceNodeId === id
-  const isSelected = selectedNodeId === id
+  const isSelected = selectedNodeIds.includes(id)
   const isPendingTarget = !!connectionSourceNodeId && !isLinkSource
-  const showContextPanel = isSelected && contextPanelOpen && !!thisNode
+  const showContextPanel =
+    selectedNodeId === id && selectedNodeIds.length === 1 && contextPanelOpen && !!thisNode
 
-  // ── Touch long-press state ───────────────────────────────────────────
   const divRef = useRef<HTMLDivElement | null>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const touchStartPos = useRef<{ x: number; y: number } | null>(null)
   const longPressActivated = useRef(false)
 
-  // Stable refs so the imperative listeners don't go stale
   const connectionSourceRef = useRef(connectionSourceNodeId)
   const setConnectionRef = useRef(setConnectionSourceNode)
   const createRefConnection = useRef(createReferenceConnection)
-  useEffect(() => { connectionSourceRef.current = connectionSourceNodeId }, [connectionSourceNodeId])
-  useEffect(() => { setConnectionRef.current = setConnectionSourceNode }, [setConnectionSourceNode])
-  useEffect(() => { createRefConnection.current = createReferenceConnection }, [createReferenceConnection])
+
+  useEffect(() => {
+    connectionSourceRef.current = connectionSourceNodeId
+  }, [connectionSourceNodeId])
+
+  useEffect(() => {
+    setConnectionRef.current = setConnectionSourceNode
+  }, [setConnectionSourceNode])
+
+  useEffect(() => {
+    createRefConnection.current = createReferenceConnection
+  }, [createReferenceConnection])
 
   function cancelLongPress() {
     if (longPressTimer.current) {
@@ -50,44 +61,44 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
     }
   }
 
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    const t = e.touches[0]
-    if (!t || !touchStartPos.current) return
+  const handleTouchMove = useCallback((event: TouchEvent) => {
+    const touch = event.touches[0]
+    if (!touch || !touchStartPos.current) {
+      return
+    }
 
     if (!longPressActivated.current) {
-      const dx = t.clientX - touchStartPos.current.x
-      const dy = t.clientY - touchStartPos.current.y
+      const dx = touch.clientX - touchStartPos.current.x
+      const dy = touch.clientY - touchStartPos.current.y
       if (Math.sqrt(dx * dx + dy * dy) > DRIFT_PX) {
-        // Finger moved before hold fired — cancel and let ReactFlow pan
         cancelLongPress()
         touchStartPos.current = null
       }
       return
     }
 
-    // Long press is active: own the touch, block camera pan
-    e.preventDefault()
-    e.stopPropagation()
+    event.preventDefault()
+    event.stopPropagation()
   }, [])
 
-  const handleTouchEnd = useCallback((e: TouchEvent) => {
+  const handleTouchEnd = useCallback((event: TouchEvent) => {
     cancelLongPress()
     touchStartPos.current = null
 
-    if (!longPressActivated.current) return
+    if (!longPressActivated.current) {
+      return
+    }
     longPressActivated.current = false
 
-    // Treat the finger-lift as the "tap" that completes or initiates a link
-    e.preventDefault()
-    e.stopPropagation()
+    event.preventDefault()
+    event.stopPropagation()
 
     const source = connectionSourceRef.current
     if (!source) {
-      // Long press set us as source already; nothing more to do on lift
       return
     }
+
     if (source !== id) {
-      // Lifting on a different card while a source is set → complete the link
       createRefConnection.current(source, id)
       setConnectionRef.current(null)
     }
@@ -100,36 +111,41 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   }, [])
 
   useEffect(() => {
-    const el = divRef.current
-    if (!el) return
-    el.addEventListener('touchmove', handleTouchMove, { passive: false })
-    el.addEventListener('touchend', handleTouchEnd, { passive: false })
-    el.addEventListener('touchcancel', handleTouchCancel)
+    const element = divRef.current
+    if (!element) {
+      return
+    }
+
+    element.addEventListener('touchmove', handleTouchMove, { passive: false })
+    element.addEventListener('touchend', handleTouchEnd, { passive: false })
+    element.addEventListener('touchcancel', handleTouchCancel)
+
     return () => {
-      el.removeEventListener('touchmove', handleTouchMove)
-      el.removeEventListener('touchend', handleTouchEnd)
-      el.removeEventListener('touchcancel', handleTouchCancel)
+      element.removeEventListener('touchmove', handleTouchMove)
+      element.removeEventListener('touchend', handleTouchEnd)
+      element.removeEventListener('touchcancel', handleTouchCancel)
     }
   }, [handleTouchMove, handleTouchEnd, handleTouchCancel])
 
-  function onTouchStart(e: React.TouchEvent) {
-    const t = e.touches[0]
-    if (!t) return
-    touchStartPos.current = { x: t.clientX, y: t.clientY }
+  function onTouchStart(event: React.TouchEvent) {
+    const touch = event.touches[0]
+    if (!touch) {
+      return
+    }
+
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY }
     longPressActivated.current = false
 
     longPressTimer.current = setTimeout(() => {
       longPressActivated.current = true
-      // Set this card as the link source
       setConnectionRef.current(id)
     }, LONG_PRESS_MS)
   }
 
-  // ── Mouse / desktop: alt+click ───────────────────────────────────────
-  function handleClick(e: React.MouseEvent) {
-    if (e.altKey) {
-      e.preventDefault()
-      e.stopPropagation()
+  function handleClick(event: React.MouseEvent) {
+    if (event.altKey) {
+      event.preventDefault()
+      event.stopPropagation()
 
       if (!connectionSourceNodeId) {
         setConnectionSourceNode(id)
@@ -142,25 +158,42 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
       return
     }
 
-    // Normal click — cancel any pending link mode, open context panel
+    if (event.ctrlKey || event.metaKey) {
+      event.preventDefault()
+      event.stopPropagation()
+      if (connectionSourceNodeId) {
+        setConnectionSourceNode(null)
+      }
+      toggleNodeSelection(id)
+      return
+    }
+
     if (connectionSourceNodeId) {
       setConnectionSourceNode(null)
       return
     }
 
+    setSelectedNode(id)
     openContextPanel()
   }
 
-  // ── Touch tap on a pending-target card ──────────────────────────────
-  // When link mode is active and the user simply taps another card
-  // (no long press needed for the second tap), complete the link.
-  function handleTouchTap(e: React.TouchEvent) {
-    // Only act if a long press did NOT just fire (longPressActivated handles that path)
-    if (longPressActivated.current) return
+  function handleTouchTap(event: React.TouchEvent) {
+    if (longPressActivated.current) {
+      return
+    }
+
     const source = connectionSourceNodeId
-    if (!source || source === id) return
-    // Stop propagation so the canvas pane-click doesn't clear selection
-    e.stopPropagation()
+    if (!source) {
+      setSelectedNode(id)
+      openContextPanel()
+      return
+    }
+
+    if (source === id) {
+      return
+    }
+
+    event.stopPropagation()
     createReferenceConnection(source, id)
     setConnectionSourceNode(null)
   }
@@ -217,7 +250,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
 
       {isLinkSource && (
         <div className="absolute -top-7 left-1/2 z-50 -translate-x-1/2 whitespace-nowrap rounded-md border border-indigo-700/60 bg-indigo-950/90 px-2.5 py-1 text-[10px] font-semibold text-indigo-300 shadow-lg">
-          Tap another card to link · tap here to cancel
+          Tap another card to link - tap here to cancel
         </div>
       )}
 

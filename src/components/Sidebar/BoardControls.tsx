@@ -1,6 +1,7 @@
 import { useRef, useState, type ChangeEvent } from 'react'
 
 import { exportAIFormat } from '../../ai/exportAIFormat'
+import { useNarrativeBoardStore } from '../../store/useNarrativeBoardStore'
 import type { NarrativeNode, SlipType } from '../../types/narrative'
 
 type BoardControlsProps = {
@@ -26,6 +27,7 @@ export function BoardControls({
   onImportAIFormat,
   onProjectNameChange
 }: BoardControlsProps) {
+  const selectedNodeIds = useNarrativeBoardStore((state) => state.selectedNodeIds)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [showAIImportModal, setShowAIImportModal] = useState(false)
   const [importText, setImportText] = useState('')
@@ -45,9 +47,17 @@ export function BoardControls({
 
   const handleCopyDSL = async () => {
     try {
-      const text = exportAIFormat(nodes, slipTypes)
+      const nodesToExport =
+        selectedNodeIds.length > 1
+          ? nodes.filter((node) => selectedNodeIds.includes(node.id))
+          : nodes
+      const text = exportAIFormat(nodesToExport, slipTypes)
       await navigator.clipboard.writeText(text)
-      setFeedback('Copied to clipboard.')
+      setFeedback(
+        selectedNodeIds.length > 1
+          ? `Copied ${nodesToExport.length} selected cards.`
+          : 'Copied to clipboard.'
+      )
       setTimeout(() => setFeedback(''), 2500)
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Unable to copy.')

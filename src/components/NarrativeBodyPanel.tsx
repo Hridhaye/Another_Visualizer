@@ -5,10 +5,12 @@ export function NarrativeBodyPanel() {
   const narrativeBodyOpen = useNarrativeBoardStore((s) => s.narrativeBodyOpen)
   const closeNarrativeBody = useNarrativeBoardStore((s) => s.closeNarrativeBody)
   const selectedNodeId = useNarrativeBoardStore((s) => s.selectedNodeId)
+  const selectedNodeIds = useNarrativeBoardStore((s) => s.selectedNodeIds)
   const nodes = useNarrativeBoardStore((s) => s.nodes)
   const updateNode = useNarrativeBoardStore((s) => s.updateNode)
 
   const node = nodes.find((n) => n.id === selectedNodeId) ?? null
+  const hasSingleSelection = selectedNodeIds.length === 1
   const bodyEditorRef = useRef<HTMLDivElement | null>(null)
 
   function syncBody() {
@@ -44,7 +46,7 @@ export function NarrativeBodyPanel() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [narrativeBodyOpen, closeNarrativeBody])
 
-  if (!narrativeBodyOpen || !node) return null
+  if (!narrativeBodyOpen || !node || !hasSingleSelection) return null
 
   return (
     <div
