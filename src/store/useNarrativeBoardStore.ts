@@ -86,6 +86,20 @@ type NarrativeBoardState = {
   viewport: SerializedViewport
   hasUnsavedChanges: boolean
   contextPanelOpen: boolean
+  canUndo: boolean
+  canRedo: boolean
+  historyPast: HistorySnapshot[]
+  historyFuture: HistorySnapshot[]
+}
+
+type HistorySnapshot = {
+  nodes: NarrativeNode[]
+  edges: NarrativeEdge[]
+  selectedNodeId: string | null
+  slipTypes: SlipType[]
+  metadata: SerializedMetadata
+  viewport: SerializedViewport
+  hasUnsavedChanges: boolean
 }
 
 type NarrativeBoardActions = {
@@ -111,9 +125,23 @@ type NarrativeBoardActions = {
   cycleMinimapState: () => void
   setViewport: (viewport: SerializedViewport) => void
   setMetadata: (metadata: SerializedMetadata) => void
+  undo: () => void
+  redo: () => void
 }
 
 export type NarrativeBoardStore = NarrativeBoardState & NarrativeBoardActions
+
+function createSnapshot(state: NarrativeBoardState): HistorySnapshot {
+  return {
+    nodes: state.nodes.map((node) => ({ ...node, data: { ...node.data }, position: { ...node.position } })),
+    edges: state.edges.map((edge) => ({ ...edge })),
+    selectedNodeId: state.selectedNodeId,
+    slipTypes: state.slipTypes.map((slip) => ({ ...slip })),
+    metadata: { ...state.metadata },
+    viewport: { ...state.viewport },
+    hasUnsavedChanges: state.hasUnsavedChanges
+  }
+}
 
 function upsertReferenceText(currentText: string, codeToAdd: string): string {
   const refs = parseReferences(currentText)
@@ -145,6 +173,10 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   minimapVisible: true,
   minimapCollapsed: false,
   contextPanelOpen: false,
+  canUndo: false,
+  canRedo: false,
+  historyPast: [],
+  historyFuture: [],
   metadata: {
     projectName: 'Mystery Board',
     createdAt: new Date().toISOString(),
@@ -155,6 +187,10 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
 
   onNodesChange: (changes) => {
     set((state) => ({
+      historyPast: [...state.historyPast, createSnapshot(state)],
+      historyFuture: [],
+      canUndo: true,
+      canRedo: false,
       nodes: applyNodeChanges(changes, state.nodes),
       hasUnsavedChanges: true
     }))
@@ -167,7 +203,14 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         .map((change) => change.id)
 
       if (removedIds.length === 0) {
-        return { edges: applyEdgeChanges(changes, state.edges) }
+        return {
+          historyPast: [...state.historyPast, createSnapshot(state)],
+          historyFuture: [],
+          canUndo: true,
+          canRedo: false,
+          edges: applyEdgeChanges(changes, state.edges),
+          hasUnsavedChanges: true
+        }
       }
 
       let updatedNodes = state.nodes
@@ -201,6 +244,10 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       })
 
       return {
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
         nodes: updatedNodes,
         edges: buildEdgesFromReferences(updatedNodes),
         hasUnsavedChanges: true
@@ -239,6 +286,10 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       }
 
       return {
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
         nodes: [...state.nodes, newNode],
         selectedNodeId: newNode.id,
         hasUnsavedChanges: true
@@ -267,6 +318,10 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         state.selectedNodeId === nodeId ? nextNodes[0]?.id ?? null : state.selectedNodeId
 
       return {
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
         nodes: nextNodes,
         edges: buildEdgesFromReferences(nextNodes),
         selectedNodeId: nextSelectedNodeId,
@@ -295,6 +350,10 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       })
 
       return {
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
         nodes: updatedNodes,
         edges: buildEdgesFromReferences(updatedNodes),
         hasUnsavedChanges: true
@@ -341,6 +400,10 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       })
 
       return {
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
         nodes: updatedNodes,
         edges: buildEdgesFromReferences(updatedNodes),
         connectionSourceNodeId: null,
@@ -356,6 +419,10 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     }
 
     set((state) => ({
+      historyPast: [...state.historyPast, createSnapshot(state)],
+      historyFuture: [],
+      canUndo: true,
+      canRedo: false,
       slipTypes: [
         ...state.slipTypes,
         {
@@ -434,6 +501,10 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         viewport: project.viewport || { x: 0, y: 0, zoom: 1 },
         selectedNodeId: nextNodes[0]?.id ?? null,
         connectionSourceNodeId: null,
+        historyPast: [],
+        historyFuture: [],
+        canUndo: false,
+        canRedo: false,
         hasUnsavedChanges: false
       })
     } catch (error) {
@@ -449,6 +520,10 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       const result = importAIFormat(rawText, state.nodes, state.slipTypes)
 
       set({
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
         nodes: result.updatedNodes,
         edges: result.updatedEdges,
         selectedNodeId: result.updatedNodes[0]?.id ?? null,
@@ -498,11 +573,25 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   },
 
   setViewport: (viewport) => {
-    set({ viewport, hasUnsavedChanges: true })
+    set((state) => ({
+      historyPast: [...state.historyPast, createSnapshot(state)],
+      historyFuture: [],
+      canUndo: true,
+      canRedo: false,
+      viewport,
+      hasUnsavedChanges: true
+    }))
   },
 
   setMetadata: (metadata) => {
-    set({ metadata, hasUnsavedChanges: true })
+    set((state) => ({
+      historyPast: [...state.historyPast, createSnapshot(state)],
+      historyFuture: [],
+      canUndo: true,
+      canRedo: false,
+      metadata,
+      hasUnsavedChanges: true
+    }))
   },
 
   openFullEditor: () => {
@@ -540,6 +629,51 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
 
       return {
         minimapVisible: false
+      }
+    })
+  }
+
+  ,
+  undo: () => {
+    set((state) => {
+      const previous = state.historyPast[state.historyPast.length - 1]
+      if (!previous) {
+        return state
+      }
+
+      const nextFuture = [createSnapshot(state), ...state.historyFuture]
+      const nextPast = state.historyPast.slice(0, -1)
+
+      return {
+        ...previous,
+        historyPast: nextPast,
+        historyFuture: nextFuture,
+        canUndo: nextPast.length > 0,
+        canRedo: true,
+        connectionSourceNodeId: null,
+        contextPanelOpen: false
+      }
+    })
+  },
+
+  redo: () => {
+    set((state) => {
+      const next = state.historyFuture[0]
+      if (!next) {
+        return state
+      }
+
+      const nextPast = [...state.historyPast, createSnapshot(state)]
+      const nextFuture = state.historyFuture.slice(1)
+
+      return {
+        ...next,
+        historyPast: nextPast,
+        historyFuture: nextFuture,
+        canUndo: true,
+        canRedo: nextFuture.length > 0,
+        connectionSourceNodeId: null,
+        contextPanelOpen: false
       }
     })
   }

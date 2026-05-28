@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import ReactFlow, {
   Background,
   Controls,
@@ -45,6 +45,10 @@ function BoardCanvas() {
   const setViewport = useNarrativeBoardStore((state) => state.setViewport)
   const metadata = useNarrativeBoardStore((state) => state.metadata)
   const hasUnsavedChanges = useNarrativeBoardStore((state) => state.hasUnsavedChanges)
+  const canUndo = useNarrativeBoardStore((state) => state.canUndo)
+  const canRedo = useNarrativeBoardStore((state) => state.canRedo)
+  const undo = useNarrativeBoardStore((state) => state.undo)
+  const redo = useNarrativeBoardStore((state) => state.redo)
 
   const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? null
   const nodeTypes = useMemo(
@@ -61,6 +65,29 @@ function BoardCanvas() {
       createReferenceConnection(connectionSourceNodeId, node.id)
     }
   }
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!event.ctrlKey || event.altKey) {
+        return
+      }
+
+      const key = event.key.toLowerCase()
+      if (key === 'z' && !event.shiftKey) {
+        event.preventDefault()
+        undo()
+        return
+      }
+
+      if (key === 'z' && event.shiftKey) {
+        event.preventDefault()
+        redo()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [undo, redo])
 
   return (
     <div className="board-root">
@@ -80,6 +107,10 @@ function BoardCanvas() {
         projectName={metadata.projectName}
         updatedAt={metadata.updatedAt}
         hasUnsavedChanges={hasUnsavedChanges}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onUndo={undo}
+        onRedo={redo}
         onProjectNameChange={(value) => setMetadata({ ...metadata, projectName: value, updatedAt: metadata.updatedAt })}
         onUpdateNode={updateNode}
       />

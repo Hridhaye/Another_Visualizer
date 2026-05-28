@@ -9,7 +9,11 @@ type BoardControlsProps = {
   projectName: string
   updatedAt: string
   hasUnsavedChanges: boolean
+  canUndo: boolean
+  canRedo: boolean
   onAddCard: () => void
+  onUndo: () => void
+  onRedo: () => void
   onSaveProject: () => Promise<void>
   onLoadProject: (file: File) => Promise<void>
   onImportAIFormat: (text: string) => Promise<{ createdCount: number; updatedCount: number }>
@@ -22,7 +26,11 @@ export function BoardControls({
   projectName,
   updatedAt,
   hasUnsavedChanges,
+  canUndo,
+  canRedo,
   onAddCard,
+  onUndo,
+  onRedo,
   onSaveProject,
   onLoadProject,
   onImportAIFormat,
@@ -109,6 +117,15 @@ export function BoardControls({
       </div>
 
       <button onClick={onAddCard} className="sidebar-btn sidebar-btn--primary">Add Card</button>
+
+      <div className="sidebar-grid-two">
+        <button onClick={onUndo} disabled={!canUndo} className="sidebar-btn disabled:opacity-50 disabled:cursor-not-allowed">
+          Undo
+        </button>
+        <button onClick={onRedo} disabled={!canRedo} className="sidebar-btn disabled:opacity-50 disabled:cursor-not-allowed">
+          Redo
+        </button>
+      </div>
 
       <div className="sidebar-grid-two">
         <button
