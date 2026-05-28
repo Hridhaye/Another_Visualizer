@@ -8,6 +8,7 @@ import ReactFlow, {
 
 import { MinimapControls } from './components/MinimapControls'
 import { NarrativeCardNode } from './components/NarrativeCardNode'
+import { NarrativeBodyPanel } from './components/NarrativeBodyPanel'
 import { Sidebar } from './components/Sidebar/Sidebar'
 import { useNarrativeBoardStore } from './store/useNarrativeBoardStore'
 import './App.css'
@@ -96,6 +97,7 @@ function BoardCanvas() {
 
   return (
     <div className="board-root">
+      <NarrativeBodyPanel />
       <Sidebar
         collapsed={sidebarCollapsed}
         sectionsOpen={sectionsOpen}

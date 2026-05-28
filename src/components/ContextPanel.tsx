@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useViewport } from 'reactflow'
-import { createPortal } from 'react-dom'
 import { parseReferences } from '../graph/buildEdgesFromReferences'
 import { PUZZLE_TYPES, type CardData, type NarrativeNode, type SlipType } from '../types/narrative'
+import { useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
 
 type ContextPanelProps = {
   node: NarrativeNode
@@ -15,9 +15,9 @@ type ContextPanelProps = {
   onToggleLink: () => void
 }
 
-type ActiveField = 'code' | 'title' | 'summary' | 'body' | 'references' | 'slipType' | 'puzzleType' | null
+type ActiveField = 'code' | 'title' | 'summary' | 'references' | 'slipType' | 'puzzleType' | null
 
-const BUTTONS: { field: ActiveField; label: string }[] = [
+const BUTTONS: { field: ActiveField | 'body'; label: string }[] = [
   { field: 'code', label: 'Code' },
   { field: 'title', label: 'Title' },
   { field: 'summary', label: 'Summary' },
@@ -30,10 +30,21 @@ const BUTTONS: { field: ActiveField; label: string }[] = [
 export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate, onDelete, onClose, onToggleLink }: ContextPanelProps) {
   const [activeField, setActiveField] = useState<ActiveField>(null)
   const [refSearch, setRefSearch] = useState('')
-  const bodyEditorRef = useRef<HTMLDivElement | null>(null)
   const { zoom } = useViewport()
+  const narrativeBodyOpen = useNarrativeBoardStore((s) => s.narrativeBodyOpen)
+  const openNarrativeBody = useNarrativeBoardStore((s) => s.openNarrativeBody)
+  const closeNarrativeBody = useNarrativeBoardStore((s) => s.closeNarrativeBody)
 
-  function toggleField(field: ActiveField) {
+  function toggleField(field: ActiveField | 'body') {
+    if (field === 'body') {
+      if (narrativeBodyOpen) {
+        closeNarrativeBody()
+      } else {
+        openNarrativeBody()
+        setActiveField(null)
+      }
+      return
+    }
     setActiveField((prev) => (prev === field ? null : field))
     setRefSearch('')
   }
@@ -62,120 +73,17 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
   )
   const zoomScale = Math.max(0.85, Math.min(1.7, 1 / Math.max(zoom, 0.01)))
 
-  function syncBodyFromEditor() {
-    const editor = bodyEditorRef.current
-    if (!editor) {
-      return
-    }
-
-    onUpdate(node.id, { body: editor.innerHTML })
-  }
-
-  function applyBodyFormatting(command: 'bold' | 'italic' | 'underline') {
-    const editor = bodyEditorRef.current
-    if (!editor) {
-      return
-    }
-
-    editor.focus()
-    document.execCommand(command)
-    syncBodyFromEditor()
-  }
-
-  useEffect(() => {
-    if (activeField !== 'body') {
-      return
-    }
-
-    const editor = bodyEditorRef.current
-    if (!editor) {
-      return
-    }
-
-    if (editor.innerHTML !== node.data.body) {
-      editor.innerHTML = node.data.body
-    }
-  }, [activeField, node.data.body, node.id])
-
   return (
-    <>
-      {activeField === 'body' && typeof document !== 'undefined' && createPortal(
-        <div
-          className="fixed inset-y-0 right-0 z-[1200] nodrag nowheel pointer-events-auto w-[min(48rem,92vw)] border-l border-zinc-700 bg-zinc-950 p-4 shadow-[-25px_0_60px_rgba(0,0,0,0.55)]"
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="mb-3 flex items-center justify-between">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Narrative Body</label>
-            <button
-              onClick={() => setActiveField(null)}
-              className="rounded-md px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
-            >
-              Close
-            </button>
-          </div>
-          <div className="mb-2 flex items-center gap-1.5">
-            <button
-              onClick={() => applyBodyFormatting('bold')}
-              className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs font-bold text-zinc-200 hover:bg-zinc-800"
-              aria-label="Bold"
-            >
-              B
-            </button>
-            <button
-              onClick={() => applyBodyFormatting('italic')}
-              className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs italic text-zinc-200 hover:bg-zinc-800"
-              aria-label="Italic"
-            >
-              I
-            </button>
-            <button
-              onClick={() => applyBodyFormatting('underline')}
-              className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs underline text-zinc-200 hover:bg-zinc-800"
-              aria-label="Underline"
-            >
-              U
-            </button>
-          </div>
-          <div
-            ref={bodyEditorRef}
-            contentEditable
-            suppressContentEditableWarning
-            onInput={syncBodyFromEditor}
-            onKeyDown={(e) => {
-              const isMod = e.ctrlKey || e.metaKey
-              if (!isMod) {
-                return
-              }
-
-              const key = e.key.toLowerCase()
-              if (key === 'b') {
-                e.preventDefault()
-                applyBodyFormatting('bold')
-              } else if (key === 'i') {
-                e.preventDefault()
-                applyBodyFormatting('italic')
-              } else if (key === 'u') {
-                e.preventDefault()
-                applyBodyFormatting('underline')
-              }
-            }}
-            className="h-[calc(100vh-6.5rem)] w-full overflow-y-auto rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 font-mono text-xs leading-5 text-zinc-100 outline-none focus:border-zinc-500"
-          />
-        </div>,
-        document.body
-      )}
-
-      <div
-        className="absolute z-50 pointer-events-none"
-        style={{
-          bottom: 'calc(100% + 10px)',
-          left: '50%',
-          transform: `translateX(-50%) scale(${zoomScale})`,
-          transformOrigin: 'bottom center'
-        }}
-      >
-      {activeField && activeField !== 'body' && (
+    <div
+      className="absolute z-50 pointer-events-none"
+      style={{
+        bottom: 'calc(100% + 10px)',
+        left: '50%',
+        transform: `translateX(-50%) scale(${zoomScale})`,
+        transformOrigin: 'bottom center'
+      }}
+    >
+      {activeField && (
         <div
           className="nodrag nowheel pointer-events-auto mb-2 w-[min(92vw,26rem)] rounded-xl border border-zinc-700 bg-zinc-950 p-4 shadow-[0_25px_60px_rgba(0,0,0,0.8)]"
           onMouseDown={(e) => e.stopPropagation()}
@@ -320,7 +228,7 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
             key={field}
             onClick={() => toggleField(field)}
             className={`h-9 whitespace-nowrap rounded-lg px-4 text-xs font-bold uppercase tracking-wider transition-all ${
-              activeField === field
+              (field === 'body' ? narrativeBodyOpen : activeField === field)
                 ? 'bg-zinc-100 text-zinc-950 shadow-lg'
                 : 'text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100'
             }`}
@@ -347,7 +255,6 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
           </svg>
         </button>
       </div>
-      </div>
-    </>
+    </div>
   )
 }

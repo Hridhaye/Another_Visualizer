@@ -86,6 +86,7 @@ type NarrativeBoardState = {
   viewport: SerializedViewport
   hasUnsavedChanges: boolean
   contextPanelOpen: boolean
+  narrativeBodyOpen: boolean
   canUndo: boolean
   canRedo: boolean
   historyPast: HistorySnapshot[]
@@ -122,6 +123,8 @@ type NarrativeBoardActions = {
   openFullEditor: () => void
   openContextPanel: () => void
   closeContextPanel: () => void
+  openNarrativeBody: () => void
+  closeNarrativeBody: () => void
   cycleMinimapState: () => void
   setViewport: (viewport: SerializedViewport) => void
   setMetadata: (metadata: SerializedMetadata) => void
@@ -173,6 +176,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   minimapVisible: true,
   minimapCollapsed: false,
   contextPanelOpen: false,
+  narrativeBodyOpen: false,
   canUndo: false,
   canRedo: false,
   historyPast: [],
@@ -328,6 +332,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         connectionSourceNodeId:
           state.connectionSourceNodeId === nodeId ? null : state.connectionSourceNodeId,
         contextPanelOpen: state.selectedNodeId === nodeId ? false : state.contextPanelOpen,
+        narrativeBodyOpen: state.selectedNodeId === nodeId ? false : state.narrativeBodyOpen,
         hasUnsavedChanges: true
       }
     })
@@ -548,7 +553,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     set({
       selectedNodeId: null,
       connectionSourceNodeId: null,
-      contextPanelOpen: false
+      contextPanelOpen: false,
+      narrativeBodyOpen: false
     })
   },
 
@@ -612,6 +618,14 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     set({ contextPanelOpen: false })
   },
 
+  openNarrativeBody: () => {
+    set({ narrativeBodyOpen: true })
+  },
+
+  closeNarrativeBody: () => {
+    set({ narrativeBodyOpen: false })
+  },
+
   cycleMinimapState: () => {
     set((state) => {
       if (!state.minimapVisible) {
@@ -651,7 +665,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         canUndo: nextPast.length > 0,
         canRedo: true,
         connectionSourceNodeId: null,
-        contextPanelOpen: false
+        contextPanelOpen: false,
+        narrativeBodyOpen: false
       }
     })
   },
@@ -673,7 +688,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         canUndo: true,
         canRedo: nextFuture.length > 0,
         connectionSourceNodeId: null,
-        contextPanelOpen: false
+        contextPanelOpen: false,
+        narrativeBodyOpen: false
       }
     })
   }
