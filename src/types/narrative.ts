@@ -27,6 +27,7 @@ export type CardData = {
   summary: string
   body: string
   slipTypeId: string
+  slipGivenTypeIds: string[]
   referencesText: string
   puzzleType: PuzzleType
 }

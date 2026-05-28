@@ -28,6 +28,12 @@ export function exportAIFormat(nodes: NarrativeNode[], slipTypes: SlipType[] = [
         lines.push(`SLIP: ${slipName}`)
       }
 
+      const givenIds = node.data.slipGivenTypeIds ?? []
+      if (givenIds.length > 0) {
+        const givenNames = givenIds.map((id) => findSlipName(slipTypes, id)).filter(Boolean)
+        lines.push(`SLIP_GIVEN: ${givenNames.join(', ')}`)
+      }
+
       if (node.data.puzzleType) {
         lines.push(`PUZZLE: ${node.data.puzzleType}`)
       }

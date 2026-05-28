@@ -100,6 +100,9 @@ function normalizeNode(value: unknown): NarrativeNode | null {
         summary: toText(value.data.summary, ''),
         body: toText(value.data.body, ''),
         slipTypeId: toText(value.data.slipTypeId, 'blue'),
+        slipGivenTypeIds: Array.isArray(value.data.slipGivenTypeIds)
+          ? value.data.slipGivenTypeIds.filter((id): id is string => typeof id === 'string')
+          : [],
         referencesText: toText(value.data.referencesText, ''),
         puzzleType: ['none', 'fill', 'reorder', 'matching'].includes(String(value.data.puzzleType))
           ? String(value.data.puzzleType)
@@ -111,6 +114,7 @@ function normalizeNode(value: unknown): NarrativeNode | null {
         summary: '',
         body: '',
         slipTypeId: 'blue',
+        slipGivenTypeIds: [],
         referencesText: '',
         puzzleType: 'none' as const
       }

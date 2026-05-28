@@ -4,6 +4,7 @@ export type AIBlock = {
   code: string
   title: string
   slip: string
+  slipGiven: string[]
   puzzle: string
   summary: string
   references: string[]
@@ -11,7 +12,7 @@ export type AIBlock = {
   rawLines: string[]
 }
 
-const SECTION_PREFIXES = ['TITLE:', 'SLIP:', 'PUZZLE:', 'SUMMARY:', 'REFERENCES:', 'CONTENT:']
+const SECTION_PREFIXES = ['TITLE:', 'SLIP:', 'SLIP_GIVEN:', 'PUZZLE:', 'SUMMARY:', 'REFERENCES:', 'CONTENT:']
 
 function normalizeLineEndings(value: string): string {
   return value.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
@@ -29,7 +30,7 @@ function collectSummary(lines: string[], startIndex: number): { text: string; ne
     const raw = lines[index]
     const trimmed = raw.trim()
 
-    if (/^@CARD\b/i.test(trimmed) || /^(TITLE|SLIP|PUZZLE|SUMMARY|REFERENCES|CONTENT)\s*:/i.test(trimmed)) {
+    if (/^@CARD\b/i.test(trimmed) || /^(TITLE|SLIP_GIVEN|SLIP|PUZZLE|SUMMARY|REFERENCES|CONTENT)\s*:/i.test(trimmed)) {
       break
     }
 
@@ -48,7 +49,7 @@ function collectReferences(lines: string[], startIndex: number): { references: s
     const raw = lines[index]
     const trimmed = raw.trim()
 
-    if (/^@CARD\b/i.test(trimmed) || /^(TITLE|SLIP|PUZZLE|SUMMARY|REFERENCES|CONTENT)\s*:/i.test(trimmed)) {
+    if (/^@CARD\b/i.test(trimmed) || /^(TITLE|SLIP_GIVEN|SLIP|PUZZLE|SUMMARY|REFERENCES|CONTENT)\s*:/i.test(trimmed)) {
       break
     }
 
@@ -90,6 +91,7 @@ export function parseAIBlocks(rawText: string): AIBlock[] {
 
     let title = ''
     let slip = ''
+    const slipGiven: string[] = []
     let puzzle = ''
     let summary = ''
     const references: string[] = []
@@ -103,10 +105,14 @@ export function parseAIBlocks(rawText: string): AIBlock[] {
         break
       }
 
+
       blockLines.push(current)
 
       if (/^TITLE\s*:/i.test(currentTrimmed)) {
         title = currentTrimmed.replace(/^TITLE\s*:\s*/i, '').trim()
+      } else if (/^SLIP_GIVEN\s*:/i.test(currentTrimmed)) {
+        const raw = currentTrimmed.replace(/^SLIP_GIVEN\s*:\s*/i, '').trim()
+        slipGiven.push(...raw.split(',').map((p) => p.trim()).filter(Boolean))
       } else if (/^SLIP\s*:/i.test(currentTrimmed)) {
         slip = currentTrimmed.replace(/^SLIP\s*:\s*/i, '').trim()
       } else if (/^PUZZLE\s*:/i.test(currentTrimmed)) {
@@ -155,6 +161,7 @@ export function parseAIBlocks(rawText: string): AIBlock[] {
       code: cardMatch[1].trim(),
       title,
       slip,
+      slipGiven,
       puzzle,
       summary,
       references,

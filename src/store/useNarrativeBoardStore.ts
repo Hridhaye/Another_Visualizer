@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type EditorField = 'code' | 'title' | 'summary' | 'references' | 'slipType' | 'puzzleType' | null
+export type EditorField = 'code' | 'title' | 'summary' | 'references' | 'slipType' | 'slipGiven' | 'puzzleType' | null
 import {
   applyEdgeChanges,
   applyNodeChanges,
@@ -47,6 +47,7 @@ const initialNodes: NarrativeNode[] = [
       body:
         'The player arrives exhausted after driving through heavy rain. The town appears abandoned at first glance.',
       slipTypeId: 'blue',
+      slipGivenTypeIds: [],
       referencesText: 'AA02',
       puzzleType: 'none'
     }
@@ -63,6 +64,7 @@ const initialNodes: NarrativeNode[] = [
       body:
         'The basement contains old financial records, coded names, and references to a hidden meeting place.',
       slipTypeId: 'red',
+      slipGivenTypeIds: [],
       referencesText: '',
       puzzleType: 'matching'
     }
@@ -400,6 +402,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
           summary: 'Brief narrative summary...',
           body: 'Expanded narrative content goes here...',
           slipTypeId: 'green',
+          slipGivenTypeIds: [],
           referencesText: '',
           puzzleType: 'none'
         }

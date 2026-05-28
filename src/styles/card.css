@@ -66,6 +66,44 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
+.card-slip-given {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.card-slip-given__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #a1a1aa;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.card-slip-given__dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+}
+
+.card-slip-given__dot {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+  flex-shrink: 0;
+}
+
 .card-groups {
   display: flex;
   flex-wrap: wrap;

@@ -9,7 +9,8 @@ const FIELD_LABELS: Record<NonNullable<EditorField>, string> = {
   title: 'Title',
   summary: 'Summary',
   references: 'References',
-  slipType: 'Slip Type',
+  slipType: 'Card Slip',
+  slipGiven: 'Slip Given',
   puzzleType: 'Puzzle Type'
 }
 
@@ -160,6 +161,42 @@ export function CardEditorFlyout() {
                 {node.data.slipTypeId === slip.id && <span className="cef-list__check">✓</span>}
               </button>
             ))}
+          </div>
+        )}
+
+        {activeEditorField === 'slipGiven' && (
+          <div className="cef-slip-given">
+            <p className="cef-slip-given__hint">Select all slip types this card gives out. Multiple allowed.</p>
+            <div className="cef-list">
+              {slipTypes.map((slip) => {
+                const current = node.data.slipGivenTypeIds ?? []
+                const isSelected = current.includes(slip.id)
+                return (
+                  <button
+                    key={slip.id}
+                    onClick={() => {
+                      const next = isSelected
+                        ? current.filter((id) => id !== slip.id)
+                        : [...current, slip.id]
+                      updateNode(node.id, { slipGivenTypeIds: next })
+                    }}
+                    className={`cef-list__item ${isSelected ? 'cef-list__item--active' : ''}`}
+                  >
+                    <span className="cef-list__dot" style={{ background: slip.color }} />
+                    {slip.name}
+                    {isSelected && <span className="cef-list__check">✓</span>}
+                  </button>
+                )
+              })}
+            </div>
+            {(node.data.slipGivenTypeIds ?? []).length > 0 && (
+              <button
+                className="cef-slip-given__clear"
+                onClick={() => updateNode(node.id, { slipGivenTypeIds: [] })}
+              >
+                Clear all
+              </button>
+            )}
           </div>
         )}
 

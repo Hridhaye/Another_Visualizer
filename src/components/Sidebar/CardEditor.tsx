@@ -11,7 +11,8 @@ const EDITOR_BUTTONS: EditorButtonDef[] = [
   { field: 'title', label: 'Title', hint: (value) => value || '-' },
   { field: 'summary', label: 'Summary', hint: (value) => value ? value.slice(0, 32) + (value.length > 32 ? '...' : '') : '-' },
   { field: 'references', label: 'References', hint: (value) => value || 'none' },
-  { field: 'slipType', label: 'Slip', hint: () => '' },
+  { field: 'slipType', label: 'Card Slip', hint: () => '' },
+  { field: 'slipGiven', label: 'Slip Given', hint: () => '' },
   { field: 'puzzleType', label: 'Puzzle', hint: (value) => value || 'none' },
   { field: 'body', label: 'Narrative Body', hint: () => '' },
 ]
@@ -52,6 +53,10 @@ export function CardEditor() {
         const slip = slipTypes.find((item) => item.id === node.data.slipTypeId)
         return slip?.name ?? '-'
       }
+      case 'slipGiven': {
+        const count = (node.data.slipGivenTypeIds ?? []).length
+        return count === 0 ? 'none' : `${count} slip${count > 1 ? 's' : ''}`
+      }
       case 'puzzleType':
         return node.data.puzzleType || 'none'
       case 'body':
@@ -62,12 +67,11 @@ export function CardEditor() {
   }
 
   function getSlipColor(field: EditorField | 'body'): string | null {
-    if (field !== 'slipType' || !node) {
-      return null
+    if (field === 'slipType' && node) {
+      const slip = slipTypes.find((item) => item.id === node.data.slipTypeId)
+      return slip?.color ?? null
     }
-
-    const slip = slipTypes.find((item) => item.id === node.data.slipTypeId)
-    return slip?.color ?? null
+    return null
   }
 
   function isActive(field: EditorField | 'body'): boolean {

@@ -805,6 +805,31 @@
   color: #5eead4;
 }
 
+/* Slip Given multi-select editor */
+.cef-slip-given__hint {
+  font-size: 11px;
+  color: #71717a;
+  margin-bottom: 8px;
+}
+
+.cef-slip-given__clear {
+  margin-top: 10px;
+  width: 100%;
+  padding: 6px 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.cef-slip-given__clear:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
 /* Legacy utility classes kept for BoardControls */
 .sidebar-label {
   display: block;
