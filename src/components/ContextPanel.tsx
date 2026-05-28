@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useViewport } from 'reactflow'
 import { parseReferences } from '../graph/buildEdgesFromReferences'
 import { PUZZLE_TYPES, type CardData, type NarrativeNode, type SlipType } from '../types/narrative'
@@ -29,7 +29,7 @@ const BUTTONS: { field: ActiveField; label: string }[] = [
 export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate, onDelete, onClose, onToggleLink }: ContextPanelProps) {
   const [activeField, setActiveField] = useState<ActiveField>(null)
   const [refSearch, setRefSearch] = useState('')
-  const bodyTextareaRef = useRef<HTMLTextAreaElement | null>(null)
+  const bodyEditorRef = useRef<HTMLDivElement | null>(null)
   const { zoom } = useViewport()
 
   function toggleField(field: ActiveField) {
@@ -61,46 +61,119 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
   )
   const zoomScale = Math.max(0.85, Math.min(1.7, 1 / Math.max(zoom, 0.01)))
 
-  function applyBodyFormatting(tag: 'b' | 'i' | 'u') {
-    const textarea = bodyTextareaRef.current
-    if (!textarea) {
+  function syncBodyFromEditor() {
+    const editor = bodyEditorRef.current
+    if (!editor) {
       return
     }
 
-    const start = textarea.selectionStart ?? 0
-    const end = textarea.selectionEnd ?? start
-    const openTag = `<${tag}>`
-    const closeTag = `</${tag}>`
-    const currentBody = node.data.body
-    const selectedText = currentBody.slice(start, end)
-    const nextBody =
-      currentBody.slice(0, start) +
-      openTag +
-      selectedText +
-      closeTag +
-      currentBody.slice(end)
-
-    onUpdate(node.id, { body: nextBody })
-
-    requestAnimationFrame(() => {
-      textarea.focus()
-      const selectionStart = start + openTag.length
-      const selectionEnd = selectionStart + selectedText.length
-      textarea.setSelectionRange(selectionStart, selectionEnd)
-    })
+    onUpdate(node.id, { body: editor.innerHTML })
   }
 
+  function applyBodyFormatting(command: 'bold' | 'italic' | 'underline') {
+    const editor = bodyEditorRef.current
+    if (!editor) {
+      return
+    }
+
+    editor.focus()
+    document.execCommand(command)
+    syncBodyFromEditor()
+  }
+
+  useEffect(() => {
+    if (activeField !== 'body') {
+      return
+    }
+
+    const editor = bodyEditorRef.current
+    if (!editor) {
+      return
+    }
+
+    if (editor.innerHTML !== node.data.body) {
+      editor.innerHTML = node.data.body
+    }
+  }, [activeField, node.data.body, node.id])
+
   return (
-    <div
-      className="absolute z-50 pointer-events-none"
-      style={{
-        bottom: 'calc(100% + 10px)',
-        left: '50%',
-        transform: `translateX(-50%) scale(${zoomScale})`,
-        transformOrigin: 'bottom center'
-      }}
-    >
-      {activeField && (
+    <>
+      {activeField === 'body' && (
+        <div
+          className="fixed right-6 top-6 z-[120] nodrag nowheel pointer-events-auto h-[min(86vh,52rem)] w-[min(42rem,calc(100vw-2rem))] rounded-xl border border-zinc-700 bg-zinc-950 p-4 shadow-[0_25px_60px_rgba(0,0,0,0.8)]"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="mb-3 flex items-center justify-between">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Narrative Body</label>
+            <button
+              onClick={() => setActiveField(null)}
+              className="rounded-md px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+            >
+              Close
+            </button>
+          </div>
+          <div className="mb-2 flex items-center gap-1.5">
+            <button
+              onClick={() => applyBodyFormatting('bold')}
+              className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs font-bold text-zinc-200 hover:bg-zinc-800"
+              aria-label="Bold"
+            >
+              B
+            </button>
+            <button
+              onClick={() => applyBodyFormatting('italic')}
+              className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs italic text-zinc-200 hover:bg-zinc-800"
+              aria-label="Italic"
+            >
+              I
+            </button>
+            <button
+              onClick={() => applyBodyFormatting('underline')}
+              className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs underline text-zinc-200 hover:bg-zinc-800"
+              aria-label="Underline"
+            >
+              U
+            </button>
+          </div>
+          <div
+            ref={bodyEditorRef}
+            contentEditable
+            suppressContentEditableWarning
+            onInput={syncBodyFromEditor}
+            onKeyDown={(e) => {
+              const isMod = e.ctrlKey || e.metaKey
+              if (!isMod) {
+                return
+              }
+
+              const key = e.key.toLowerCase()
+              if (key === 'b') {
+                e.preventDefault()
+                applyBodyFormatting('bold')
+              } else if (key === 'i') {
+                e.preventDefault()
+                applyBodyFormatting('italic')
+              } else if (key === 'u') {
+                e.preventDefault()
+                applyBodyFormatting('underline')
+              }
+            }}
+            className="h-[calc(100%-5.5rem)] w-full overflow-y-auto rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 font-mono text-xs leading-5 text-zinc-100 outline-none focus:border-zinc-500"
+          />
+        </div>
+      )}
+
+      <div
+        className="absolute z-50 pointer-events-none"
+        style={{
+          bottom: 'calc(100% + 10px)',
+          left: '50%',
+          transform: `translateX(-50%) scale(${zoomScale})`,
+          transformOrigin: 'bottom center'
+        }}
+      >
+      {activeField && activeField !== 'body' && (
         <div
           className="nodrag nowheel pointer-events-auto mb-2 w-[min(92vw,26rem)] rounded-xl border border-zinc-700 bg-zinc-950 p-4 shadow-[0_25px_60px_rgba(0,0,0,0.8)]"
           onMouseDown={(e) => e.stopPropagation()}
@@ -127,43 +200,6 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
                 onChange={(e) => onUpdate(node.id, { summary: e.target.value })}
                 rows={4}
                 className="w-full resize-none rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs text-zinc-100 outline-none focus:border-zinc-500"
-              />
-            </div>
-          )}
-
-          {activeField === 'body' && (
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Narrative Body</label>
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => applyBodyFormatting('b')}
-                  className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs font-bold text-zinc-200 hover:bg-zinc-800"
-                  aria-label="Bold"
-                >
-                  B
-                </button>
-                <button
-                  onClick={() => applyBodyFormatting('i')}
-                  className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs italic text-zinc-200 hover:bg-zinc-800"
-                  aria-label="Italic"
-                >
-                  I
-                </button>
-                <button
-                  onClick={() => applyBodyFormatting('u')}
-                  className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs underline text-zinc-200 hover:bg-zinc-800"
-                  aria-label="Underline"
-                >
-                  U
-                </button>
-              </div>
-              <textarea
-                ref={bodyTextareaRef}
-                autoFocus
-                value={node.data.body}
-                onChange={(e) => onUpdate(node.id, { body: e.target.value })}
-                rows={10}
-                className="w-full resize-y rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 font-mono text-xs leading-5 text-zinc-100 outline-none focus:border-zinc-500"
               />
             </div>
           )}
@@ -309,6 +345,7 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
           </svg>
         </button>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
