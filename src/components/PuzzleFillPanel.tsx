@@ -178,8 +178,6 @@ export function PuzzleFillPanel() {
     }
   }
 
-  const selectedBlank = fill.blanks.find((b) => b.id === selectedBlankId) ?? null
-
   return (
     <div
       className="narrative-body-panel puzzle-fill-panel"
