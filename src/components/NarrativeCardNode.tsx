@@ -31,6 +31,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const nodeGroups = groups.filter((group) => group.nodeIds.includes(id))
   const hasPuzzle = data.puzzleType !== 'none'
   const puzzleText = getPuzzleDisplayText(data.puzzleType, data.puzzleSummary)
+  const cardClassName = `card-shell relative ${isSelected ? 'card-selected' : ''} ${isHighlighted ? 'card-highlighted' : ''} ${hasPuzzle ? 'has-puzzle' : ''}`
 
   const divRef = useRef<HTMLDivElement | null>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -219,7 +220,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
     <div
       ref={divRef}
       data-card-id={id}
-      className={`card-shell relative ${isSelected ? 'card-selected' : ''} ${isHighlighted ? 'card-highlighted' : ''}`}
+      className={cardClassName}
       style={{
         border: `7px solid ${slipColor}`,
         backgroundColor: '#0f1015',
@@ -261,12 +262,6 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
         )
       })()}
 
-      {hasPuzzle && (
-        <div className="card-puzzle" title={puzzleText}>
-          <span className="card-puzzle__badge">{puzzleText}</span>
-        </div>
-      )}
-
       {nodeGroups.length > 0 && (
         <div className="card-groups">
           {nodeGroups.map((group) => (
@@ -280,6 +275,12 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
       {data.referencesText && (
         <div className="mt-4 border-t border-zinc-700 pt-3 text-sm text-zinc-400">
           References: {data.referencesText}
+        </div>
+      )}
+
+      {hasPuzzle && (
+        <div className="card-puzzle" title={puzzleText}>
+          <span className="card-puzzle__badge">{puzzleText}</span>
         </div>
       )}
 
