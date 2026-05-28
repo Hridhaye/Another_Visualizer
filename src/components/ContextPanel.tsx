@@ -181,12 +181,12 @@ export function ContextPanel({ node, allNodes, slipTypes, onUpdate, onClose }: C
       )}
 
       {/* Button bar */}
-      <div className="flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 shadow-xl">
+      <div className="flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2.5 shadow-xl">
         {BUTTONS.map(({ field, label }) => (
           <button
             key={field}
             onClick={() => toggleField(field)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+            className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
               activeField === field
                 ? 'bg-zinc-600 text-zinc-100'
                 : 'text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100'
@@ -196,11 +196,11 @@ export function ContextPanel({ node, allNodes, slipTypes, onUpdate, onClose }: C
           </button>
         ))}
 
-        <div className="mx-1.5 h-5 w-px bg-zinc-700" />
+        <div className="mx-2 h-5 w-px bg-zinc-700" />
 
         <button
           onClick={onClose}
-          className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-700 hover:text-zinc-200"
+          className="rounded-lg p-2 shrink-0 text-zinc-500 hover:bg-zinc-700 hover:text-zinc-200"
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
