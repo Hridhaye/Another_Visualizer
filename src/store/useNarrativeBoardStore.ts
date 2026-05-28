@@ -99,6 +99,7 @@ type NarrativeBoardState = {
   historyFuture: HistorySnapshot[]
   multiSelectMode: boolean
   highlightedNodeIds: string[]
+  activeGroupId: string | null
 }
 
 type HistorySnapshot = {
@@ -293,6 +294,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   historyFuture: [],
   multiSelectMode: false,
   highlightedNodeIds: [],
+  activeGroupId: null,
   metadata: {
     projectName: 'Mystery Board',
     createdAt: new Date().toISOString(),
@@ -618,7 +620,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         contextPanelOpen: false,
         narrativeBodyOpen: false,
         activeEditorField: null,
-        multiSelectMode: false
+        multiSelectMode: false,
+        activeGroupId: groupId
       }
     })
   },
@@ -635,7 +638,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         canUndo: true,
         canRedo: false,
         groups: state.groups.filter((group) => group.id !== groupId),
-        hasUnsavedChanges: true
+        hasUnsavedChanges: true,
+        activeGroupId: state.activeGroupId === groupId ? null : state.activeGroupId
       }
     })
   },
@@ -755,7 +759,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       ...getSelectionState(state.nodes, nodeId ? [nodeId] : [], nodeId),
       contextPanelOpen: nodeId ? state.contextPanelOpen : false,
       narrativeBodyOpen: nodeId ? state.narrativeBodyOpen : false,
-      activeEditorField: nodeId ? state.activeEditorField : null
+      activeEditorField: nodeId ? state.activeEditorField : null,
+      activeGroupId: null
     }))
   },
 
@@ -790,7 +795,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         ...nextSelection,
         contextPanelOpen: hasSingleSelection ? state.contextPanelOpen : false,
         narrativeBodyOpen: hasSingleSelection ? state.narrativeBodyOpen : false,
-        activeEditorField: hasSingleSelection ? state.activeEditorField : null
+        activeEditorField: hasSingleSelection ? state.activeEditorField : null,
+        activeGroupId: null
       }
     })
   },
@@ -802,7 +808,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       connectionSourceNodeId: null,
       contextPanelOpen: false,
       narrativeBodyOpen: false,
-      activeEditorField: null
+      activeEditorField: null,
+      activeGroupId: null
     })
   },
 

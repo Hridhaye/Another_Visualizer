@@ -4,7 +4,6 @@ import { exportAIFormat } from '../../ai/exportAIFormat'
 import { useNarrativeBoardStore } from '../../store/useNarrativeBoardStore'
 import type { NarrativeNode, SlipType } from '../../types/narrative'
 
-const FLASH_MS = 1200
 
 type BoardControlsProps = {
   nodes: NarrativeNode[]
@@ -36,11 +35,11 @@ export function BoardControls({
   const highlightedNodeIds = useNarrativeBoardStore((state) => state.highlightedNodeIds)
   const setHighlight = useNarrativeBoardStore((state) => state.setHighlight)
   const clearHighlight = useNarrativeBoardStore((state) => state.clearHighlight)
+  const activeGroupId = useNarrativeBoardStore((state) => state.activeGroupId)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [showAIImportModal, setShowAIImportModal] = useState(false)
   const [importText, setImportText] = useState('')
   const [feedback, setFeedback] = useState('')
-  const [lastSelectedGroupId, setLastSelectedGroupId] = useState<string | null>(null)
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -144,21 +143,17 @@ export function BoardControls({
         ) : (
           <div className="group-picker__list">
             {groups.map((group) => {
-              const isJustSelected = lastSelectedGroupId === group.id
+              const isActive = activeGroupId === group.id
               const isHighlighted = group.nodeIds.length > 0 && group.nodeIds.every((id) => highlightedNodeIds.includes(id))
               return (
                 <div key={group.id} className="group-picker__item">
                   <button
-                    onClick={() => {
-                      selectGroup(group.id)
-                      setLastSelectedGroupId(group.id)
-                      setTimeout(() => setLastSelectedGroupId(null), FLASH_MS)
-                    }}
-                    className={`group-picker__select${isJustSelected ? ' group-picker__select--flash' : ''}`}
+                    onClick={() => selectGroup(group.id)}
+                    className={`group-picker__select${isActive ? ' group-picker__select--flash' : ''}`}
                   >
                     <span className="group-picker__name">{group.name}</span>
                     <span className="group-picker__meta">
-                      {isJustSelected ? `✓ ${group.nodeIds.length} selected` : `${group.nodeIds.length} cards`}
+                      {isActive ? `✓ ${group.nodeIds.length} selected` : `${group.nodeIds.length} cards`}
                     </span>
                   </button>
                   <button

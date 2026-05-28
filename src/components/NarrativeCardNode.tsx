@@ -28,6 +28,9 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const thisNode = nodes.find((node) => node.id === id)
 
   const highlightedNodeIds = useNarrativeBoardStore((state) => state.highlightedNodeIds)
+  const activeGroupId = useNarrativeBoardStore((state) => state.activeGroupId)
+  const activeGroup = activeGroupId ? groups.find((g) => g.id === activeGroupId) ?? null : null
+  const isGroupSelected = !!activeGroup?.nodeIds.includes(id)
 
   const slipColor = getSlipColor(slipTypes, data.slipTypeId)
   const isLinkSource = connectionSourceNodeId === id
@@ -208,12 +211,14 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   else if (isPendingTarget) extraShadow = ', 0 0 0 2px rgba(99,102,241,0.3)'
 
   const highlightShadow = isHighlighted
-    ? ', 0 0 0 10px rgba(251,191,36,1), 0 0 0 12px rgba(251,191,36,0.12)'
+    ? ', 0 0 0 12px rgba(251,191,36,1), 0 0 0 14px rgba(251,191,36,0.12)'
     : ''
 
-  const baseShadow = isSelected
-    ? `0 0 0 2px rgba(59,130,246,0.45), 0 12px 34px rgba(0,0,0,0.5)`
-    : `0 0 0 2px rgba(255,255,255,0.04)`
+  const baseShadow = isGroupSelected
+    ? `0 0 0 3px rgba(59,130,246,0.8), 0 0 20px 4px rgba(59,130,246,0.35), 0 12px 34px rgba(0,0,0,0.5)`
+    : isSelected
+      ? `0 0 0 2px rgba(59,130,246,0.55), 0 0 12px 2px rgba(59,130,246,0.2), 0 12px 34px rgba(0,0,0,0.5)`
+      : `0 0 0 2px rgba(255,255,255,0.04)`
 
   return (
     <div
