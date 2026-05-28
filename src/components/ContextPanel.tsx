@@ -64,8 +64,9 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
   )
   return (
     <div
-      className="fixed z-50 pointer-events-none"
+      className="z-50 pointer-events-none"
       style={{
+        position: 'fixed',
         bottom: '80px',
         left: '50%',
         transform: 'translateX(-50%)',

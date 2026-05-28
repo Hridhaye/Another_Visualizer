@@ -2,7 +2,14 @@
 
 .relative { position: relative; }
 .absolute { position: absolute; }
+.fixed { position: fixed; }
 .sticky { position: sticky; }
+.pointer-events-none { pointer-events: none; }
+.pointer-events-auto { pointer-events: auto; }
+.resize-none { resize: none; }
+.outline-none { outline: none; }
+.mx-1 { margin-left: 0.25rem; margin-right: 0.25rem; }
+.focus\:border-zinc-500:focus { border-color: #71717a; }
 .top-0 { top: 0; }
 .left-1\/2 { left: 50%; }
 .right-4 { right: 1rem; }
