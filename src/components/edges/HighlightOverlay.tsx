@@ -60,7 +60,12 @@ export function HighlightOverlay({ containerEl }: { containerEl: HTMLElement | n
 
   if (!containerEl || !selectedNodeId) return null
 
-  const highlightedEdges = edges.filter((e) => e.source === selectedNodeId)
+  // For normal edges: selected node is the source.
+  // For bidirectional edges: selected node may be source OR target (only one canonical edge exists).
+  const highlightedEdges = edges.filter((e) =>
+    e.source === selectedNodeId ||
+    (e.data?.bidirectional === true && e.target === selectedNodeId)
+  )
   if (highlightedEdges.length === 0) return null
 
   const sourceGroups: Record<string, string[]> = {}
@@ -74,18 +79,25 @@ export function HighlightOverlay({ containerEl }: { containerEl: HTMLElement | n
   const overlayEdges: OverlayEdge[] = []
 
   for (const edge of highlightedEdges) {
-    const sourceNode = nodeMap.get(edge.source)
-    const targetNode = nodeMap.get(edge.target)
-    if (!sourceNode || !targetNode) continue
+    const isBidir = edge.data?.bidirectional === true
+    // If selected node is the target of a bidir edge, treat it as if it were the source
+    const flipped = isBidir && edge.target === selectedNodeId
 
-    const sw = sourceNode.width ?? 200
-    const sh = sourceNode.height ?? 100
-    const th = targetNode.height ?? 100
+    const fromId = flipped ? edge.target : edge.source
+    const toId = flipped ? edge.source : edge.target
 
-    const sourceX = sourceNode.position.x + sw
-    const sourceY = sourceNode.position.y + sh / 2
-    const targetX = targetNode.position.x
-    const targetY = targetNode.position.y + th / 2
+    const fromNode = nodeMap.get(fromId)
+    const toNode = nodeMap.get(toId)
+    if (!fromNode || !toNode) continue
+
+    const fw = fromNode.width ?? 200
+    const fh = fromNode.height ?? 100
+    const th = toNode.height ?? 100
+
+    const sourceX = fromNode.position.x + fw
+    const sourceY = fromNode.position.y + fh / 2
+    const targetX = toNode.position.x
+    const targetY = toNode.position.y + th / 2
 
     const group = sourceGroups[edge.source] ?? []
     const indexInGroup = group.indexOf(edge.id)
@@ -99,7 +111,7 @@ export function HighlightOverlay({ containerEl }: { containerEl: HTMLElement | n
       targetX,
       targetY,
       shift,
-      isBidir: edge.data?.bidirectional === true,
+      isBidir,
     })
   }
 
