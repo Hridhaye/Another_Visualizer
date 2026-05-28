@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { Handle, Position, type NodeProps } from 'reactflow'
 
-import { ContextPanel } from './ContextPanel'
 import { getSlipColor, useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
 import type { CardData } from '../types/narrative'
 
@@ -11,22 +10,14 @@ const DRIFT_PX = 8
 export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   void selected
   const slipTypes = useNarrativeBoardStore((state) => state.slipTypes)
-  const selectedNodeId = useNarrativeBoardStore((state) => state.selectedNodeId)
   const selectedNodeIds = useNarrativeBoardStore((state) => state.selectedNodeIds)
   const groups = useNarrativeBoardStore((state) => state.groups)
   const connectionSourceNodeId = useNarrativeBoardStore((state) => state.connectionSourceNodeId)
-  const contextPanelOpen = useNarrativeBoardStore((state) => state.contextPanelOpen)
   const openContextPanel = useNarrativeBoardStore((state) => state.openContextPanel)
-  const closeContextPanel = useNarrativeBoardStore((state) => state.closeContextPanel)
-  const updateNode = useNarrativeBoardStore((state) => state.updateNode)
-  const deleteCard = useNarrativeBoardStore((state) => state.deleteCard)
   const setConnectionSourceNode = useNarrativeBoardStore((state) => state.setConnectionSourceNode)
   const createReferenceConnection = useNarrativeBoardStore((state) => state.createReferenceConnection)
   const setSelectedNode = useNarrativeBoardStore((state) => state.setSelectedNode)
   const toggleNodeSelection = useNarrativeBoardStore((state) => state.toggleNodeSelection)
-  const nodes = useNarrativeBoardStore((state) => state.nodes)
-  const thisNode = nodes.find((node) => node.id === id)
-
   const highlightedNodeIds = useNarrativeBoardStore((state) => state.highlightedNodeIds)
   const activeGroupId = useNarrativeBoardStore((state) => state.activeGroupId)
   const activeGroup = activeGroupId ? groups.find((g) => g.id === activeGroupId) ?? null : null
@@ -37,8 +28,6 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const isSelected = selectedNodeIds.includes(id)
   const isHighlighted = highlightedNodeIds.includes(id)
   const isPendingTarget = !!connectionSourceNodeId && !isLinkSource
-  const showContextPanel =
-    selectedNodeId === id && selectedNodeIds.length === 1 && contextPanelOpen && !!thisNode
   const nodeGroups = groups.filter((group) => group.nodeIds.includes(id))
 
   const divRef = useRef<HTMLDivElement | null>(null)
@@ -241,19 +230,6 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
       onTouchStart={onTouchStart}
       onTouchEnd={handleTouchTap}
     >
-      {showContextPanel && (
-        <ContextPanel
-          node={thisNode}
-          allNodes={nodes}
-          slipTypes={slipTypes}
-          isLinkSource={isLinkSource}
-          onUpdate={updateNode}
-          onDelete={deleteCard}
-          onClose={closeContextPanel}
-          onToggleLink={() => setConnectionSourceNode(isLinkSource ? null : id)}
-        />
-      )}
-
       <Handle type="target" position={Position.Left} />
 
       <div className="card-header">

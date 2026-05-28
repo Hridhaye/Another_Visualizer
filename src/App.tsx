@@ -8,6 +8,7 @@ import ReactFlow, {
 import { MinimapControls } from './components/MinimapControls'
 import { NarrativeCardNode } from './components/NarrativeCardNode'
 import { NarrativeBodyPanel } from './components/NarrativeBodyPanel'
+import { ContextPanel } from './components/ContextPanel'
 import { CardEditorFlyout } from './components/CardEditorFlyout'
 import { Sidebar } from './components/Sidebar/Sidebar'
 import { useNarrativeBoardStore } from './store/useNarrativeBoardStore'
@@ -25,6 +26,13 @@ function BoardCanvas() {
   const sectionsOpen = useNarrativeBoardStore((state) => state.sectionsOpen)
   const minimapVisible = useNarrativeBoardStore((state) => state.minimapVisible)
   const minimapCollapsed = useNarrativeBoardStore((state) => state.minimapCollapsed)
+
+  const selectedNodeId = useNarrativeBoardStore((state) => state.selectedNodeId)
+  const contextPanelOpen = useNarrativeBoardStore((state) => state.contextPanelOpen)
+  const closeContextPanel = useNarrativeBoardStore((state) => state.closeContextPanel)
+  const updateNode = useNarrativeBoardStore((state) => state.updateNode)
+  const deleteCard = useNarrativeBoardStore((state) => state.deleteCard)
+  const connectionSourceNodeId = useNarrativeBoardStore((state) => state.connectionSourceNodeId)
 
   const onNodesChange = useNarrativeBoardStore((state) => state.onNodesChange)
   const onEdgesChange = useNarrativeBoardStore((state) => state.onEdgesChange)
@@ -231,8 +239,23 @@ function BoardCanvas() {
     }
   }, [groupsPanelOpen, selectedNodeIds.length])
 
+  const activeNode = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) ?? null : null
+  const showContextPanel = !!activeNode && contextPanelOpen
+
   return (
     <div className="board-root">
+      {showContextPanel && (
+        <ContextPanel
+          node={activeNode}
+          allNodes={nodes}
+          slipTypes={slipTypes}
+          isLinkSource={connectionSourceNodeId === activeNode.id}
+          onUpdate={updateNode}
+          onDelete={deleteCard}
+          onClose={closeContextPanel}
+          onToggleLink={() => setConnectionSourceNode(connectionSourceNodeId === activeNode.id ? null : activeNode.id)}
+        />
+      )}
       <NarrativeBodyPanel />
       <CardEditorFlyout />
       <Sidebar

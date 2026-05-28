@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useViewport } from 'reactflow'
 import { parseReferences } from '../graph/buildEdgesFromReferences'
 import { PUZZLE_TYPES, type CardData, type NarrativeNode, type SlipType } from '../types/narrative'
 import { useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
@@ -31,7 +30,6 @@ const BUTTONS: { field: ActiveField | 'body'; label: string }[] = [
 export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate, onDelete, onClose, onToggleLink }: ContextPanelProps) {
   const [activeField, setActiveField] = useState<ActiveField>(null)
   const [refSearch, setRefSearch] = useState('')
-  const { zoom } = useViewport()
   const narrativeBodyOpen = useNarrativeBoardStore((s) => s.narrativeBodyOpen)
   const openNarrativeBody = useNarrativeBoardStore((s) => s.openNarrativeBody)
   const closeNarrativeBody = useNarrativeBoardStore((s) => s.closeNarrativeBody)
@@ -64,16 +62,13 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
       n.data.code.toLowerCase().includes(searchLower) ||
       n.data.title.toLowerCase().includes(searchLower)
   )
-  const zoomScale = Math.max(0.85, Math.min(1.7, 1 / Math.max(zoom, 0.01)))
-
   return (
     <div
-      className="absolute z-50 pointer-events-none"
+      className="fixed z-50 pointer-events-none"
       style={{
-        bottom: 'calc(100% + 10px)',
+        bottom: '80px',
         left: '50%',
-        transform: `translateX(-50%) scale(${zoomScale})`,
-        transformOrigin: 'bottom center'
+        transform: 'translateX(-50%)',
       }}
     >
       {activeField && (
