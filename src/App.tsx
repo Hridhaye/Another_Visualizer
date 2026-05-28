@@ -32,7 +32,6 @@ function BoardCanvas() {
   const contextPanelOpen = useNarrativeBoardStore((state) => state.contextPanelOpen)
   const closeContextPanel = useNarrativeBoardStore((state) => state.closeContextPanel)
   const updateNode = useNarrativeBoardStore((state) => state.updateNode)
-  const deleteCard = useNarrativeBoardStore((state) => state.deleteCard)
   const connectionSourceNodeId = useNarrativeBoardStore((state) => state.connectionSourceNodeId)
 
   const onNodesChange = useNarrativeBoardStore((state) => state.onNodesChange)
