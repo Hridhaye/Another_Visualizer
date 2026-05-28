@@ -202,7 +202,7 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
         </div>
       )}
 
-      <div className="flex max-w-[min(92vw,45rem)] flex-wrap items-center gap-1.5 rounded-2xl border border-zinc-700 bg-zinc-950 p-4 shadow-[0_25px_60px_rgba(0,0,0,0.8)]">
+      <div className="flex items-center gap-1.5 rounded-2xl border border-zinc-700 bg-zinc-950 p-4 shadow-[0_25px_60px_rgba(0,0,0,0.8)]">
         {BUTTONS.map(({ field, label }) => (
           <button
             key={field}
@@ -210,7 +210,7 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
             className={`h-9 whitespace-nowrap rounded-lg px-4 text-xs font-bold uppercase tracking-wider transition-all ${
               activeField === field
                 ? 'bg-zinc-100 text-zinc-950 shadow-lg'
-                : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200'
+                : 'text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100'
             }`}
           >
             {label}
@@ -228,7 +228,7 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
 
         <button
           onClick={onClose}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-600 hover:bg-zinc-800 hover:text-zinc-200"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
