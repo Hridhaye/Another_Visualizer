@@ -49,23 +49,46 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
   const currentRefs = parseReferences(node.data.referencesText)
   const slipForms = node.data.referenceSlipForms ?? []
 
+  function slipIdForRef(code: string): string | undefined {
+    return allNodes.find((n) => n.id !== node.id && n.data.code === code)?.data.slipTypeId
+  }
+
+  function removeOneSlip(given: string[], slipId: string): string[] {
+    const idx = given.indexOf(slipId)
+    if (idx === -1) return given
+    return [...given.slice(0, idx), ...given.slice(idx + 1)]
+  }
+
   function addRef(code: string) {
     const next = currentRefs.includes(code) ? currentRefs : [...currentRefs, code]
     onUpdate(node.id, { referencesText: next.join(', ') })
   }
 
   function removeRef(code: string) {
-    onUpdate(node.id, {
+    const wasOn = slipForms.includes(code)
+    const slipId = slipIdForRef(code)
+    const patch: Partial<CardData> = {
       referencesText: currentRefs.filter((r) => r !== code).join(', '),
       referenceSlipForms: slipForms.filter((c) => c !== code)
-    })
+    }
+    if (wasOn && slipId) {
+      patch.slipGivenTypeIds = removeOneSlip(node.data.slipGivenTypeIds ?? [], slipId)
+    }
+    onUpdate(node.id, patch)
   }
 
   function toggleSlipForm(code: string) {
-    const next = slipForms.includes(code)
-      ? slipForms.filter((c) => c !== code)
-      : [...slipForms, code]
-    onUpdate(node.id, { referenceSlipForms: next })
+    const turningOn = !slipForms.includes(code)
+    const slipId = slipIdForRef(code)
+    const next = turningOn
+      ? [...slipForms, code]
+      : slipForms.filter((c) => c !== code)
+    const patch: Partial<CardData> = { referenceSlipForms: next }
+    if (slipId) {
+      const given = node.data.slipGivenTypeIds ?? []
+      patch.slipGivenTypeIds = turningOn ? [...given, slipId] : removeOneSlip(given, slipId)
+    }
+    onUpdate(node.id, patch)
   }
 
   const otherNodes = allNodes.filter((n) => n.id !== node.id)
@@ -198,27 +221,27 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
             const counts = slipTypes.map((slip) => ({
               slip,
               count: given.filter((id) => id === slip.id).length,
-              auto: autoIds.filter((id) => id === slip.id).length
+              min: autoIds.filter((id) => id === slip.id).length
             }))
-            function setCount(slipId: string, delta: number) {
+            function setCount(slipId: string, min: number, delta: number) {
               const current = given.filter((id) => id === slipId).length
-              const next = Math.max(0, current + delta)
+              const next = Math.max(min, current + delta)
               const without = given.filter((id) => id !== slipId)
               onUpdate(node.id, { slipGivenTypeIds: [...without, ...Array(next).fill(slipId)] })
             }
             return (
               <div className="context-panel__field">
                 <label className="context-panel__label">Slip Given</label>
-                {counts.map(({ slip, count, auto }) => (
+                {counts.map(({ slip, count, min }) => (
                   <div key={slip.id} className="context-panel__slip-given-row">
                     <span className="context-panel__slip-dot" style={{ backgroundColor: slip.color }} />
-                    <span className={`context-panel__slip-name${count + auto > 0 ? ' context-panel__slip-name--active' : ''}`}>
+                    <span className={`context-panel__slip-name${count > 0 ? ' context-panel__slip-name--active' : ''}`}>
                       {slip.name}
-                      {auto > 0 && <span className="context-panel__slip-auto" title="From referenced cards"> +{auto} ref</span>}
+                      {min > 0 && <span className="context-panel__slip-auto" title="Minimum set by referenced cards"> min {min}</span>}
                     </span>
-                    <button onClick={() => setCount(slip.id, -1)} disabled={count === 0} className="context-panel__stepper">−</button>
+                    <button onClick={() => setCount(slip.id, min, -1)} disabled={count <= min} className="context-panel__stepper">−</button>
                     <span className="context-panel__stepper-val">{count}</span>
-                    <button onClick={() => setCount(slip.id, 1)} className="context-panel__stepper">+</button>
+                    <button onClick={() => setCount(slip.id, min, 1)} className="context-panel__stepper">+</button>
                   </div>
                 ))}
               </div>

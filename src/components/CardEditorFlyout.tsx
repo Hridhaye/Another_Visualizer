@@ -55,6 +55,20 @@ export function CardEditorFlyout() {
 
   const slipForms = node.data.referenceSlipForms ?? []
 
+  function slipIdForRef(code: string): string | undefined {
+    return otherNodes.find((n) => n.data.code === code)?.data.slipTypeId
+  }
+
+  function addOneSlip(given: string[], slipId: string): string[] {
+    return [...given, slipId]
+  }
+
+  function removeOneSlip(given: string[], slipId: string): string[] {
+    const idx = given.indexOf(slipId)
+    if (idx === -1) return given
+    return [...given.slice(0, idx), ...given.slice(idx + 1)]
+  }
+
   function addRef(code: string) {
     if (!node) return
     const next = currentRefs.includes(code) ? currentRefs : [...currentRefs, code]
@@ -63,18 +77,31 @@ export function CardEditorFlyout() {
 
   function removeRef(code: string) {
     if (!node) return
-    updateNode(node.id, {
+    const wasOn = slipForms.includes(code)
+    const slipId = slipIdForRef(code)
+    const patch: Partial<typeof node.data> = {
       referencesText: currentRefs.filter((r) => r !== code).join(', '),
       referenceSlipForms: slipForms.filter((c) => c !== code)
-    })
+    }
+    if (wasOn && slipId) {
+      patch.slipGivenTypeIds = removeOneSlip(node.data.slipGivenTypeIds ?? [], slipId)
+    }
+    updateNode(node.id, patch)
   }
 
   function toggleSlipForm(code: string) {
     if (!node) return
-    const next = slipForms.includes(code)
-      ? slipForms.filter((c) => c !== code)
-      : [...slipForms, code]
-    updateNode(node.id, { referenceSlipForms: next })
+    const turningOn = !slipForms.includes(code)
+    const slipId = slipIdForRef(code)
+    const next = turningOn
+      ? [...slipForms, code]
+      : slipForms.filter((c) => c !== code)
+    const patch: Partial<typeof node.data> = { referenceSlipForms: next }
+    if (slipId) {
+      const given = node.data.slipGivenTypeIds ?? []
+      patch.slipGivenTypeIds = turningOn ? addOneSlip(given, slipId) : removeOneSlip(given, slipId)
+    }
+    updateNode(node.id, patch)
   }
 
   return (
@@ -207,38 +234,46 @@ export function CardEditorFlyout() {
           const nodeId = node.id
           const given = node.data.slipGivenTypeIds ?? []
           const autoIds = autoGivenSlipIds(node, nodes)
+          function minFor(slipId: string) {
+            return autoIds.filter((id) => id === slipId).length
+          }
           function adjust(slipId: string, count: number, delta: number) {
-            const next = Math.max(0, count + delta)
+            const next = Math.max(minFor(slipId), count + delta)
             const without = given.filter((id) => id !== slipId)
             updateNode(nodeId, { slipGivenTypeIds: [...without, ...Array(next).fill(slipId)] })
           }
+          function clearToMinimums() {
+            const next = slipTypes.flatMap((slip) => Array(minFor(slip.id)).fill(slip.id))
+            updateNode(nodeId, { slipGivenTypeIds: next })
+          }
+          const hasManualExtra = slipTypes.some((slip) => given.filter((id) => id === slip.id).length > minFor(slip.id))
           return (
           <div className="cef-slip-given">
-            <p className="cef-slip-given__hint">Set how many of each slip type this card gives out. Slips from referenced cards (slip form on) are added automatically.</p>
+            <p className="cef-slip-given__hint">Set how many of each slip type this card gives out. References with their slip form on raise the minimum.</p>
             <div className="cef-slip-given__rows">
               {slipTypes.map((slip) => {
                 const count = given.filter((id) => id === slip.id).length
-                const auto = autoIds.filter((id) => id === slip.id).length
+                const min = minFor(slip.id)
                 return (
                   <div key={slip.id} className="cef-slip-given__row">
                     <span className="cef-list__dot" style={{ background: slip.color }} />
-                    <span className={`cef-slip-given__name ${count + auto > 0 ? 'cef-slip-given__name--active' : ''}`}>
+                    <span className={`cef-slip-given__name ${count > 0 ? 'cef-slip-given__name--active' : ''}`}>
                       {slip.name}
-                      {auto > 0 && <span className="cef-slip-given__auto" title="From referenced cards"> +{auto} ref</span>}
+                      {min > 0 && <span className="cef-slip-given__auto" title="Minimum set by referenced cards"> min {min}</span>}
                     </span>
-                    <button className="cef-slip-given__stepper" onClick={() => adjust(slip.id, count, -1)} disabled={count === 0}>−</button>
+                    <button className="cef-slip-given__stepper" onClick={() => adjust(slip.id, count, -1)} disabled={count <= min}>−</button>
                     <span className="cef-slip-given__count">{count}</span>
                     <button className="cef-slip-given__stepper" onClick={() => adjust(slip.id, count, 1)}>+</button>
                   </div>
                 )
               })}
             </div>
-            {given.length > 0 && (
+            {hasManualExtra && (
               <button
                 className="cef-slip-given__clear"
-                onClick={() => updateNode(nodeId, { slipGivenTypeIds: [] })}
+                onClick={clearToMinimums}
               >
-                Clear all
+                Reset to minimums
               </button>
             )}
           </div>

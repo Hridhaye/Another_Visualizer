@@ -1,4 +1,4 @@
-import { buildEdgesFromReferences } from '../graph/buildEdgesFromReferences'
+import { buildEdgesFromReferences, enforceGivenSlipMinimums } from '../graph/buildEdgesFromReferences'
 import type { NarrativeEdge, NarrativeNode, SlipType } from '../types/narrative'
 import { PUZZLE_TYPES } from '../types/narrative'
 import { parseAIBlocks } from './parseAIBlocks'
@@ -110,9 +110,18 @@ export function importAIFormat(rawText: string, existingNodes: NarrativeNode[], 
     createdCount += 1
   }
 
+  // Toggled-on reference slip forms enforce a per-slip-type minimum on Slip Given.
+  // The DSL carries totals but not the form flags, so top up any node that fell
+  // below its minimum after import (e.g. a hand-edited SLIP_GIVEN line).
+  const normalizedNodes = updatedNodes.map((node) => {
+    const enforced = enforceGivenSlipMinimums(node, updatedNodes)
+    if (enforced === node.data.slipGivenTypeIds) return node
+    return { ...node, data: { ...node.data, slipGivenTypeIds: enforced } }
+  })
+
   return {
-    updatedNodes,
-    updatedEdges: buildEdgesFromReferences(updatedNodes),
+    updatedNodes: normalizedNodes,
+    updatedEdges: buildEdgesFromReferences(normalizedNodes),
     createdCount,
     updatedCount
   }

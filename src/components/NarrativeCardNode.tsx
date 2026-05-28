@@ -3,7 +3,6 @@ import { Handle, Position, type NodeProps } from 'reactflow'
 
 import { getSlipColor, useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
 import { getPuzzleDisplayText, type CardData } from '../types/narrative'
-import { effectiveGivenSlipIds } from '../graph/buildEdgesFromReferences'
 
 const LONG_PRESS_MS = 400
 const DRIFT_PX = 8
@@ -11,7 +10,6 @@ const DRIFT_PX = 8
 export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   void selected
   const slipTypes = useNarrativeBoardStore((state) => state.slipTypes)
-  const allNodes = useNarrativeBoardStore((state) => state.nodes)
   const selectedNodeIds = useNarrativeBoardStore((state) => state.selectedNodeIds)
   const groups = useNarrativeBoardStore((state) => state.groups)
   const connectionSourceNodeId = useNarrativeBoardStore((state) => state.connectionSourceNodeId)
@@ -260,10 +258,8 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
 
       <div className="card-summary">{data.summary}</div>
 
-      {(() => {
-        const thisNode = allNodes.find((n) => n.id === id)
-        const given = thisNode ? effectiveGivenSlipIds(thisNode, allNodes) : (data.slipGivenTypeIds ?? [])
-        if (given.length === 0) return null
+      {(data.slipGivenTypeIds ?? []).length > 0 && (() => {
+        const given = data.slipGivenTypeIds ?? []
         const entries = slipTypes
           .map((slip) => ({ slip, count: given.filter((id) => id === slip.id).length }))
           .filter(({ count }) => count > 0)

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { exportAIFormat } from './exportAIFormat'
+import { importAIFormat } from './importAIFormat'
 import { parseAIBlocks } from './parseAIBlocks'
 import { validateAIFormat } from './validateAIFormat'
 
@@ -109,6 +110,41 @@ REFERENCES:
     expect(blocks).toHaveLength(1)
     expect(blocks[0]?.slip).toBe('Blue Slip')
     expect(blocks[0]?.slipGiven).toEqual(['Red Slip', 'Red Slip', 'Green Slip'])
+  })
+
+  it('roundtrips Slip Given totals (auto-slips export as the stored total)', () => {
+    const slipTypes = [
+      { id: 'blue', name: 'Blue Slip', color: '#3b82f6' },
+      { id: 'red', name: 'Red Slip', color: '#ef4444' }
+    ]
+    // BB02 references AA01 (red) with its slip form on, so the red slip is part
+    // of BB02's stored Slip Given total.
+    const nodes = [
+      { id: 'a', type: 'narrativeCard', position: { x: 0, y: 0 }, data: { code: 'AA01', title: 'First', summary: '', body: '', slipTypeId: 'red', slipGivenTypeIds: [], referencesText: '', referenceSlipForms: [], puzzleType: 'none' } },
+      { id: 'b', type: 'narrativeCard', position: { x: 0, y: 0 }, data: { code: 'BB02', title: 'Second', summary: '', body: '', slipTypeId: 'blue', slipGivenTypeIds: ['red'], referencesText: 'AA01', referenceSlipForms: ['AA01'], puzzleType: 'none' } }
+    ] as never
+
+    const text = exportAIFormat(nodes, slipTypes)
+    expect(text).toContain('SLIP_GIVEN: Red Slip')
+
+    const result = importAIFormat(text, nodes, slipTypes)
+    const reimportedB = result.updatedNodes.find((n) => n.data.code === 'BB02')
+    expect(reimportedB?.data.slipGivenTypeIds).toEqual(['red'])
+  })
+
+  it('tops Slip Given up to the reference minimum when the DSL omits it', () => {
+    const slipTypes = [{ id: 'red', name: 'Red Slip', color: '#ef4444' }]
+    const nodes = [
+      { id: 'a', type: 'narrativeCard', position: { x: 0, y: 0 }, data: { code: 'AA01', title: 'First', summary: '', body: '', slipTypeId: 'red', slipGivenTypeIds: [], referencesText: '', referenceSlipForms: [], puzzleType: 'none' } },
+      { id: 'b', type: 'narrativeCard', position: { x: 0, y: 0 }, data: { code: 'BB02', title: 'Second', summary: '', body: '', slipTypeId: 'red', slipGivenTypeIds: ['red'], referencesText: 'AA01', referenceSlipForms: ['AA01'], puzzleType: 'none' } }
+    ] as never
+
+    // Hand-edited DSL that drops BB02's SLIP_GIVEN entirely.
+    const raw = `@CARD AA01\nTITLE: First\nCARD_SLIP: Red Slip\n\n@CARD BB02\nTITLE: Second\nCARD_SLIP: Red Slip\n\nREFERENCES:\n- AA01\n`
+    const result = importAIFormat(raw, nodes, slipTypes)
+    const reimportedB = result.updatedNodes.find((n) => n.data.code === 'BB02')
+    // referenceSlipForms still has AA01 (red) on, so the minimum of 1 red is restored.
+    expect(reimportedB?.data.slipGivenTypeIds).toEqual(['red'])
   })
 
   it('parses legacy SLIP: field as card slip', () => {

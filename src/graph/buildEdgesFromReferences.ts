@@ -10,8 +10,9 @@ export function parseReferences(referencesText: string): string[] {
 }
 
 /**
- * Slip ids auto-added to a card via toggled-on reference slip forms: for each
- * referenced code whose slip form is on, the referenced card's current slip type.
+ * Slip ids contributed by toggled-on reference slip forms: for each referenced
+ * code whose slip form is on, the referenced card's current slip type. These act
+ * as a per-slip-type minimum on the card's Slip Given count.
  */
 export function autoGivenSlipIds(node: NarrativeNode, allNodes: NarrativeNode[]): string[] {
   const forms = node.data.referenceSlipForms ?? []
@@ -20,9 +21,25 @@ export function autoGivenSlipIds(node: NarrativeNode, allNodes: NarrativeNode[])
     .filter((id): id is string => Boolean(id))
 }
 
-/** Manual given slips plus the auto-added slips derived from toggled references. */
-export function effectiveGivenSlipIds(node: NarrativeNode, allNodes: NarrativeNode[]): string[] {
-  return [...(node.data.slipGivenTypeIds ?? []), ...autoGivenSlipIds(node, allNodes)]
+/**
+ * Returns slipGivenTypeIds topped up so that, per slip type, the count is at
+ * least the minimum required by the card's toggled-on reference slip forms.
+ * Manual extras above the minimum are preserved.
+ */
+export function enforceGivenSlipMinimums(node: NarrativeNode, allNodes: NarrativeNode[]): string[] {
+  const given = node.data.slipGivenTypeIds ?? []
+  const autoIds = autoGivenSlipIds(node, allNodes)
+  if (autoIds.length === 0) return given
+
+  const result = [...given]
+  const minByType = new Map<string, number>()
+  for (const id of autoIds) minByType.set(id, (minByType.get(id) ?? 0) + 1)
+
+  for (const [slipId, min] of minByType) {
+    const have = result.filter((id) => id === slipId).length
+    for (let i = have; i < min; i += 1) result.push(slipId)
+  }
+  return result
 }
 
 export function buildEdgesFromReferences(
