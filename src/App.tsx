@@ -9,6 +9,7 @@ import { NarrativeEdgeComponent } from './components/edges/NarrativeEdge'
 import { BiDirectionalEdge, BiDirectionalEdgeMarkerDef } from './components/edges/BiDirectionalEdge'
 import { NarrativeBodyPanel } from './components/NarrativeBodyPanel'
 import { PuzzleFillPanel } from './components/PuzzleFillPanel'
+import { PuzzleReorderPanel } from './components/PuzzleReorderPanel'
 import { ContextPanel } from './components/ContextPanel'
 import { CardEditorFlyout } from './components/CardEditorFlyout'
 import { Sidebar } from './components/Sidebar/Sidebar'
@@ -288,6 +289,7 @@ function BoardCanvas() {
       </svg>
       <NarrativeBodyPanel />
       <PuzzleFillPanel />
+      <PuzzleReorderPanel />
       <CardEditorFlyout />
       <Sidebar
         collapsed={sidebarCollapsed}

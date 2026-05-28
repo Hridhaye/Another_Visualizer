@@ -60,6 +60,7 @@ export function PuzzleFillPanel() {
   }, [puzzleBodyOpen, closePuzzleBody])
 
   if (!puzzleBodyOpen || !node || !hasSingleSelection) return null
+  if (node.data.puzzleType !== 'fill') return null
 
   function buildRenderedHtml(f: FillPuzzleContent): string {
     if (!f.showAnswers) return f.bodyHtml

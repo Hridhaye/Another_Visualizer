@@ -62,6 +62,20 @@ export type FillPuzzleContent = {
   showAnswers: boolean
 }
 
+export type ReorderBox = {
+  id: string
+  text: string
+}
+
+export type ReorderPuzzleContent = {
+  /** Box pool — all boxes, identified by id */
+  boxes: ReorderBox[]
+  /** ids in the scrambled order the player first sees */
+  scrambledOrder: string[]
+  /** ids in the correct solution order */
+  solutionOrder: string[]
+}
+
 export type CardData = {
   code: string
   title: string
@@ -73,6 +87,7 @@ export type CardData = {
   puzzleType: PuzzleType
   puzzleSummary?: string
   puzzleFillContent?: FillPuzzleContent
+  puzzleReorderContent?: ReorderPuzzleContent
 }
 
 export type NarrativeNode = Node<CardData>
