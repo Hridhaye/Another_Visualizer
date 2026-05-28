@@ -101,7 +101,7 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
     <>
       {activeField === 'body' && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed right-6 top-6 z-[1200] nodrag nowheel pointer-events-auto h-[min(86vh,52rem)] w-[min(44rem,calc(100vw-2rem))] rounded-xl border border-zinc-700 bg-zinc-950 p-4 shadow-[0_25px_60px_rgba(0,0,0,0.8)]"
+          className="fixed inset-y-0 right-0 z-[1200] nodrag nowheel pointer-events-auto w-[min(48rem,92vw)] border-l border-zinc-700 bg-zinc-950 p-4 shadow-[-25px_0_60px_rgba(0,0,0,0.55)]"
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
@@ -160,7 +160,7 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
                 applyBodyFormatting('underline')
               }
             }}
-            className="h-[calc(100%-5.5rem)] w-full overflow-y-auto rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 font-mono text-xs leading-5 text-zinc-100 outline-none focus:border-zinc-500"
+            className="h-[calc(100vh-6.5rem)] w-full overflow-y-auto rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 font-mono text-xs leading-5 text-zinc-100 outline-none focus:border-zinc-500"
           />
         </div>,
         document.body
