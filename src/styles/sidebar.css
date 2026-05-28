@@ -263,12 +263,13 @@
 
 .group-picker__item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 4px;
   align-items: stretch;
 }
 
 .group-picker__select,
+.group-picker__highlight,
 .group-picker__delete {
   border-radius: 7px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -285,6 +286,49 @@
   padding: 7px 9px;
   cursor: pointer;
   text-align: left;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.group-picker__select:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #f0f2f8;
+}
+
+.group-picker__select--flash {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #86efac;
+}
+
+.group-picker__select--flash .group-picker__meta {
+  color: #4ade80;
+}
+
+.group-picker__highlight {
+  width: 30px;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.group-picker__highlight:hover {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.group-picker__highlight--on {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.group-picker__highlight--on:hover {
+  background: rgba(251, 191, 36, 0.18);
 }
 
 .group-picker__delete {

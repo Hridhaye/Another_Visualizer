@@ -27,9 +27,12 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const nodes = useNarrativeBoardStore((state) => state.nodes)
   const thisNode = nodes.find((node) => node.id === id)
 
+  const highlightedNodeIds = useNarrativeBoardStore((state) => state.highlightedNodeIds)
+
   const slipColor = getSlipColor(slipTypes, data.slipTypeId)
   const isLinkSource = connectionSourceNodeId === id
   const isSelected = selectedNodeIds.includes(id)
+  const isHighlighted = highlightedNodeIds.includes(id)
   const isPendingTarget = !!connectionSourceNodeId && !isLinkSource
   const showContextPanel =
     selectedNodeId === id && selectedNodeIds.length === 1 && contextPanelOpen && !!thisNode
@@ -208,7 +211,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
     <div
       ref={divRef}
       data-card-id={id}
-      className={`card-shell relative ${isSelected ? 'card-selected' : ''}`}
+      className={`card-shell relative ${isSelected ? 'card-selected' : ''} ${isHighlighted ? 'card-highlighted' : ''}`}
       style={{
         border: `6px solid ${slipColor}`,
         backgroundColor: '#18181b',

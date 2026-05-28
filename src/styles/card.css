@@ -16,6 +16,16 @@
     0 12px 34px rgba(0, 0, 0, 0.5);
 }
 
+.card-shell.card-highlighted {
+  outline: 3px solid rgba(251, 191, 36, 0.75);
+  outline-offset: 2px;
+}
+
+.card-shell.card-selected.card-highlighted {
+  outline: 3px solid rgba(251, 191, 36, 0.75);
+  outline-offset: 2px;
+}
+
 .card-shell:hover {
   transform: translateY(-1px);
 }

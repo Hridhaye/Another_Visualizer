@@ -98,6 +98,7 @@ type NarrativeBoardState = {
   historyPast: HistorySnapshot[]
   historyFuture: HistorySnapshot[]
   multiSelectMode: boolean
+  highlightedNodeIds: string[]
 }
 
 type HistorySnapshot = {
@@ -149,6 +150,8 @@ type NarrativeBoardActions = {
   redo: () => void
   deleteSelectedCards: () => void
   setMultiSelectMode: (enabled: boolean) => void
+  setHighlight: (nodeIds: string[]) => void
+  clearHighlight: () => void
 }
 
 export type NarrativeBoardStore = NarrativeBoardState & NarrativeBoardActions
@@ -289,6 +292,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   historyPast: [],
   historyFuture: [],
   multiSelectMode: false,
+  highlightedNodeIds: [],
   metadata: {
     projectName: 'Mystery Board',
     createdAt: new Date().toISOString(),
@@ -926,6 +930,14 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
 
   setMultiSelectMode: (enabled) => {
     set({ multiSelectMode: enabled })
+  },
+
+  setHighlight: (nodeIds) => {
+    set({ highlightedNodeIds: nodeIds })
+  },
+
+  clearHighlight: () => {
+    set({ highlightedNodeIds: [] })
   },
 
   undo: () => {
