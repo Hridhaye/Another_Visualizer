@@ -34,9 +34,15 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const nodeGroups = groups.filter((group) => group.nodeIds.includes(id))
   const hasPuzzle = data.puzzleType !== 'none'
   const puzzleText = getPuzzleDisplayText(data.puzzleType, data.puzzleSummary)
+  const nodes = useNarrativeBoardStore((state) => state.nodes)
   const isPickSource = matchingPickMode && matchingPickSourceNodeId === id
-  const isPickTarget = matchingPickMode && matchingPickSourceNodeId !== id
-  const cardClassName = `card-shell relative ${isSelected ? 'card-selected' : ''} ${isHighlighted ? 'card-highlighted' : ''} ${hasPuzzle ? 'has-puzzle' : ''} ${isPickSource ? 'card-pick-source' : ''} ${isPickTarget ? 'card-pick-target' : ''}`
+  const isPickTarget = matchingPickMode && !isPickSource
+  const isPickPicked = matchingPickMode && (() => {
+    if (!matchingPickSourceNodeId) return false
+    const sourceNode = nodes.find((n) => n.id === matchingPickSourceNodeId)
+    return sourceNode?.data.puzzleMatchingContent?.cards.some((c) => c.nodeId === id) ?? false
+  })()
+  const cardClassName = `card-shell relative ${isSelected ? 'card-selected' : ''} ${isHighlighted ? 'card-highlighted' : ''} ${hasPuzzle ? 'has-puzzle' : ''} ${isPickSource ? 'card-pick-source' : ''} ${isPickTarget ? 'card-pick-target' : ''} ${isPickPicked ? 'card-pick-picked' : ''}`
 
   const divRef = useRef<HTMLDivElement | null>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
