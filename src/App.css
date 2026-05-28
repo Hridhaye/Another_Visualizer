@@ -1135,14 +1135,6 @@
   box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.7) !important;
 }
 
-.card-pick-picked .card-shell {
-  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.9), 0 0 12px rgba(139, 92, 246, 0.3) !important;
-  opacity: 0.65;
-}
-
-.card-pick-picked {
-  cursor: default !important;
-}
 
 /* ── Context Panel ───────────────────────────────────────────────────── */
 .context-panel {

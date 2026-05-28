@@ -216,11 +216,13 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   if (isLinkSource) extraShadow = ', 0 0 0 3px rgba(99,102,241,0.85)'
   else if (isPendingTarget) extraShadow = ', 0 0 0 2px rgba(99,102,241,0.3)'
 
-  const baseShadow = isGroupSelected
-    ? `0 0 0 3px rgba(255,255,255,0.7)`
-    : isSelected
-      ? `0 0 0 2px rgba(255,255,255,0.6)`
-      : `0 0 0 2px rgba(255,255,255,0.04)`
+  const baseShadow = isPickPicked
+    ? `0 0 0 2px rgba(255,255,255,0.85)`
+    : isGroupSelected
+      ? `0 0 0 3px rgba(255,255,255,0.7)`
+      : isSelected
+        ? `0 0 0 2px rgba(255,255,255,0.6)`
+        : `0 0 0 2px rgba(255,255,255,0.04)`
 
   const highlightShadow = isHighlighted
     ? isGroupSelected
