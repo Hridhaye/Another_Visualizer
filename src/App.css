@@ -310,8 +310,8 @@
 .card-puzzle__badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
-  font-size: 16px;
+  padding: 8px 14px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: 0.08em;
   border-radius: 4px;
