@@ -8,6 +8,7 @@ type ContextPanelProps = {
   slipTypes: SlipType[]
   isLinkSource: boolean
   onUpdate: (nodeId: string, patch: Partial<CardData>) => void
+  onDelete: (nodeId: string) => void
   onClose: () => void
   onToggleLink: () => void
 }
@@ -23,7 +24,7 @@ const BUTTONS: { field: ActiveField; label: string }[] = [
   { field: 'puzzleType', label: 'Puzzle'     },
 ]
 
-export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate, onClose, onToggleLink }: ContextPanelProps) {
+export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate, onDelete, onClose, onToggleLink }: ContextPanelProps) {
   const [activeField, setActiveField] = useState<ActiveField>(null)
   const [refSearch, setRefSearch] = useState('')
 
@@ -209,6 +210,13 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
           }`}
         >
           {isLinkSource ? 'Cancel' : 'Link'}
+        </button>
+
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(node.id) }}
+          className="rounded-lg px-4 py-2 text-sm font-medium text-red-300 transition-colors whitespace-nowrap hover:bg-red-950 hover:text-red-200"
+        >
+          Delete
         </button>
 
         <button

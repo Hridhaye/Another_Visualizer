@@ -93,6 +93,7 @@ type NarrativeBoardActions = {
   onEdgesChange: (changes: EdgeChange[]) => void
   onConnect: (connection: Connection) => void
   addCard: () => void
+  deleteCard: (nodeId: string) => void
   updateNode: (nodeId: string, patch: Partial<CardData>) => void
   createReferenceConnection: (sourceNodeId: string, targetNodeId: string) => void
   addSlipType: (name: string, color: string) => void
@@ -240,6 +241,38 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       return {
         nodes: [...state.nodes, newNode],
         selectedNodeId: newNode.id,
+        hasUnsavedChanges: true
+      }
+    })
+  },
+
+  deleteCard: (nodeId) => {
+    set((state) => {
+      const nodeToDelete = state.nodes.find((node) => node.id === nodeId)
+      if (!nodeToDelete) {
+        return state
+      }
+
+      const nextNodes = state.nodes
+        .filter((node) => node.id !== nodeId)
+        .map((node) => ({
+          ...node,
+          data: {
+            ...node.data,
+            referencesText: removeReferenceText(node.data.referencesText, nodeToDelete.data.code)
+          }
+        }))
+
+      const nextSelectedNodeId =
+        state.selectedNodeId === nodeId ? nextNodes[0]?.id ?? null : state.selectedNodeId
+
+      return {
+        nodes: nextNodes,
+        edges: buildEdgesFromReferences(nextNodes),
+        selectedNodeId: nextSelectedNodeId,
+        connectionSourceNodeId:
+          state.connectionSourceNodeId === nodeId ? null : state.connectionSourceNodeId,
+        contextPanelOpen: state.selectedNodeId === nodeId ? false : state.contextPanelOpen,
         hasUnsavedChanges: true
       }
     })

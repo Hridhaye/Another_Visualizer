@@ -11,6 +11,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const openContextPanel = useNarrativeBoardStore((state) => state.openContextPanel)
   const closeContextPanel = useNarrativeBoardStore((state) => state.closeContextPanel)
   const updateNode = useNarrativeBoardStore((state) => state.updateNode)
+  const deleteCard = useNarrativeBoardStore((state) => state.deleteCard)
   const setConnectionSourceNode = useNarrativeBoardStore((state) => state.setConnectionSourceNode)
   const nodes = useNarrativeBoardStore((state) => state.nodes)
   const thisNode = nodes.find((n) => n.id === id)
@@ -43,6 +44,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
           slipTypes={slipTypes}
           isLinkSource={isLinkSource}
           onUpdate={updateNode}
+          onDelete={deleteCard}
           onClose={closeContextPanel}
           onToggleLink={() => setConnectionSourceNode(isLinkSource ? null : id)}
         />
