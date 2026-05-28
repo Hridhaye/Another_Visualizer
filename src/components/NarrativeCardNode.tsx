@@ -5,7 +5,9 @@ import { getSlipColor, useNarrativeBoardStore } from '../store/useNarrativeBoard
 import type { CardData } from '../types/narrative'
 
 export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
+  void selected
   const slipTypes = useNarrativeBoardStore((state) => state.slipTypes)
+  const selectedNodeId = useNarrativeBoardStore((state) => state.selectedNodeId)
   const connectionSourceNodeId = useNarrativeBoardStore((state) => state.connectionSourceNodeId)
   const contextPanelOpen = useNarrativeBoardStore((state) => state.contextPanelOpen)
   const openContextPanel = useNarrativeBoardStore((state) => state.openContextPanel)
@@ -18,16 +20,17 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
 
   const slipColor = getSlipColor(slipTypes, data.slipTypeId)
   const isLinkSource = connectionSourceNodeId === id
-  const showContextPanel = selected && contextPanelOpen && !!thisNode
+  const isSelected = selectedNodeId === id
+  const showContextPanel = isSelected && contextPanelOpen && !!thisNode
 
   return (
     <div
-      className={`card-shell relative ${selected ? 'card-selected' : ''}`}
+      className={`card-shell relative ${isSelected ? 'card-selected' : ''}`}
       style={{
         border: `6px solid ${slipColor}`,
         backgroundColor: '#18181b',
         backgroundImage: 'linear-gradient(to bottom, rgba(255,255,255,0.03), rgba(255,255,255,0))',
-        boxShadow: selected
+        boxShadow: isSelected
           ? `0 0 0 2px rgba(59,130,246,0.45), 0 12px 34px rgba(0,0,0,0.5), inset 0 0 80px ${slipColor}22`
           : `0 0 0 2px rgba(255,255,255,0.04), inset 0 0 80px ${slipColor}22`
       }}

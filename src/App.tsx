@@ -121,6 +121,7 @@ function BoardCanvas() {
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          elementsSelectable={!connectionSourceNodeId}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
