@@ -35,12 +35,12 @@ type SectionProps = {
 
 function Section({ title, toneClassName, open, onToggle, children }: SectionProps) {
   return (
-    <section className={`sidebar-section ${toneClassName}`}>
-      <button onClick={onToggle} className="sidebar-section__toggle">
-        <div className="sidebar-section__title">{title}</div>
-        <div className="sidebar-section__icon">{open ? '-' : '+'}</div>
+    <section className={`sidebar-section ${toneClassName} overflow-hidden rounded-lg border border-white/5`}>
+      <button onClick={onToggle} className="sidebar-section__toggle flex w-full items-center justify-between px-3 py-2 text-left hover:bg-white/5">
+        <div className="sidebar-section__title text-[10px] font-bold uppercase tracking-wider opacity-80">{title}</div>
+        <div className="sidebar-section__icon text-xs opacity-50">{open ? '−' : '+'}</div>
       </button>
-      {open ? <div className="sidebar-section__content">{children}</div> : null}
+      {open ? <div className="sidebar-section__content border-t border-white/5">{children}</div> : null}
     </section>
   )
 }
@@ -66,27 +66,27 @@ export function Sidebar({
 }: SidebarProps) {
   return (
     <aside className={collapsed ? 'sidebar sidebar--collapsed' : 'sidebar'}>
-      <div className="sidebar__header">
-        <div className="sidebar__header-row">
+      <div className="sidebar__header border-b border-zinc-800 bg-zinc-950/50 px-3 py-2.5 backdrop-blur-md">
+        <div className="sidebar__header-row flex items-center justify-between">
           {!collapsed && (
-            <div className="sidebar__title-wrap">
-              <h1 className="sidebar__title">Mystery Board</h1>
-              <p className="sidebar__subtitle">Non-linear narrative plotting tool</p>
+            <div className="sidebar__title-wrap leading-tight">
+              <h1 className="sidebar__title text-sm font-bold tracking-tight">Mystery Board</h1>
+              <p className="sidebar__subtitle text-[10px] text-zinc-500">Non-linear narrative plotting tool</p>
             </div>
           )}
 
           <button
             onClick={onToggleSidebar}
-            className="sidebar__collapse-btn"
+            className="sidebar__collapse-btn flex h-6 w-6 items-center justify-center rounded bg-zinc-800 text-[10px] hover:bg-zinc-700"
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {collapsed ? '>' : '<'}
+            {collapsed ? '→' : '←'}
           </button>
         </div>
       </div>
 
       {!collapsed && (
-        <div className="sidebar__content">
+        <div className="sidebar__content flex flex-col gap-2 p-2">
           <Section
             title="Board Controls"
             toneClassName="sidebar-section--board"

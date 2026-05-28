@@ -72,33 +72,38 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
       onClick={(e) => e.stopPropagation()}
     >
       {activeField && (
-        <div className="mb-3 w-[min(92vw,26rem)] rounded-2xl border border-zinc-700/80 bg-zinc-900/95 p-4 shadow-2xl backdrop-blur-sm">
+        <div className="mb-4 w-[min(92vw,26rem)] rounded-2xl border border-zinc-700/50 bg-zinc-900/98 p-4 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-md">
           {(activeField === 'code' || activeField === 'title') && (
-            <input
-              autoFocus
-              value={activeField === 'code' ? node.data.code : node.data.title}
-              onChange={(e) =>
-                onUpdate(node.id, { [activeField]: e.target.value })
-              }
-              className="w-full rounded-md bg-zinc-800 px-3 py-2 text-sm text-zinc-100 outline-none focus:ring-1 focus:ring-zinc-500"
-            />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">{activeField}</label>
+              <input
+                autoFocus
+                value={activeField === 'code' ? node.data.code : node.data.title}
+                onChange={(e) => onUpdate(node.id, { [activeField]: e.target.value })}
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500"
+              />
+            </div>
           )}
 
           {activeField === 'summary' && (
-            <textarea
-              autoFocus
-              value={node.data.summary}
-              onChange={(e) => onUpdate(node.id, { summary: e.target.value })}
-              rows={4}
-              className="w-full resize-none rounded-md bg-zinc-800 px-3 py-2 text-sm text-zinc-100 outline-none focus:ring-1 focus:ring-zinc-500"
-            />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Summary</label>
+              <textarea
+                autoFocus
+                value={node.data.summary}
+                onChange={(e) => onUpdate(node.id, { summary: e.target.value })}
+                rows={4}
+                className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-500"
+              />
+            </div>
           )}
 
           {activeField === 'references' && (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">References & Linking</label>
               <button
                 onClick={(e) => { e.stopPropagation(); onToggleLink() }}
-                className={`min-h-11 w-full rounded-xl px-4 py-2.5 text-left text-sm font-semibold transition-colors ${
+                className={`flex h-10 w-full items-center justify-center rounded-lg px-4 text-xs font-bold transition-colors ${
                   isLinkSource
                     ? 'bg-blue-700 text-blue-100 hover:bg-blue-600'
                     : 'bg-zinc-800 text-zinc-200 hover:bg-zinc-700'
@@ -161,7 +166,8 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
           )}
 
           {activeField === 'slipType' && (
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Select Slip Type</label>
               {slipTypes.map((slip) => (
                 <button
                   key={slip.id}
@@ -178,7 +184,8 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
           )}
 
           {activeField === 'puzzleType' && (
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Select Puzzle Type</label>
               {PUZZLE_TYPES.map((pt) => (
                 <button
                   key={pt}
@@ -195,33 +202,33 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
         </div>
       )}
 
-      <div className="flex max-w-[min(92vw,42rem)] flex-wrap items-center gap-2 rounded-2xl border border-zinc-700/80 bg-zinc-900/95 px-3 py-3 shadow-xl backdrop-blur-sm">
+      <div className="flex max-w-[min(92vw,45rem)] flex-wrap items-center gap-1.5 rounded-3xl border border-white/10 bg-zinc-900/98 p-3 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">
         {BUTTONS.map(({ field, label }) => (
           <button
             key={field}
             onClick={() => toggleField(field)}
-            className={`min-h-11 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            className={`h-9 whitespace-nowrap rounded-full px-4 text-xs font-bold uppercase tracking-wider transition-all ${
               activeField === field
-                ? 'bg-zinc-100 text-zinc-900'
-                : 'text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100'
+                ? 'bg-white text-black shadow-lg'
+                : 'text-zinc-400 hover:bg-white/10 hover:text-white'
             }`}
           >
             {label}
           </button>
         ))}
 
-        <div className="mx-1 hidden h-6 w-px bg-zinc-700 sm:block" />
+        <div className="mx-1 hidden h-5 w-px bg-zinc-800 sm:block" />
 
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(node.id) }}
-          className="min-h-11 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold text-red-300 transition-colors hover:bg-red-950 hover:text-red-200"
+          className="h-9 whitespace-nowrap rounded-full px-4 text-xs font-bold uppercase tracking-wider text-red-400 transition-all hover:bg-red-950/50 hover:text-red-300"
         >
           Delete
         </button>
 
         <button
           onClick={onClose}
-          className="min-h-11 shrink-0 rounded-lg px-3 py-2 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-zinc-600 hover:bg-zinc-800 hover:text-zinc-200"
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />

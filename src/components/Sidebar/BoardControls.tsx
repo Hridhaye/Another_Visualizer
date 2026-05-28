@@ -90,27 +90,27 @@ export function BoardControls({
     : 'Not saved yet'
 
   return (
-    <div className="sidebar-panel">
-      <div className="sidebar-card">
-        <label className="sidebar-label sidebar-label--tight">Project Name</label>
+    <div className="sidebar-panel flex flex-col gap-2 p-2">
+      <div className="sidebar-card rounded-md border border-zinc-800 bg-zinc-900/50 p-2 text-xs">
+        <label className="sidebar-label sidebar-label--tight mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-500">Project Name</label>
         <input
           value={projectName}
           onChange={(event) => onProjectNameChange(event.target.value)}
-          className="sidebar-input"
+          className="sidebar-input w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs outline-none focus:border-blue-500"
           placeholder="Mystery Board"
         />
 
-        <div className="sidebar-meta-row">
-          <span className={hasUnsavedChanges ? 'sidebar-meta sidebar-meta--warn' : 'sidebar-meta sidebar-meta--ok'}>
+        <div className="sidebar-meta-row mt-2 flex items-center justify-between text-[10px]">
+          <span className={hasUnsavedChanges ? 'sidebar-meta sidebar-meta--warn text-amber-500/80' : 'sidebar-meta sidebar-meta--ok text-emerald-500/80'}>
             {hasUnsavedChanges ? 'Unsaved changes' : 'All changes saved'}
           </span>
-          <span className="sidebar-meta">{formattedUpdatedAt}</span>
+          <span className="sidebar-meta text-zinc-600">{formattedUpdatedAt}</span>
         </div>
       </div>
 
-      <button onClick={onAddCard} className="sidebar-btn sidebar-btn--primary">Add Card</button>
+      <button onClick={onAddCard} className="sidebar-btn sidebar-btn--primary w-full rounded-md bg-blue-600 py-1.5 text-xs font-bold text-white hover:bg-blue-500">Add Card</button>
 
-      <div className="sidebar-grid-two">
+      <div className="sidebar-grid-two grid grid-cols-2 gap-2">
         <button
           onClick={async () => {
             try {
@@ -120,27 +120,27 @@ export function BoardControls({
               window.alert(message)
             }
           }}
-          className="sidebar-btn"
+          className="sidebar-btn rounded bg-zinc-800 py-1 text-xs hover:bg-zinc-700"
         >
           Export
         </button>
 
-        <button onClick={handleLoadClick} className="sidebar-btn">
+        <button onClick={handleLoadClick} className="sidebar-btn rounded bg-zinc-800 py-1 text-xs hover:bg-zinc-700">
           Import
         </button>
       </div>
 
-      <div className="sidebar-grid-two">
-        <button onClick={handleCopyAIFormat} className="sidebar-btn sidebar-btn--violet">
+      <div className="sidebar-grid-two grid grid-cols-2 gap-2">
+        <button onClick={handleCopyAIFormat} className="sidebar-btn sidebar-btn--violet rounded bg-violet-900/30 border border-violet-800/50 py-1 text-xs text-violet-300 hover:bg-violet-800/40">
           Copy DSL
         </button>
 
-        <button onClick={() => setShowAIImportModal(true)} className="sidebar-btn sidebar-btn--amber">
+        <button onClick={() => setShowAIImportModal(true)} className="sidebar-btn sidebar-btn--amber rounded bg-amber-900/30 border border-amber-800/50 py-1 text-xs text-amber-300 hover:bg-amber-800/40">
           Import DSL
         </button>
       </div>
 
-      {feedback ? <p className="sidebar-feedback">{feedback}</p> : null}
+      {feedback ? <p className="sidebar-feedback px-1 text-[10px] text-emerald-400/80">{feedback}</p> : null}
 
       {showAIImportModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
