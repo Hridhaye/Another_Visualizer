@@ -16,16 +16,15 @@ type ContextPanelProps = {
 
 type ActiveField = 'code' | 'title' | 'summary' | 'references' | 'slipType' | 'slipGiven' | 'puzzleType' | null
 
-const BUTTONS: { field: ActiveField | 'body' | 'puzzlePanel'; label: string }[] = [
-  { field: 'code',        label: 'Code' },
-  { field: 'title',       label: 'Title' },
-  { field: 'summary',     label: 'Summary' },
-  { field: 'body',        label: 'Body' },
-  { field: 'references',  label: 'Refs' },
-  { field: 'slipType',    label: 'Card Slip' },
-  { field: 'slipGiven',   label: 'Given Slip' },
-  { field: 'puzzleType',  label: 'Puzzle Type' },
-  { field: 'puzzlePanel', label: 'Puzzle' },
+const BUTTONS: { field: ActiveField | 'body'; label: string }[] = [
+  { field: 'code',       label: 'Code' },
+  { field: 'title',      label: 'Title' },
+  { field: 'summary',    label: 'Summary' },
+  { field: 'body',       label: 'Body' },
+  { field: 'references', label: 'Refs' },
+  { field: 'slipType',   label: 'Card Slip' },
+  { field: 'slipGiven',  label: 'Given Slip' },
+  { field: 'puzzleType', label: 'Puzzle' },
 ]
 
 export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate, onDelete, onClose, onToggleLink }: ContextPanelProps) {
@@ -38,14 +37,9 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
   const openPuzzleBody = useNarrativeBoardStore((s) => s.openPuzzleBody)
   const closePuzzleBody = useNarrativeBoardStore((s) => s.closePuzzleBody)
 
-  function toggleField(field: ActiveField | 'body' | 'puzzlePanel') {
+  function toggleField(field: ActiveField | 'body') {
     if (field === 'body') {
       narrativeBodyOpen ? closeNarrativeBody() : openNarrativeBody()
-      setActiveField(null)
-      return
-    }
-    if (field === 'puzzlePanel') {
-      puzzleBodyOpen ? closePuzzleBody() : openPuzzleBody()
       setActiveField(null)
       return
     }
@@ -216,6 +210,15 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
                 placeholder="Who left the door closed that night?"
                 className="context-panel__input context-panel__input--textarea"
               />
+              {node.data.puzzleType !== 'none' && (
+                <button
+                  onClick={() => { puzzleBodyOpen ? closePuzzleBody() : openPuzzleBody() }}
+                  className={`context-panel__slip-item${puzzleBodyOpen ? ' context-panel__slip-item--active' : ''}`}
+                  style={{ marginTop: 12 }}
+                >
+                  {puzzleBodyOpen ? 'Close puzzle panel' : 'Open puzzle panel'}
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -228,15 +231,11 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
         </div>
 
         {BUTTONS.map(({ field, label }) => {
-          if (field === 'puzzlePanel' && node.data.puzzleType === 'none') return null
-          const isActive =
-            field === 'body' ? narrativeBodyOpen :
-            field === 'puzzlePanel' ? puzzleBodyOpen :
-            activeField === field
+          const isActive = field === 'body' ? narrativeBodyOpen : activeField === field
           return (
             <button
               key={field}
-              onClick={() => toggleField(field as ActiveField | 'body' | 'puzzlePanel')}
+              onClick={() => toggleField(field)}
               className={`history-bar__btn${isActive ? ' context-panel__btn--active' : ''}`}
             >
               {label}
