@@ -77,7 +77,7 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
     >
       {activeField && (
         <div
-          className="nodrag nowheel pointer-events-auto mb-2 w-[min(92vw,26rem)] rounded-xl border border-zinc-700 bg-zinc-950 p-4 shadow-[0_25px_60px_rgba(0,0,0,0.8)]"
+          className="nodrag nowheel pointer-events-auto mb-2 w-[min(92vw,26rem)] rounded-xl border border-zinc-700 bg-zinc-950 p-4 shadow-none"
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
@@ -193,7 +193,7 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
       )}
 
       <div
-        className="nodrag nowheel pointer-events-auto flex items-center gap-1.5 rounded-2xl border border-zinc-700 bg-zinc-950 p-4 shadow-[0_25px_60px_rgba(0,0,0,0.8)]"
+        className="nodrag nowheel pointer-events-auto flex items-center gap-1.5 rounded-2xl border border-zinc-700 bg-zinc-950 p-4 shadow-none"
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
