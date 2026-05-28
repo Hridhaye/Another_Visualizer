@@ -20,10 +20,10 @@ const BUTTONS: { field: ActiveField | 'body'; label: string }[] = [
   { field: 'code',       label: 'Code' },
   { field: 'title',      label: 'Title' },
   { field: 'summary',    label: 'Summary' },
-  { field: 'body',       label: 'Narrative Body' },
-  { field: 'references', label: 'Reference' },
-  { field: 'slipType',   label: 'Card Slip' },
-  { field: 'slipGiven',  label: 'Slip Given' },
+  { field: 'body',       label: 'Body' },
+  { field: 'references', label: 'Refs' },
+  { field: 'slipType',   label: 'Slip' },
+  { field: 'slipGiven',  label: 'Given' },
   { field: 'puzzleType', label: 'Puzzle' },
 ]
 
@@ -62,73 +62,64 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
       n.data.code.toLowerCase().includes(searchLower) ||
       n.data.title.toLowerCase().includes(searchLower)
   )
+
   return (
     <div
-      className="z-50 pointer-events-none"
-      style={{
-        position: 'fixed',
-        bottom: '80px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-      }}
+      className="nodrag nowheel context-panel"
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+      style={{ position: 'fixed', bottom: '72px', left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}
     >
       {activeField && (
-        <div
-          className="nodrag nowheel pointer-events-auto mb-2 w-[min(92vw,26rem)] rounded-xl border border-zinc-700 bg-zinc-950 p-4 shadow-none"
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="context-panel__popover">
           {(activeField === 'code' || activeField === 'title') && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{activeField}</label>
+            <div className="context-panel__field">
+              <label className="context-panel__label">{activeField}</label>
               <input
                 autoFocus
                 value={activeField === 'code' ? node.data.code : node.data.title}
                 onChange={(e) => onUpdate(node.id, { [activeField]: e.target.value })}
-                className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs text-zinc-100 outline-none focus:border-zinc-500"
+                className="context-panel__input"
               />
             </div>
           )}
 
           {activeField === 'summary' && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Summary</label>
+            <div className="context-panel__field">
+              <label className="context-panel__label">Summary</label>
               <textarea
                 autoFocus
                 value={node.data.summary}
                 onChange={(e) => onUpdate(node.id, { summary: e.target.value })}
                 rows={4}
-                className="w-full resize-none rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs text-zinc-100 outline-none focus:border-zinc-500"
+                className="context-panel__input context-panel__input--textarea"
               />
             </div>
           )}
 
           {activeField === 'references' && (
-            <div className="flex flex-col gap-3">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">References</label>
-
+            <div className="context-panel__field">
+              <label className="context-panel__label">References</label>
               {currentRefs.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
+                <div className="context-panel__ref-tags">
                   {currentRefs.map((code) => (
-                    <span key={code} className="flex items-center gap-1 rounded-md bg-zinc-700 px-2 py-1 text-xs text-zinc-200">
+                    <span key={code} className="context-panel__ref-tag">
                       {code}
-                      <button onClick={() => removeRef(code)} className="text-zinc-400 hover:text-zinc-100">×</button>
+                      <button onClick={() => removeRef(code)} className="context-panel__ref-remove">×</button>
                     </span>
                   ))}
                 </div>
               )}
-
               <input
                 autoFocus
                 value={refSearch}
                 onChange={(e) => setRefSearch(e.target.value)}
-                placeholder="Search by code or title..."
-                className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs text-zinc-100 outline-none focus:border-zinc-500"
+                placeholder="Search by code or title…"
+                className="context-panel__input"
               />
-
-              <div className="max-h-40 overflow-y-auto rounded-md border border-zinc-700 bg-zinc-800">
+              <div className="context-panel__ref-list">
                 {filteredNodes.length === 0 ? (
-                  <p className="px-3 py-2 text-xs text-zinc-500">No cards found</p>
+                  <p className="context-panel__ref-empty">No cards found</p>
                 ) : (
                   filteredNodes.map((n) => {
                     const already = currentRefs.includes(n.data.code)
@@ -137,13 +128,11 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
                         key={n.id}
                         onClick={() => { addRef(n.data.code); setRefSearch('') }}
                         disabled={already}
-                        className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${
-                          already ? 'cursor-default text-zinc-600' : 'text-zinc-200 hover:bg-zinc-700'
-                        }`}
+                        className={`context-panel__ref-item${already ? ' context-panel__ref-item--added' : ''}`}
                       >
-                        <span className="font-mono text-xs text-zinc-400">{n.data.code}</span>
-                        <span className="truncate">{n.data.title}</span>
-                        {already && <span className="ml-auto text-xs text-zinc-600">added</span>}
+                        <span className="context-panel__ref-code">{n.data.code}</span>
+                        <span className="context-panel__ref-title">{n.data.title}</span>
+                        {already && <span className="context-panel__ref-badge">added</span>}
                       </button>
                     )
                   })
@@ -153,17 +142,15 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
           )}
 
           {activeField === 'slipType' && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Card Slip</label>
+            <div className="context-panel__field">
+              <label className="context-panel__label">Card Slip</label>
               {slipTypes.map((slip) => (
                 <button
                   key={slip.id}
                   onClick={() => { onUpdate(node.id, { slipTypeId: slip.id }); setActiveField(null) }}
-                  className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-zinc-800 ${
-                    node.data.slipTypeId === slip.id ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-400'
-                  }`}
+                  className={`context-panel__slip-item${node.data.slipTypeId === slip.id ? ' context-panel__slip-item--active' : ''}`}
                 >
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: slip.color }} />
+                  <span className="context-panel__slip-dot" style={{ backgroundColor: slip.color }} />
                   {slip.name}
                 </button>
               ))}
@@ -183,22 +170,15 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
               onUpdate(node.id, { slipGivenTypeIds: [...without, ...Array(next).fill(slipId)] })
             }
             return (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Slip Given</label>
+              <div className="context-panel__field">
+                <label className="context-panel__label">Slip Given</label>
                 {counts.map(({ slip, count }) => (
-                  <div key={slip.id} className="flex items-center gap-2 rounded-md px-2 py-1 text-xs">
-                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: slip.color }} />
-                    <span className={`flex-1 ${count > 0 ? 'text-zinc-100' : 'text-zinc-400'}`}>{slip.name}</span>
-                    <button
-                      onClick={() => setCount(slip.id, -1)}
-                      disabled={count === 0}
-                      className="flex h-6 w-6 items-center justify-center rounded text-zinc-300 hover:bg-zinc-700 disabled:opacity-30"
-                    >−</button>
-                    <span className="w-4 text-center text-zinc-200">{count}</span>
-                    <button
-                      onClick={() => setCount(slip.id, 1)}
-                      className="flex h-6 w-6 items-center justify-center rounded text-zinc-300 hover:bg-zinc-700"
-                    >+</button>
+                  <div key={slip.id} className="context-panel__slip-given-row">
+                    <span className="context-panel__slip-dot" style={{ backgroundColor: slip.color }} />
+                    <span className={`context-panel__slip-name${count > 0 ? ' context-panel__slip-name--active' : ''}`}>{slip.name}</span>
+                    <button onClick={() => setCount(slip.id, -1)} disabled={count === 0} className="context-panel__stepper">−</button>
+                    <span className="context-panel__stepper-val">{count}</span>
+                    <button onClick={() => setCount(slip.id, 1)} className="context-panel__stepper">+</button>
                   </div>
                 ))}
               </div>
@@ -206,15 +186,13 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
           })()}
 
           {activeField === 'puzzleType' && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Select Puzzle Type</label>
+            <div className="context-panel__field">
+              <label className="context-panel__label">Puzzle Type</label>
               {PUZZLE_TYPES.map((pt) => (
                 <button
                   key={pt}
                   onClick={() => { onUpdate(node.id, { puzzleType: pt }); setActiveField(null) }}
-                  className={`rounded-md px-2 py-1.5 text-left text-xs hover:bg-zinc-800 ${
-                    node.data.puzzleType === pt ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-400'
-                  }`}
+                  className={`context-panel__slip-item${node.data.puzzleType === pt ? ' context-panel__slip-item--active' : ''}`}
                 >
                   {pt.charAt(0).toUpperCase() + pt.slice(1)}
                 </button>
@@ -224,53 +202,37 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
         </div>
       )}
 
-      <div
-        className="nodrag nowheel pointer-events-auto flex items-center gap-1.5 rounded-2xl border border-zinc-700 bg-zinc-950 p-4 shadow-none"
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="context-panel__bar">
         {BUTTONS.map(({ field, label }) => (
           <button
             key={field}
             onClick={() => toggleField(field)}
-            className={`h-9 whitespace-nowrap rounded-lg px-4 text-xs font-bold uppercase tracking-wider transition-all ${
-              (field === 'body' ? narrativeBodyOpen : activeField === field)
-                ? 'bg-zinc-100 text-zinc-950 shadow-lg'
-                : 'text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100'
-            }`}
+            className={`history-bar__btn${(field === 'body' ? narrativeBodyOpen : activeField === field) ? ' context-panel__btn--active' : ''}`}
           >
             {label}
           </button>
         ))}
 
-        <div className="mx-1 h-5 w-px bg-zinc-800" />
+        <div className="history-bar__divider" />
 
-        {/* Link button — top-level, not buried in References */}
         <button
           onClick={(e) => { e.stopPropagation(); onToggleLink() }}
-          className={`h-9 whitespace-nowrap rounded-lg px-4 text-xs font-bold uppercase tracking-wider transition-all ${
-            isLinkSource
-              ? 'bg-indigo-600 text-indigo-100 shadow-lg hover:bg-indigo-500'
-              : 'text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100'
-          }`}
+          className={`history-bar__btn${isLinkSource ? ' context-panel__btn--link-active' : ''}`}
         >
-          {isLinkSource ? 'Cancel Link' : 'Link'}
+          {isLinkSource ? 'Cancel' : 'Link'}
         </button>
 
-        <div className="mx-1 h-5 w-px bg-zinc-800" />
+        <div className="history-bar__divider" />
 
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(node.id) }}
-          className="h-9 whitespace-nowrap rounded-lg px-4 text-xs font-bold uppercase tracking-wider text-red-500/80 transition-all hover:bg-red-950/30 hover:text-red-400"
+          className="history-bar__btn history-bar__btn--danger"
         >
           Delete
         </button>
 
-        <button
-          onClick={onClose}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <button onClick={onClose} className="context-panel__close">
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
             <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
           </svg>
         </button>
