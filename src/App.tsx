@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import ReactFlow, {
   Background,
   Controls,
@@ -244,7 +245,7 @@ function BoardCanvas() {
 
   return (
     <div className="board-root">
-      {showContextPanel && (
+      {showContextPanel && createPortal(
         <ContextPanel
           node={activeNode}
           allNodes={nodes}
@@ -254,7 +255,8 @@ function BoardCanvas() {
           onDelete={deleteCard}
           onClose={closeContextPanel}
           onToggleLink={() => setConnectionSourceNode(connectionSourceNodeId === activeNode.id ? null : activeNode.id)}
-        />
+        />,
+        document.body
       )}
       <NarrativeBodyPanel />
       <CardEditorFlyout />
