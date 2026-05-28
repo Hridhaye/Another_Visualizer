@@ -1,36 +1,28 @@
 import { getSmoothStepPath } from 'reactflow'
 import type { EdgeProps } from 'reactflow'
 
-const ARROW_SIZE = 8
-
 function ArrowMarker({ id, color }: { id: string; color: string }) {
   return (
     <defs>
       <marker
         id={id}
-        markerWidth={ARROW_SIZE}
-        markerHeight={ARROW_SIZE}
-        refX={ARROW_SIZE - 1}
-        refY={ARROW_SIZE / 2}
+        markerWidth="8"
+        markerHeight="8"
+        refX="7"
+        refY="4"
         orient="auto"
       >
-        <path
-          d={`M0,0 L0,${ARROW_SIZE} L${ARROW_SIZE},${ARROW_SIZE / 2} z`}
-          fill={color}
-        />
+        <path d="M0,0 L0,8 L8,4 z" fill={color} />
       </marker>
       <marker
         id={`${id}-start`}
-        markerWidth={ARROW_SIZE}
-        markerHeight={ARROW_SIZE}
-        refX={1}
-        refY={ARROW_SIZE / 2}
+        markerWidth="8"
+        markerHeight="8"
+        refX="1"
+        refY="4"
         orient="auto-start-reverse"
       >
-        <path
-          d={`M0,0 L0,${ARROW_SIZE} L${ARROW_SIZE},${ARROW_SIZE / 2} z`}
-          fill={color}
-        />
+        <path d="M0,0 L0,8 L8,4 z" fill={color} />
       </marker>
     </defs>
   )
@@ -53,13 +45,12 @@ export function BiDirectionalEdge({
     targetX,
     targetY,
     targetPosition,
-    borderRadius: 16,
+    borderRadius: 0,
   })
 
   const isHighlighted = data?.isOutgoingFromSelected
-
-  const color = isHighlighted ? 'rgba(251,191,36,1)' : 'rgba(251,191,36,0.6)'
-  const markerId = `bidir-arrow-${id}`
+  const color = isHighlighted ? 'rgba(255,255,255,0.85)' : 'rgba(148,163,184,0.55)'
+  const markerId = `bidir-${id}`
 
   return (
     <>
@@ -68,14 +59,11 @@ export function BiDirectionalEdge({
         d={edgePath}
         fill="none"
         stroke={color}
-        strokeWidth={isHighlighted ? 2.5 : 1.8}
-        strokeDasharray="6 3"
+        strokeWidth={isHighlighted ? 3 : 2.5}
         markerEnd={`url(#${markerId})`}
         markerStart={`url(#${markerId}-start)`}
         style={{
-          filter: isHighlighted
-            ? 'drop-shadow(0 0 5px rgba(251,191,36,0.8))'
-            : 'drop-shadow(0 0 2px rgba(251,191,36,0.3))',
+          filter: isHighlighted ? 'drop-shadow(0 0 4px rgba(255,255,255,0.6))' : 'none',
           transition: 'stroke 0.15s ease, stroke-width 0.15s ease, filter 0.15s ease',
         }}
       />

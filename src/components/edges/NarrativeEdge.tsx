@@ -1,4 +1,4 @@
-import { getBezierPath, BaseEdge } from 'reactflow'
+import { getSmoothStepPath, BaseEdge } from 'reactflow'
 import type { EdgeProps } from 'reactflow'
 
 export function NarrativeEdgeComponent({
@@ -12,13 +12,14 @@ export function NarrativeEdgeComponent({
   data,
   markerEnd,
 }: EdgeProps) {
-  const [edgePath] = getBezierPath({
+  const [edgePath] = getSmoothStepPath({
     sourceX,
     sourceY,
     sourcePosition,
     targetX,
     targetY,
     targetPosition,
+    borderRadius: 0,
   })
 
   const isHighlighted = data?.isOutgoingFromSelected
