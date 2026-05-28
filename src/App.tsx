@@ -63,7 +63,6 @@ function BoardCanvas() {
   const multiSelectMode = useNarrativeBoardStore((state) => state.multiSelectMode)
   const setMultiSelectMode = useNarrativeBoardStore((state) => state.setMultiSelectMode)
   const matchingPickMode = useNarrativeBoardStore((state) => state.matchingPickMode)
-  const cancelMatchingPickMode = useNarrativeBoardStore((state) => state.cancelMatchingPickMode)
   const commitMatchingPickMode = useNarrativeBoardStore((state) => state.commitMatchingPickMode)
   const groups = useNarrativeBoardStore((state) => state.groups)
   const createGroupFromSelection = useNarrativeBoardStore((state) => state.createGroupFromSelection)
