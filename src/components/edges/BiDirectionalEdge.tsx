@@ -53,7 +53,7 @@ function HighlightedBidirPath({
   const { forward, reverse } = buildPaths(sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, shift)
 
   return createPortal(
-    <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', overflow: 'visible', zIndex: 10 }}>
+    <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', overflow: 'visible', zIndex: 10, mixBlendMode: 'screen' }}>
       <BiDirectionalEdgeMarkerDef />
       <g style={{ transform: `translate(${x}px, ${y}px) scale(${zoom})`, transformOrigin: '0 0' }}>
         <path
