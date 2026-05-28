@@ -1,5 +1,11 @@
 import { useMemo } from 'react'
-import ReactFlow, { Background, Controls, ReactFlowProvider, type NodeMouseHandler } from 'reactflow'
+import ReactFlow, {
+  Background,
+  Controls,
+  ReactFlowProvider,
+  useReactFlow,
+  type NodeMouseHandler
+} from 'reactflow'
 
 import { ContextPanel } from './components/ContextPanel'
 import { MinimapControls } from './components/MinimapControls'
@@ -10,7 +16,8 @@ import './App.css'
 import './styles/card.css'
 import 'reactflow/dist/style.css'
 
-function App() {
+function BoardCanvas() {
+  const reactFlow = useReactFlow()
   const nodes = useNarrativeBoardStore((state) => state.nodes)
   const edges = useNarrativeBoardStore((state) => state.edges)
   const selectedNodeId = useNarrativeBoardStore((state) => state.selectedNodeId)
@@ -53,9 +60,19 @@ function App() {
     []
   )
 
-  const handleNodeClick: NodeMouseHandler = (event, node) => {
+  const handleNodeClick: NodeMouseHandler = (_event, node) => {
     setSelectedNode(node.id)
-    setContextPanelPosition({ x: event.clientX, y: event.clientY })
+
+    const cardX = node.positionAbsolute?.x ?? node.position.x
+    const cardY = node.positionAbsolute?.y ?? node.position.y
+    const cardWidth = node.width ?? 420
+
+    const projected = reactFlow.project({
+      x: cardX + cardWidth + 12,
+      y: cardY + 8
+    })
+
+    setContextPanelPosition({ x: projected.x, y: projected.y })
 
     if (connectionSourceNodeId && connectionSourceNodeId !== node.id) {
       createReferenceConnection(connectionSourceNodeId, node.id)
@@ -63,8 +80,7 @@ function App() {
   }
 
   return (
-    <ReactFlowProvider>
-      <div className="board-root">
+    <div className="board-root">
         <Sidebar
           collapsed={sidebarCollapsed}
           sectionsOpen={sectionsOpen}
@@ -128,6 +144,13 @@ function App() {
           )}
         </div>
       </div>
+    )
+}
+
+function App() {
+  return (
+    <ReactFlowProvider>
+      <BoardCanvas />
     </ReactFlowProvider>
   )
 }

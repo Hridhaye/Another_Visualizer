@@ -45,14 +45,6 @@ export function exportAIFormat(nodes: NarrativeNode[], slipTypes: SlipType[] = [
         references.forEach((reference) => lines.push(`- ${reference}`))
       }
 
-      const body = node.data.body ?? ''
-      if (body.trim()) {
-        lines.push('')
-        lines.push('CONTENT:')
-        lines.push(body.trim())
-        lines.push('END_CONTENT')
-      }
-
       return lines.join('\n').trimEnd()
     })
     .filter(Boolean)
