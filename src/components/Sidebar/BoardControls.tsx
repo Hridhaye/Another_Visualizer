@@ -145,23 +145,23 @@ export function BoardControls({
       {showAIImportModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-2xl rounded-2xl border border-zinc-800 bg-zinc-950 p-4 shadow-2xl shadow-black/40">
-            <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-base font-semibold text-white">Import AI Format</h3>
-                <p className="text-xs text-zinc-400">Paste the DSL text. Existing codes are updated; missing codes are created.</p>
+                <h3 className="text-sm font-bold tracking-tight text-white uppercase">Import AI Format</h3>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wide">Paste the DSL text. Existing codes are updated; missing codes are created.</p>
               </div>
-              <button onClick={() => setShowAIImportModal(false)} className="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs text-zinc-200">Close</button>
+              <button onClick={() => setShowAIImportModal(false)} className="rounded-md bg-zinc-800 px-2.5 py-1 text-[10px] font-bold uppercase text-zinc-400 hover:text-zinc-200">Close</button>
             </div>
             <textarea
               value={importText}
               onChange={(event) => setImportText(event.target.value)}
               rows={14}
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 p-3 text-sm text-zinc-100 outline-none focus:border-violet-500"
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 p-3 text-xs text-zinc-200 font-mono outline-none focus:border-violet-500"
               placeholder="@CARD AA01\nTITLE: Forest Arrival\n..."
             />
-            <div className="mt-3 flex justify-end gap-2">
-              <button onClick={() => setShowAIImportModal(false)} className="rounded-lg bg-zinc-800 px-4 py-2 text-sm text-zinc-200">Cancel</button>
-              <button onClick={handleImportAIFormat} className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600">Import</button>
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={() => setShowAIImportModal(false)} className="rounded-md bg-zinc-800 px-3 py-1.5 text-xs font-bold text-zinc-300 hover:bg-zinc-700">Cancel</button>
+              <button onClick={handleImportAIFormat} className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-600">Import</button>
             </div>
           </div>
         </div>

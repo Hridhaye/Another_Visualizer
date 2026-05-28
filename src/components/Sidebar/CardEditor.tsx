@@ -92,7 +92,7 @@ export function CardEditor({
         </div>
 
         <div>
-          <label className="text-sm text-zinc-400">Puzzle Type</label>
+          <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Puzzle Type</label>
           <select
             value={selectedNode.data.puzzleType}
             onChange={(event) => {
@@ -100,7 +100,7 @@ export function CardEditor({
                 puzzleType: event.target.value as CardData['puzzleType']
               })
             }}
-            className="mt-1 w-full rounded-md bg-zinc-800 px-3 py-2 text-base"
+            className="mt-1 w-full rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-xs text-zinc-100 outline-none"
           >
             {PUZZLE_TYPES.map((puzzleType) => (
               <option key={puzzleType} value={puzzleType}>

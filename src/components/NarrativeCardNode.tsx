@@ -23,6 +23,12 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const isSelected = selectedNodeId === id
   const showContextPanel = isSelected && contextPanelOpen && !!thisNode
 
+  const handleTap = () => {
+    if (!connectionSourceNodeId) {
+      openContextPanel()
+    }
+  }
+
   return (
     <div
       className={`card-shell relative ${isSelected ? 'card-selected' : ''}`}
@@ -34,10 +40,10 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
           ? `0 0 0 2px rgba(59,130,246,0.45), 0 12px 34px rgba(0,0,0,0.5), inset 0 0 80px ${slipColor}22`
           : `0 0 0 2px rgba(255,255,255,0.04), inset 0 0 80px ${slipColor}22`
       }}
-      onClick={() => {
-        if (!connectionSourceNodeId) {
-          openContextPanel()
-        }
+      onClick={handleTap}
+      onTouchEnd={(e) => {
+        e.preventDefault()
+        handleTap()
       }}
     >
       {showContextPanel && (

@@ -132,6 +132,10 @@ function BoardCanvas() {
           fitViewOptions={{ padding: 0.15 }}
           minZoom={0.2}
           maxZoom={1.8}
+          panOnDrag={[0, 1, 2]}
+          zoomOnPinch={true}
+          zoomOnScroll={true}
+          preventScrolling={true}
           className="reactflow-dark"
         >
           <Background color="#3f3f46" gap={26} />
