@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useViewport } from 'reactflow'
 import { parseReferences } from '../graph/buildEdgesFromReferences'
 import { PUZZLE_TYPES, type CardData, type NarrativeNode, type SlipType } from '../types/narrative'
 
@@ -27,6 +28,7 @@ const BUTTONS: { field: ActiveField; label: string }[] = [
 export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate, onDelete, onClose, onToggleLink }: ContextPanelProps) {
   const [activeField, setActiveField] = useState<ActiveField>(null)
   const [refSearch, setRefSearch] = useState('')
+  const { zoom } = useViewport()
 
   function toggleField(field: ActiveField) {
     setActiveField((prev) => (prev === field ? null : field))
@@ -55,11 +57,17 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
       n.data.code.toLowerCase().includes(searchLower) ||
       n.data.title.toLowerCase().includes(searchLower)
   )
+  const zoomScale = Math.max(0.85, Math.min(1.7, 1 / Math.max(zoom, 0.01)))
 
   return (
     <div
       className="nodrag nowheel absolute z-50"
-      style={{ bottom: 'calc(100% + 10px)', left: '50%', transform: 'translateX(-50%)' }}
+      style={{
+        bottom: 'calc(100% + 10px)',
+        left: '50%',
+        transform: `translateX(-50%) scale(${zoomScale})`,
+        transformOrigin: 'bottom center'
+      }}
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
