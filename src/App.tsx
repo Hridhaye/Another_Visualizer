@@ -380,7 +380,6 @@ function BoardCanvas() {
             slipTypes={slipTypes}
             isLinkSource={connectionSourceNodeId === activeNode.id}
             onUpdate={updateNode}
-            onDelete={deleteCard}
             onClose={closeContextPanel}
             onToggleLink={() => setConnectionSourceNode(connectionSourceNodeId === activeNode.id ? null : activeNode.id)}
           />

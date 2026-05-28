@@ -9,12 +9,11 @@ type ContextPanelProps = {
   slipTypes: SlipType[]
   isLinkSource: boolean
   onUpdate: (nodeId: string, patch: Partial<CardData>) => void
-  onDelete: (nodeId: string) => void
   onClose: () => void
   onToggleLink: () => void
 }
 
-type ActiveField = 'codeRefs' | 'title' | 'summary' | 'slipType' | 'slipGiven' | 'puzzleType' | null
+type ActiveField = 'codeRefs' | 'title' | 'summary' | 'slipType' | 'slipGiven' | 'tags' | 'puzzleType' | null
 
 const BUTTONS: { field: ActiveField | 'body'; label: string }[] = [
   { field: 'codeRefs',   label: 'Code & Refs' },
@@ -23,12 +22,19 @@ const BUTTONS: { field: ActiveField | 'body'; label: string }[] = [
   { field: 'body',       label: 'Body' },
   { field: 'slipType',   label: 'Card Slip' },
   { field: 'slipGiven',  label: 'Given Slip' },
+  { field: 'tags',       label: 'Tags' },
   { field: 'puzzleType', label: 'Puzzle' },
 ]
 
-export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate, onDelete, onClose, onToggleLink }: ContextPanelProps) {
+export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate, onClose, onToggleLink }: ContextPanelProps) {
   const [activeField, setActiveField] = useState<ActiveField>(null)
   const [refSearch, setRefSearch] = useState('')
+  const [tagSearch, setTagSearch] = useState('')
+  const tags = useNarrativeBoardStore((s) => s.tags)
+  const addTag = useNarrativeBoardStore((s) => s.addTag)
+  const deleteTag = useNarrativeBoardStore((s) => s.deleteTag)
+  const assignTagToNode = useNarrativeBoardStore((s) => s.assignTagToNode)
+  const unassignTagFromNode = useNarrativeBoardStore((s) => s.unassignTagFromNode)
   const narrativeBodyOpen = useNarrativeBoardStore((s) => s.narrativeBodyOpen)
   const openNarrativeBody = useNarrativeBoardStore((s) => s.openNarrativeBody)
   const closeNarrativeBody = useNarrativeBoardStore((s) => s.closeNarrativeBody)
@@ -44,6 +50,7 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
     }
     setActiveField((prev) => (prev === field ? null : field))
     setRefSearch('')
+    setTagSearch('')
   }
 
   const currentRefs = parseReferences(node.data.referencesText)
@@ -248,6 +255,81 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
             )
           })()}
 
+          {activeField === 'tags' && (() => {
+            const assigned = node.data.tagIds ?? []
+            const search = tagSearch.trim()
+            const searchLower = search.toLowerCase()
+            const filtered = tags.filter((t) => t.name.toLowerCase().includes(searchLower))
+            const exactExists = tags.some((t) => t.name.toLowerCase() === searchLower)
+            function createAndAssign() {
+              if (!search || exactExists) return
+              addTag(search)
+              const created = useNarrativeBoardStore.getState().tags.find((t) => t.name.toLowerCase() === searchLower)
+              if (created) assignTagToNode(node.id, created.id)
+              setTagSearch('')
+            }
+            return (
+              <div className="context-panel__field">
+                <label className="context-panel__label">Tags</label>
+                {assigned.length > 0 && (
+                  <div className="context-panel__ref-tags">
+                    {assigned.map((tagId) => {
+                      const tag = tags.find((t) => t.id === tagId)
+                      if (!tag) return null
+                      return (
+                        <span key={tagId} className="context-panel__ref-tag context-panel__ref-tag--slip-form">
+                          <span className="context-panel__ref-tag-title">{tag.name}</span>
+                          <button onClick={() => unassignTagFromNode(node.id, tagId)} className="context-panel__ref-remove">×</button>
+                        </span>
+                      )
+                    })}
+                  </div>
+                )}
+                <input
+                  autoFocus
+                  value={tagSearch}
+                  onChange={(e) => setTagSearch(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') createAndAssign() }}
+                  placeholder="Search or create a tag…"
+                  className="context-panel__input"
+                />
+                {search && !exactExists && (
+                  <button onClick={createAndAssign} className="context-panel__ref-item">
+                    <span className="context-panel__ref-title">Create “{search}”</span>
+                    <span className="context-panel__ref-badge">new</span>
+                  </button>
+                )}
+                <div className="context-panel__ref-list">
+                  {filtered.length === 0 && !search ? (
+                    <p className="context-panel__ref-empty">No tags yet</p>
+                  ) : (
+                    filtered.map((tag) => {
+                      const already = assigned.includes(tag.id)
+                      return (
+                        <div key={tag.id} className="context-panel__tag-row">
+                          <button
+                            onClick={() => (already ? unassignTagFromNode(node.id, tag.id) : assignTagToNode(node.id, tag.id))}
+                            className={`context-panel__ref-item context-panel__tag-assign${already ? ' context-panel__ref-item--added' : ''}`}
+                          >
+                            <span className="context-panel__ref-title">{tag.name}</span>
+                            {already && <span className="context-panel__ref-badge">added</span>}
+                          </button>
+                          <button
+                            onClick={() => deleteTag(tag.id)}
+                            className="context-panel__tag-delete"
+                            title="Delete tag from project"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+            )
+          })()}
+
           {activeField === 'puzzleType' && (
             <div className="context-panel__field">
               <label className="context-panel__label">Puzzle Type</label>
@@ -310,15 +392,6 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
           className={`history-bar__btn${isLinkSource ? ' context-panel__btn--link-active' : ''}`}
         >
           {isLinkSource ? 'Cancel' : 'Link'}
-        </button>
-
-        <div className="history-bar__divider" />
-
-        <button
-          onClick={(e) => { e.stopPropagation(); onDelete(node.id) }}
-          className="history-bar__btn history-bar__btn--danger"
-        >
-          Delete
         </button>
 
         <button onClick={onClose} className="context-panel__close">

@@ -29,6 +29,7 @@ export function BoardControls({
   onProjectNameChange
 }: BoardControlsProps) {
   const selectedNodeIds = useNarrativeBoardStore((state) => state.selectedNodeIds)
+  const tags = useNarrativeBoardStore((state) => state.tags)
   const groups = useNarrativeBoardStore((state) => state.groups)
   const selectGroup = useNarrativeBoardStore((state) => state.selectGroup)
   const deleteGroup = useNarrativeBoardStore((state) => state.deleteGroup)
@@ -59,7 +60,7 @@ export function BoardControls({
         selectedNodeIds.length > 1
           ? nodes.filter((node) => selectedNodeIds.includes(node.id))
           : nodes
-      const text = exportAIFormat(nodesToExport, slipTypes)
+      const text = exportAIFormat(nodesToExport, slipTypes, tags)
       await navigator.clipboard.writeText(text)
       setFeedback(
         selectedNodeIds.length > 1

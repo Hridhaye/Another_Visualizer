@@ -857,6 +857,32 @@
   flex-shrink: 0;
 }
 
+.cef-tag-row {
+  display: flex;
+  align-items: center;
+}
+
+.cef-tag-assign {
+  flex: 1;
+}
+
+.cef-tag-delete {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 6px 9px;
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.cef-tag-delete:hover {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.12);
+}
+
 /* List (slip / puzzle picker) */
 .cef-list {
   display: flex;

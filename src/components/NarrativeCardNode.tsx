@@ -3,6 +3,7 @@ import { Handle, Position, type NodeProps } from 'reactflow'
 
 import { getSlipColor, useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
 import { getPuzzleDisplayText, type CardData } from '../types/narrative'
+import { computeTagLogos } from '../graph/tagLogos'
 
 const LONG_PRESS_MS = 400
 const DRIFT_PX = 8
@@ -10,6 +11,7 @@ const DRIFT_PX = 8
 export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   void selected
   const slipTypes = useNarrativeBoardStore((state) => state.slipTypes)
+  const tags = useNarrativeBoardStore((state) => state.tags)
   const selectedNodeIds = useNarrativeBoardStore((state) => state.selectedNodeIds)
   const groups = useNarrativeBoardStore((state) => state.groups)
   const connectionSourceNodeId = useNarrativeBoardStore((state) => state.connectionSourceNodeId)
@@ -254,6 +256,22 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
       <div className="card-header">
         <div className="card-code">{data.code}</div>
         <div className="card-title">{data.title}</div>
+        {(data.tagIds ?? []).length > 0 && (() => {
+          const logos = computeTagLogos(tags)
+          const assigned = (data.tagIds ?? [])
+            .map((id) => tags.find((t) => t.id === id))
+            .filter((t): t is NonNullable<typeof t> => Boolean(t))
+          if (assigned.length === 0) return null
+          return (
+            <div className="card-tag-logos">
+              {assigned.map((tag) => (
+                <span key={tag.id} className="card-tag-logo" title={tag.name}>
+                  {logos.get(tag.id) ?? tag.name.charAt(0).toUpperCase()}
+                </span>
+              ))}
+            </div>
+          )
+        })()}
       </div>
 
       <div className="card-summary">{data.summary}</div>

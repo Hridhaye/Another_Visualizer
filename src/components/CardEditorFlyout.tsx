@@ -10,6 +10,7 @@ const FIELD_LABELS: Record<NonNullable<EditorField>, string> = {
   summary: 'Summary',
   slipType: 'Card Slip',
   slipGiven: 'Slip Given',
+  tags: 'Tags',
   puzzleType: 'Puzzle Type'
 }
 
@@ -21,10 +22,16 @@ export function CardEditorFlyout() {
   const nodes = useNarrativeBoardStore((s) => s.nodes)
   const updateNode = useNarrativeBoardStore((s) => s.updateNode)
   const slipTypes = useNarrativeBoardStore((s) => s.slipTypes)
+  const tags = useNarrativeBoardStore((s) => s.tags)
+  const addTag = useNarrativeBoardStore((s) => s.addTag)
+  const deleteTag = useNarrativeBoardStore((s) => s.deleteTag)
+  const assignTagToNode = useNarrativeBoardStore((s) => s.assignTagToNode)
+  const unassignTagFromNode = useNarrativeBoardStore((s) => s.unassignTagFromNode)
 
   const node = nodes.find((n) => n.id === selectedNodeId) ?? null
   const hasSingleSelection = selectedNodeIds.length === 1
   const [refSearch, setRefSearch] = useState('')
+  const [tagSearch, setTagSearch] = useState('')
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
 
   useEffect(() => {
@@ -32,6 +39,7 @@ export function CardEditorFlyout() {
       inputRef.current.focus()
     }
     setRefSearch('')
+    setTagSearch('')
   }, [activeEditorField, selectedNodeId])
 
   useEffect(() => {
@@ -276,6 +284,73 @@ export function CardEditorFlyout() {
                 Reset to minimums
               </button>
             )}
+          </div>
+          )
+        })()}
+
+        {activeEditorField === 'tags' && (() => {
+          const assigned = node.data.tagIds ?? []
+          const search = tagSearch.trim()
+          const searchLower = search.toLowerCase()
+          const filtered = tags.filter((t) => t.name.toLowerCase().includes(searchLower))
+          const exactExists = tags.some((t) => t.name.toLowerCase() === searchLower)
+          function createAndAssign() {
+            if (!node || !search || exactExists) return
+            addTag(search)
+            const created = useNarrativeBoardStore.getState().tags.find((t) => t.name.toLowerCase() === searchLower)
+            if (created) assignTagToNode(node.id, created.id)
+            setTagSearch('')
+          }
+          return (
+          <div className="cef-refs">
+            {assigned.length > 0 && (
+              <div className="cef-refs__chips">
+                {assigned.map((tagId) => {
+                  const tag = tags.find((t) => t.id === tagId)
+                  if (!tag) return null
+                  return (
+                    <span key={tagId} className="cef-chip cef-chip--slip-form">
+                      <span className="cef-chip__title">{tag.name}</span>
+                      <button onClick={() => unassignTagFromNode(node.id, tagId)} className="cef-chip__remove">×</button>
+                    </span>
+                  )
+                })}
+              </div>
+            )}
+            <input
+              value={tagSearch}
+              onChange={(e) => setTagSearch(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') createAndAssign() }}
+              placeholder="Search or create a tag…"
+              className="cef-input"
+            />
+            {search && !exactExists && (
+              <button onClick={createAndAssign} className="cef-refs__item">
+                <span className="cef-refs__item-title">Create “{search}”</span>
+                <span className="cef-refs__item-badge">new</span>
+              </button>
+            )}
+            <div className="cef-refs__list">
+              {filtered.length === 0 && !search ? (
+                <p className="cef-refs__empty">No tags yet</p>
+              ) : (
+                filtered.map((tag) => {
+                  const already = assigned.includes(tag.id)
+                  return (
+                    <div key={tag.id} className="cef-tag-row">
+                      <button
+                        onClick={() => (already ? unassignTagFromNode(node.id, tag.id) : assignTagToNode(node.id, tag.id))}
+                        className={`cef-refs__item cef-tag-assign ${already ? 'cef-refs__item--added' : ''}`}
+                      >
+                        <span className="cef-refs__item-title">{tag.name}</span>
+                        {already && <span className="cef-refs__item-badge">added</span>}
+                      </button>
+                      <button onClick={() => deleteTag(tag.id)} className="cef-tag-delete" title="Delete tag from project">×</button>
+                    </div>
+                  )
+                })
+              )}
+            </div>
           </div>
           )
         })()}

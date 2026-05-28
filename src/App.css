@@ -1395,6 +1395,34 @@
   cursor: default;
 }
 
+.context-panel__tag-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.context-panel__tag-assign {
+  flex: 1;
+}
+
+.context-panel__tag-delete {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: #71717a;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.context-panel__tag-delete:hover {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.12);
+}
+
 .context-panel__ref-code {
   font-family: monospace;
   font-size: 10px;

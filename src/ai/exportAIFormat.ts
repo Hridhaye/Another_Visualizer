@@ -1,8 +1,16 @@
-import { getPuzzleDisplayText, type NarrativeNode, type SlipType } from '../types/narrative'
+import { getPuzzleDisplayText, type NarrativeNode, type SlipType, type Tag } from '../types/narrative'
 
 function findSlipName(slipTypes: SlipType[], slipTypeId: string): string {
   const match = slipTypes.find((entry) => entry.id === slipTypeId)
   return match?.name ?? slipTypeId
+}
+
+function formatTags(tags: Tag[], tagIds: string[]): string | null {
+  if (tagIds.length === 0) return null
+  const names = tagIds
+    .map((id) => tags.find((tag) => tag.id === id)?.name)
+    .filter((name): name is string => Boolean(name))
+  return names.length > 0 ? names.join(', ') : null
 }
 
 function formatReferences(value: string): string[] {
@@ -28,7 +36,7 @@ function formatSlipGiven(slipTypes: SlipType[], slipGivenTypeIds: string[]): str
   return parts.join(', ')
 }
 
-export function exportAIFormat(nodes: NarrativeNode[], slipTypes: SlipType[] = []): string {
+export function exportAIFormat(nodes: NarrativeNode[], slipTypes: SlipType[] = [], tags: Tag[] = []): string {
   const sorted = [...nodes].sort((left, right) => left.data.code.localeCompare(right.data.code))
 
   return sorted
@@ -47,6 +55,11 @@ export function exportAIFormat(nodes: NarrativeNode[], slipTypes: SlipType[] = [
       const slipGiven = formatSlipGiven(slipTypes, node.data.slipGivenTypeIds ?? [])
       if (slipGiven) {
         lines.push(`SLIP_GIVEN: ${slipGiven}`)
+      }
+
+      const tagNames = formatTags(tags, node.data.tagIds ?? [])
+      if (tagNames) {
+        lines.push(`TAGS: ${tagNames}`)
       }
 
       const puzzleText = getPuzzleDisplayText(node.data.puzzleType, node.data.puzzleSummary)

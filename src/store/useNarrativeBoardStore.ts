@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type EditorField = 'codeRefs' | 'title' | 'summary' | 'slipType' | 'slipGiven' | 'puzzleType' | null
+export type EditorField = 'codeRefs' | 'title' | 'summary' | 'slipType' | 'slipGiven' | 'tags' | 'puzzleType' | null
 import {
   applyEdgeChanges,
   applyNodeChanges,
@@ -25,7 +25,8 @@ import type {
   SerializedMetadata,
   SerializedProjectData,
   SerializedViewport,
-  SlipType
+  SlipType,
+  Tag
 } from '../types/narrative'
 
 const defaultSlipTypes: SlipType[] = [
@@ -34,6 +35,8 @@ const defaultSlipTypes: SlipType[] = [
   { id: 'green', name: 'Green Slip', color: '#22c55e' },
   { id: 'yellow', name: 'Yellow Slip', color: '#eab308' }
 ]
+
+const defaultTags: Tag[] = []
 
 const initialNodes: NarrativeNode[] = [
   {
@@ -85,6 +88,7 @@ type NarrativeBoardState = {
   selectedNodeIds: string[]
   groups: CardGroup[]
   slipTypes: SlipType[]
+  tags: Tag[]
   sidebarCollapsed: boolean
   sectionsOpen: SectionOpenState
   connectionSourceNodeId: string | null
@@ -116,6 +120,7 @@ type HistorySnapshot = {
   selectedNodeIds: string[]
   groups: CardGroup[]
   slipTypes: SlipType[]
+  tags: Tag[]
   metadata: SerializedMetadata
   viewport: SerializedViewport
   hasUnsavedChanges: boolean
@@ -132,6 +137,11 @@ type NarrativeBoardActions = {
   addSlipType: (name: string, color: string) => void
   renameSlipType: (id: string, name: string) => void
   deleteSlipType: (id: string) => void
+  addTag: (name: string) => void
+  renameTag: (id: string, name: string) => void
+  deleteTag: (id: string) => void
+  assignTagToNode: (nodeId: string, tagId: string) => void
+  unassignTagFromNode: (nodeId: string, tagId: string) => void
   createGroupFromSelection: (name: string) => void
   toggleSelectionInGroup: (groupId: string) => void
   selectGroup: (groupId: string) => void
@@ -180,6 +190,7 @@ function createSnapshot(state: NarrativeBoardState): HistorySnapshot {
     selectedNodeIds: [...state.selectedNodeIds],
     groups: state.groups.map((group) => ({ ...group, nodeIds: [...group.nodeIds] })),
     slipTypes: state.slipTypes.map((slip) => ({ ...slip })),
+    tags: state.tags.map((tag) => ({ ...tag })),
     metadata: { ...state.metadata },
     viewport: { ...state.viewport },
     hasUnsavedChanges: state.hasUnsavedChanges
@@ -298,6 +309,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   selectedNodeIds: ['1'],
   groups: [],
   slipTypes: defaultSlipTypes,
+  tags: defaultTags,
   sidebarCollapsed: false,
   sectionsOpen: initialSectionsOpen,
   connectionSourceNodeId: null,
@@ -613,6 +625,112 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     })
   },
 
+  addTag: (name) => {
+    const trimmedName = name.trim()
+    if (!trimmedName) {
+      return
+    }
+
+    set((state) => {
+      if (state.tags.some((tag) => tag.name.toLowerCase() === trimmedName.toLowerCase())) {
+        return state
+      }
+
+      return {
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
+        tags: [...state.tags, { id: crypto.randomUUID(), name: trimmedName }],
+        hasUnsavedChanges: true
+      }
+    })
+  },
+
+  renameTag: (id, name) => {
+    const trimmedName = name.trim()
+    if (!trimmedName) {
+      return
+    }
+
+    set((state) => ({
+      historyPast: [...state.historyPast, createSnapshot(state)],
+      historyFuture: [],
+      canUndo: true,
+      canRedo: false,
+      tags: state.tags.map((tag) => (tag.id === id ? { ...tag, name: trimmedName } : tag)),
+      hasUnsavedChanges: true
+    }))
+  },
+
+  deleteTag: (id) => {
+    set((state) => {
+      if (!state.tags.some((tag) => tag.id === id)) {
+        return state
+      }
+
+      const updatedNodes = state.nodes.map((node) =>
+        (node.data.tagIds ?? []).includes(id)
+          ? { ...node, data: { ...node.data, tagIds: (node.data.tagIds ?? []).filter((tid) => tid !== id) } }
+          : node
+      )
+
+      return {
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
+        tags: state.tags.filter((tag) => tag.id !== id),
+        nodes: updatedNodes,
+        hasUnsavedChanges: true
+      }
+    })
+  },
+
+  assignTagToNode: (nodeId, tagId) => {
+    set((state) => {
+      const node = state.nodes.find((n) => n.id === nodeId)
+      if (!node || (node.data.tagIds ?? []).includes(tagId)) {
+        return state
+      }
+
+      return {
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
+        nodes: state.nodes.map((n) =>
+          n.id === nodeId
+            ? { ...n, data: { ...n.data, tagIds: [...(n.data.tagIds ?? []), tagId] } }
+            : n
+        ),
+        hasUnsavedChanges: true
+      }
+    })
+  },
+
+  unassignTagFromNode: (nodeId, tagId) => {
+    set((state) => {
+      const node = state.nodes.find((n) => n.id === nodeId)
+      if (!node || !(node.data.tagIds ?? []).includes(tagId)) {
+        return state
+      }
+
+      return {
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
+        nodes: state.nodes.map((n) =>
+          n.id === nodeId
+            ? { ...n, data: { ...n.data, tagIds: (n.data.tagIds ?? []).filter((tid) => tid !== tagId) } }
+            : n
+        ),
+        hasUnsavedChanges: true
+      }
+    })
+  },
+
   createGroupFromSelection: (name) => {
     const trimmedName = name.trim()
     if (!trimmedName) {
@@ -729,6 +847,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     const projectData: SerializedProjectData = serializeProject({
       nodes: state.nodes,
       slipTypes: state.slipTypes,
+      tags: state.tags,
       groups: state.groups,
       viewport: state.viewport,
       metadata: {
@@ -778,6 +897,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         nodes: nextNodes,
         edges: nextEdges,
         slipTypes: project.slipTypes.map((item) => ({ ...item })),
+        tags: project.tags.map((item) => ({ ...item })),
         groups: normalizeGroups(project.groups.map((group) => ({ ...group, nodeIds: [...group.nodeIds] })), nextNodes),
         metadata: {
           projectName: project.metadata.projectName || 'Mystery Board',
@@ -804,7 +924,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     const state = get()
 
     try {
-      const result = importAIFormat(rawText, state.nodes, state.slipTypes)
+      const result = importAIFormat(rawText, state.nodes, state.slipTypes, state.tags)
 
       set({
         historyPast: [...state.historyPast, createSnapshot(state)],
@@ -813,6 +933,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         canRedo: false,
         nodes: result.updatedNodes,
         edges: result.updatedEdges,
+        tags: result.updatedTags,
         groups: normalizeGroups(state.groups, result.updatedNodes),
         selectedNodeId: result.updatedNodes[0]?.id ?? null,
         selectedNodeIds: result.updatedNodes[0]?.id ? [result.updatedNodes[0].id] : [],

@@ -12,6 +12,7 @@ const EDITOR_BUTTONS: EditorButtonDef[] = [
   { field: 'summary', label: 'Summary', hint: (value) => value ? value.slice(0, 32) + (value.length > 32 ? '...' : '') : '-' },
   { field: 'slipType', label: 'Card Slip', hint: () => '' },
   { field: 'slipGiven', label: 'Slip Given', hint: () => '' },
+  { field: 'tags', label: 'Tags', hint: () => '' },
   { field: 'puzzleType', label: 'Puzzle', hint: (value) => value || 'none' },
   { field: 'body', label: 'Narrative Body', hint: () => '' },
 ]
@@ -55,6 +56,10 @@ export function CardEditor() {
       case 'slipGiven': {
         const count = (node.data.slipGivenTypeIds ?? []).length
         return count === 0 ? 'none' : `${count} slip${count > 1 ? 's' : ''}`
+      }
+      case 'tags': {
+        const count = (node.data.tagIds ?? []).length
+        return count === 0 ? 'none' : `${count} tag${count > 1 ? 's' : ''}`
       }
       case 'puzzleType':
         return node.data.puzzleType || 'none'

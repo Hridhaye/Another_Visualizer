@@ -1,4 +1,4 @@
-import type { CardGroup, NarrativeNode, SerializedMetadata, SerializedProject, SerializedViewport, SlipType } from '../types/narrative'
+import type { CardGroup, NarrativeNode, SerializedMetadata, SerializedProject, SerializedViewport, SlipType, Tag } from '../types/narrative'
 
 const SUPPORTED_VERSION = 1
 
@@ -57,6 +57,21 @@ function normalizeSlipType(value: unknown): SlipType | null {
   return { id, name, color }
 }
 
+function normalizeTag(value: unknown): Tag | null {
+  if (!isRecord(value)) {
+    return null
+  }
+
+  const id = toText(value.id, '')
+  const name = toText(value.name, '')
+
+  if (!id || !name) {
+    return null
+  }
+
+  return { id, name }
+}
+
 function normalizeGroup(value: unknown): CardGroup | null {
   if (!isRecord(value)) {
     return null
@@ -107,6 +122,9 @@ function normalizeNode(value: unknown): NarrativeNode | null {
         referenceSlipForms: Array.isArray(value.data.referenceSlipForms)
           ? value.data.referenceSlipForms.filter((code): code is string => typeof code === 'string')
           : [],
+        tagIds: Array.isArray(value.data.tagIds)
+          ? value.data.tagIds.filter((id): id is string => typeof id === 'string')
+          : [],
         puzzleType: ['none', 'fill', 'reorder', 'matching'].includes(String(value.data.puzzleType))
           ? String(value.data.puzzleType)
           : 'none'
@@ -120,6 +138,7 @@ function normalizeNode(value: unknown): NarrativeNode | null {
         slipGivenTypeIds: [],
         referencesText: '',
         referenceSlipForms: [],
+        tagIds: [],
         puzzleType: 'none' as const
       }
 
@@ -149,6 +168,9 @@ export function validateProject(value: unknown): { ok: true; project: Serialized
   const slipTypes = Array.isArray(value.slipTypes)
     ? value.slipTypes.map(normalizeSlipType).filter((item): item is SlipType => item !== null)
     : []
+  const tags = Array.isArray(value.tags)
+    ? value.tags.map(normalizeTag).filter((item): item is Tag => item !== null)
+    : []
   const groups = Array.isArray(value.groups)
     ? value.groups.map(normalizeGroup).filter((item): item is CardGroup => item !== null)
     : []
@@ -164,6 +186,7 @@ export function validateProject(value: unknown): { ok: true; project: Serialized
       metadata,
       viewport,
       slipTypes,
+      tags,
       groups,
       nodes
     }

@@ -147,6 +147,36 @@ REFERENCES:
     expect(reimportedB?.data.slipGivenTypeIds).toEqual(['red'])
   })
 
+  it('exports and re-imports TAGS, resolving names back to the same tag ids', () => {
+    const tags = [
+      { id: 't-suspect', name: 'Suspect' },
+      { id: 't-location', name: 'Location' }
+    ]
+    const nodes = [
+      { id: 'a', type: 'narrativeCard', position: { x: 0, y: 0 }, data: { code: 'AA01', title: 'First', summary: '', body: '', slipTypeId: 'blue', slipGivenTypeIds: [], referencesText: '', referenceSlipForms: [], tagIds: ['t-suspect', 't-location'], puzzleType: 'none' } }
+    ] as never
+
+    const text = exportAIFormat(nodes, [{ id: 'blue', name: 'Blue Slip', color: '#3b82f6' }], tags)
+    expect(text).toContain('TAGS: Suspect, Location')
+
+    const result = importAIFormat(text, nodes, [{ id: 'blue', name: 'Blue Slip', color: '#3b82f6' }], tags)
+    const reimported = result.updatedNodes.find((n) => n.data.code === 'AA01')
+    expect(reimported?.data.tagIds).toEqual(['t-suspect', 't-location'])
+    expect(result.updatedTags).toHaveLength(2)
+  })
+
+  it('creates new tags on import when the TAGS name is unknown', () => {
+    const nodes = [
+      { id: 'a', type: 'narrativeCard', position: { x: 0, y: 0 }, data: { code: 'AA01', title: 'First', summary: '', body: '', slipTypeId: 'blue', slipGivenTypeIds: [], referencesText: '', referenceSlipForms: [], tagIds: [], puzzleType: 'none' } }
+    ] as never
+
+    const raw = `@CARD AA01\nTITLE: First\nTAGS: Clue, Witness\n`
+    const result = importAIFormat(raw, nodes, [{ id: 'blue', name: 'Blue Slip', color: '#3b82f6' }], [])
+    expect(result.updatedTags.map((t) => t.name).sort()).toEqual(['Clue', 'Witness'])
+    const reimported = result.updatedNodes.find((n) => n.data.code === 'AA01')
+    expect(reimported?.data.tagIds).toHaveLength(2)
+  })
+
   it('parses legacy SLIP: field as card slip', () => {
     const raw = `
 @CARD AA01

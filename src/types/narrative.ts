@@ -38,6 +38,11 @@ export type SlipType = {
   color: string
 }
 
+export type Tag = {
+  id: string
+  name: string
+}
+
 export type CardGroup = {
   id: string
   name: string
@@ -100,6 +105,8 @@ export type CardData = {
   referencesText: string
   /** Reference codes whose "slip form" is toggled on: the referenced card's slip type is auto-added to this card's given slips. */
   referenceSlipForms?: string[]
+  /** Ids of tags (from the project-wide tag registry) assigned to this card. */
+  tagIds?: string[]
   puzzleType: PuzzleType
   puzzleSummary?: string
   puzzleFillContent?: FillPuzzleContent
@@ -127,6 +134,7 @@ export type SerializedProject = {
   metadata: SerializedMetadata
   viewport: SerializedViewport
   slipTypes: SlipType[]
+  tags: Tag[]
   groups: CardGroup[]
   nodes: NarrativeNode[]
   [key: string]: unknown
@@ -138,6 +146,7 @@ export type SerializedProjectData = {
   viewport: SerializedViewport
   nodes: NarrativeNode[]
   slipTypes: SlipType[]
+  tags: Tag[]
   groups: CardGroup[]
 }
 

@@ -1,5 +1,5 @@
 import { buildEdgesFromReferences, enforceGivenSlipMinimums } from '../graph/buildEdgesFromReferences'
-import type { NarrativeEdge, NarrativeNode, SlipType } from '../types/narrative'
+import type { NarrativeEdge, NarrativeNode, SlipType, Tag } from '../types/narrative'
 import { PUZZLE_TYPES } from '../types/narrative'
 import { parseAIBlocks } from './parseAIBlocks'
 import { validateAIFormat } from './validateAIFormat'
@@ -7,6 +7,7 @@ import { validateAIFormat } from './validateAIFormat'
 export type AIImportResult = {
   updatedNodes: NarrativeNode[]
   updatedEdges: NarrativeEdge[]
+  updatedTags: Tag[]
   createdCount: number
   updatedCount: number
 }
@@ -46,7 +47,7 @@ function normalizePuzzle(value: string): { puzzleType: (typeof PUZZLE_TYPES)[num
   return { puzzleType, puzzleSummary }
 }
 
-export function importAIFormat(rawText: string, existingNodes: NarrativeNode[], slipTypes: SlipType[]): AIImportResult {
+export function importAIFormat(rawText: string, existingNodes: NarrativeNode[], slipTypes: SlipType[], existingTags: Tag[] = []): AIImportResult {
   const blocks = parseAIBlocks(rawText)
   const validation = validateAIFormat(blocks, existingNodes)
 
@@ -56,8 +57,25 @@ export function importAIFormat(rawText: string, existingNodes: NarrativeNode[], 
 
   const existingByCode = new Map(existingNodes.map((node) => [node.data.code.toUpperCase(), node]))
   const updatedNodes = existingNodes.map((node) => ({ ...node }))
+  const tags: Tag[] = existingTags.map((tag) => ({ ...tag }))
   let createdCount = 0
   let updatedCount = 0
+
+  // Resolve a tag name to an id, creating a new tag (in `tags`) on first sight.
+  function resolveTagIds(names: string[]): string[] {
+    const ids: string[] = []
+    for (const rawName of names) {
+      const name = rawName.trim()
+      if (!name) continue
+      let tag = tags.find((t) => t.name.toLowerCase() === name.toLowerCase())
+      if (!tag) {
+        tag = { id: crypto.randomUUID(), name }
+        tags.push(tag)
+      }
+      if (!ids.includes(tag.id)) ids.push(tag.id)
+    }
+    return ids
+  }
 
   for (const block of validation.cards) {
     const existing = existingByCode.get(block.code.toUpperCase())
@@ -75,6 +93,9 @@ export function importAIFormat(rawText: string, existingNodes: NarrativeNode[], 
           slipGivenTypeIds: block.slipGiven.length > 0
             ? resolveSlipGivenTypeIds(slipTypes, block.slipGiven)
             : (existing.data.slipGivenTypeIds ?? []),
+          tagIds: block.tags.length > 0
+            ? resolveTagIds(block.tags)
+            : (existing.data.tagIds ?? []),
           referencesText: block.references.join(', '),
           puzzleType: normalizePuzzle(block.puzzle || existing.data.puzzleType).puzzleType,
           puzzleSummary: normalizePuzzle(block.puzzle || existing.data.puzzleType).puzzleSummary
@@ -100,6 +121,7 @@ export function importAIFormat(rawText: string, existingNodes: NarrativeNode[], 
         body: block.content.trim(),
         slipTypeId: resolveSlipTypeId(slipTypes, block.slip || 'blue'),
         slipGivenTypeIds: resolveSlipGivenTypeIds(slipTypes, block.slipGiven),
+        tagIds: resolveTagIds(block.tags),
         referencesText: block.references.join(', '),
         puzzleType: normalizePuzzle(block.puzzle || 'none').puzzleType,
         puzzleSummary: normalizePuzzle(block.puzzle || 'none').puzzleSummary
@@ -122,6 +144,7 @@ export function importAIFormat(rawText: string, existingNodes: NarrativeNode[], 
   return {
     updatedNodes: normalizedNodes,
     updatedEdges: buildEdgesFromReferences(normalizedNodes),
+    updatedTags: tags,
     createdCount,
     updatedCount
   }
