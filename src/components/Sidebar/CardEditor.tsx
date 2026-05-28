@@ -1,114 +1,115 @@
-import { PUZZLE_TYPES, type CardData, type NarrativeNode, type SlipType } from '../../types/narrative'
+import { useNarrativeBoardStore, type EditorField } from '../../store/useNarrativeBoardStore'
 
-type CardEditorProps = {
-  selectedNode: NarrativeNode | null
-  slipTypes: SlipType[]
-  onUpdateNode: (nodeId: string, patch: Partial<CardData>) => void
+type EditorButtonDef = {
+  field: EditorField | 'body'
+  label: string
+  hint: (val: string) => string
 }
 
-export function CardEditor({
-  selectedNode,
-  slipTypes,
-  onUpdateNode
-}: CardEditorProps) {
-  if (!selectedNode) {
-    return null
+const EDITOR_BUTTONS: EditorButtonDef[] = [
+  { field: 'code',       label: 'Code',           hint: (v) => v },
+  { field: 'title',      label: 'Title',          hint: (v) => v || '—' },
+  { field: 'summary',    label: 'Summary',        hint: (v) => v ? v.slice(0, 32) + (v.length > 32 ? '…' : '') : '—' },
+  { field: 'references', label: 'References',     hint: (v) => v || 'none' },
+  { field: 'slipType',   label: 'Slip',           hint: () => '' },
+  { field: 'puzzleType', label: 'Puzzle',         hint: (v) => v || 'none' },
+  { field: 'body',       label: 'Narrative Body', hint: () => '' },
+]
+
+export function CardEditor() {
+  const selectedNodeId = useNarrativeBoardStore((s) => s.selectedNodeId)
+  const nodes = useNarrativeBoardStore((s) => s.nodes)
+  const slipTypes = useNarrativeBoardStore((s) => s.slipTypes)
+  const activeEditorField = useNarrativeBoardStore((s) => s.activeEditorField)
+  const narrativeBodyOpen = useNarrativeBoardStore((s) => s.narrativeBodyOpen)
+  const openEditorField = useNarrativeBoardStore((s) => s.openEditorField)
+  const closeEditorField = useNarrativeBoardStore((s) => s.closeEditorField)
+  const openNarrativeBody = useNarrativeBoardStore((s) => s.openNarrativeBody)
+  const closeNarrativeBody = useNarrativeBoardStore((s) => s.closeNarrativeBody)
+
+  const node = nodes.find((n) => n.id === selectedNodeId) ?? null
+  const hasSelection = !!node
+
+  function getHint(field: EditorField | 'body'): string {
+    if (!node) return ''
+    switch (field) {
+      case 'code':       return node.data.code
+      case 'title':      return node.data.title ? node.data.title.slice(0, 28) + (node.data.title.length > 28 ? '…' : '') : '—'
+      case 'summary':    return node.data.summary ? node.data.summary.slice(0, 28) + (node.data.summary.length > 28 ? '…' : '') : '—'
+      case 'references': return node.data.referencesText || 'none'
+      case 'slipType': {
+        const slip = slipTypes.find((s) => s.id === node.data.slipTypeId)
+        return slip?.name ?? '—'
+      }
+      case 'puzzleType': return node.data.puzzleType || 'none'
+      case 'body':       return node.data.body ? 'has content' : 'empty'
+      default:           return ''
+    }
+  }
+
+  function getSlipColor(field: EditorField | 'body'): string | null {
+    if (field !== 'slipType' || !node) return null
+    const slip = slipTypes.find((s) => s.id === node.data.slipTypeId)
+    return slip?.color ?? null
+  }
+
+  function isActive(field: EditorField | 'body'): boolean {
+    if (field === 'body') return narrativeBodyOpen
+    return activeEditorField === field
+  }
+
+  function toggle(field: EditorField | 'body') {
+    if (!hasSelection) return
+    if (field === 'body') {
+      narrativeBodyOpen ? closeNarrativeBody() : openNarrativeBody()
+      return
+    }
+    if (activeEditorField === field) {
+      closeEditorField()
+    } else {
+      openEditorField(field)
+    }
   }
 
   return (
-    <div className="px-2 pb-3 pt-1">
-      <div className="flex flex-col gap-2.5">
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Code</label>
-          <input
-            value={selectedNode.data.code}
-            onChange={(event) => {
-              onUpdateNode(selectedNode.id, { code: event.target.value })
-            }}
-            className="mt-1 w-full rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-xs text-zinc-100 outline-none focus:border-blue-500"
-          />
-        </div>
+    <div className="card-editor">
+      {!hasSelection && (
+        <p className="card-editor__empty-hint">Select a card to edit its fields</p>
+      )}
+      <div className="card-editor__grid">
+        {EDITOR_BUTTONS.map(({ field, label }) => {
+          const active = isActive(field)
+          const hint = getHint(field)
+          const slipColor = getSlipColor(field)
+          const isBody = field === 'body'
 
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Title</label>
-          <input
-            value={selectedNode.data.title}
-            onChange={(event) => {
-              onUpdateNode(selectedNode.id, { title: event.target.value })
-            }}
-            className="mt-1 w-full rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-xs text-zinc-100 outline-none focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Summary</label>
-          <textarea
-            value={selectedNode.data.summary}
-            onChange={(event) => {
-              onUpdateNode(selectedNode.id, { summary: event.target.value })
-            }}
-            className="mt-1 min-h-[60px] w-full rounded border border-zinc-800 bg-zinc-950 px-2 py-1.5 text-xs text-zinc-100 outline-none focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">References</label>
-          <input
-            value={selectedNode.data.referencesText}
-            onChange={(event) => {
-              onUpdateNode(selectedNode.id, { referencesText: event.target.value })
-            }}
-            placeholder="AA02, AB03, CV11"
-            className="mt-1 w-full rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-xs text-zinc-100 outline-none focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Narrative Body</label>
-          <textarea
-            value={selectedNode.data.body}
-            onChange={(event) => {
-              onUpdateNode(selectedNode.id, { body: event.target.value })
-            }}
-            className="mt-1 min-h-[140px] w-full rounded border border-zinc-800 bg-zinc-950 px-2 py-1.5 font-mono text-xs leading-5 text-zinc-200 outline-none focus:border-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Slip Type</label>
-          <select
-            value={selectedNode.data.slipTypeId}
-            onChange={(event) => {
-              onUpdateNode(selectedNode.id, { slipTypeId: event.target.value })
-            }}
-            className="mt-1 w-full rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-xs text-zinc-100 outline-none"
-          >
-            {slipTypes.map((slip) => (
-              <option key={slip.id} value={slip.id}>
-                {slip.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Puzzle Type</label>
-          <select
-            value={selectedNode.data.puzzleType}
-            onChange={(event) => {
-              onUpdateNode(selectedNode.id, {
-                puzzleType: event.target.value as CardData['puzzleType']
-              })
-            }}
-            className="mt-1 w-full rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-xs text-zinc-100 outline-none"
-          >
-            {PUZZLE_TYPES.map((puzzleType) => (
-              <option key={puzzleType} value={puzzleType}>
-                {puzzleType.charAt(0).toUpperCase() + puzzleType.slice(1)}
-              </option>
-            ))}
-          </select>
-        </div>
+          return (
+            <button
+              key={field}
+              disabled={!hasSelection}
+              onClick={() => toggle(field)}
+              className={[
+                'card-editor__btn',
+                active ? 'card-editor__btn--active' : '',
+                !hasSelection ? 'card-editor__btn--disabled' : '',
+                isBody ? 'card-editor__btn--body' : '',
+              ].filter(Boolean).join(' ')}
+            >
+              <span className="card-editor__btn-label">{label}</span>
+              {hasSelection && hint && (
+                <span className="card-editor__btn-hint">
+                  {slipColor && (
+                    <span
+                      className="card-editor__slip-dot"
+                      style={{ background: slipColor }}
+                    />
+                  )}
+                  {hint}
+                </span>
+              )}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

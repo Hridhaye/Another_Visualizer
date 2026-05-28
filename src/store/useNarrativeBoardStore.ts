@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+
+export type EditorField = 'code' | 'title' | 'summary' | 'references' | 'slipType' | 'puzzleType' | null
 import {
   applyEdgeChanges,
   applyNodeChanges,
@@ -87,6 +89,7 @@ type NarrativeBoardState = {
   hasUnsavedChanges: boolean
   contextPanelOpen: boolean
   narrativeBodyOpen: boolean
+  activeEditorField: EditorField
   canUndo: boolean
   canRedo: boolean
   historyPast: HistorySnapshot[]
@@ -125,6 +128,8 @@ type NarrativeBoardActions = {
   closeContextPanel: () => void
   openNarrativeBody: () => void
   closeNarrativeBody: () => void
+  openEditorField: (field: EditorField) => void
+  closeEditorField: () => void
   cycleMinimapState: () => void
   setViewport: (viewport: SerializedViewport) => void
   setMetadata: (metadata: SerializedMetadata) => void
@@ -177,6 +182,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   minimapCollapsed: false,
   contextPanelOpen: false,
   narrativeBodyOpen: false,
+  activeEditorField: null,
   canUndo: false,
   canRedo: false,
   historyPast: [],
@@ -333,6 +339,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
           state.connectionSourceNodeId === nodeId ? null : state.connectionSourceNodeId,
         contextPanelOpen: state.selectedNodeId === nodeId ? false : state.contextPanelOpen,
         narrativeBodyOpen: state.selectedNodeId === nodeId ? false : state.narrativeBodyOpen,
+        activeEditorField: state.selectedNodeId === nodeId ? null : state.activeEditorField,
         hasUnsavedChanges: true
       }
     })
@@ -554,7 +561,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       selectedNodeId: null,
       connectionSourceNodeId: null,
       contextPanelOpen: false,
-      narrativeBodyOpen: false
+      narrativeBodyOpen: false,
+      activeEditorField: null
     })
   },
 
@@ -626,6 +634,14 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     set({ narrativeBodyOpen: false })
   },
 
+  openEditorField: (field) => {
+    set({ activeEditorField: field })
+  },
+
+  closeEditorField: () => {
+    set({ activeEditorField: null })
+  },
+
   cycleMinimapState: () => {
     set((state) => {
       if (!state.minimapVisible) {
@@ -666,7 +682,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         canRedo: true,
         connectionSourceNodeId: null,
         contextPanelOpen: false,
-        narrativeBodyOpen: false
+        narrativeBodyOpen: false,
+        activeEditorField: null
       }
     })
   },
@@ -689,7 +706,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         canRedo: nextFuture.length > 0,
         connectionSourceNodeId: null,
         contextPanelOpen: false,
-        narrativeBodyOpen: false
+        narrativeBodyOpen: false,
+        activeEditorField: null
       }
     })
   }

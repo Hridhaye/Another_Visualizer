@@ -9,6 +9,7 @@ import ReactFlow, {
 import { MinimapControls } from './components/MinimapControls'
 import { NarrativeCardNode } from './components/NarrativeCardNode'
 import { NarrativeBodyPanel } from './components/NarrativeBodyPanel'
+import { CardEditorFlyout } from './components/CardEditorFlyout'
 import { Sidebar } from './components/Sidebar/Sidebar'
 import { useNarrativeBoardStore } from './store/useNarrativeBoardStore'
 import './App.css'
@@ -31,7 +32,6 @@ function BoardCanvas() {
   const onEdgesChange = useNarrativeBoardStore((state) => state.onEdgesChange)
   const onConnect = useNarrativeBoardStore((state) => state.onConnect)
   const addCard = useNarrativeBoardStore((state) => state.addCard)
-  const updateNode = useNarrativeBoardStore((state) => state.updateNode)
   const saveProject = useNarrativeBoardStore((state) => state.saveProject)
   const loadProject = useNarrativeBoardStore((state) => state.loadProject)
   const applyAIFormatImport = useNarrativeBoardStore((state) => state.applyAIFormatImport)
@@ -51,7 +51,6 @@ function BoardCanvas() {
   const undo = useNarrativeBoardStore((state) => state.undo)
   const redo = useNarrativeBoardStore((state) => state.redo)
 
-  const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? null
   const nodeTypes = useMemo(
     () => ({
       narrativeCard: NarrativeCardNode
@@ -98,11 +97,11 @@ function BoardCanvas() {
   return (
     <div className="board-root">
       <NarrativeBodyPanel />
+      <CardEditorFlyout />
       <Sidebar
         collapsed={sidebarCollapsed}
         sectionsOpen={sectionsOpen}
         nodes={nodes}
-        selectedNode={selectedNode}
         slipTypes={slipTypes}
         onToggleSidebar={toggleSidebar}
         onToggleSection={toggleSection}
@@ -114,7 +113,6 @@ function BoardCanvas() {
         updatedAt={metadata.updatedAt}
         hasUnsavedChanges={hasUnsavedChanges}
         onProjectNameChange={(value) => setMetadata({ ...metadata, projectName: value, updatedAt: metadata.updatedAt })}
-        onUpdateNode={updateNode}
       />
 
       <div className="board-canvas">
