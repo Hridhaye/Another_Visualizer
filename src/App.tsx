@@ -64,6 +64,7 @@ function BoardCanvas() {
   const setMultiSelectMode = useNarrativeBoardStore((state) => state.setMultiSelectMode)
   const matchingPickMode = useNarrativeBoardStore((state) => state.matchingPickMode)
   const cancelMatchingPickMode = useNarrativeBoardStore((state) => state.cancelMatchingPickMode)
+  const commitMatchingPickMode = useNarrativeBoardStore((state) => state.commitMatchingPickMode)
   const groups = useNarrativeBoardStore((state) => state.groups)
   const createGroupFromSelection = useNarrativeBoardStore((state) => state.createGroupFromSelection)
   const toggleSelectionInGroup = useNarrativeBoardStore((state) => state.toggleSelectionInGroup)
@@ -370,7 +371,7 @@ function BoardCanvas() {
         {matchingPickMode && (
           <div className="matching-pick-banner">
             <span className="matching-pick-banner__text">Click cards to add them to the puzzle</span>
-            <button onClick={cancelMatchingPickMode} className="matching-pick-banner__done">Done</button>
+            <button onClick={commitMatchingPickMode} className="matching-pick-banner__done">Done</button>
           </div>
         )}
         {showContextPanel && (

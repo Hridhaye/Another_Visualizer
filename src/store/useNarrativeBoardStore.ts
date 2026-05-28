@@ -106,6 +106,7 @@ type NarrativeBoardState = {
   activeGroupId: string | null
   matchingPickMode: boolean
   matchingPickSourceNodeId: string | null
+  matchingPickStagedIds: string[]
 }
 
 type HistorySnapshot = {
@@ -166,6 +167,7 @@ type NarrativeBoardActions = {
   enterMatchingPickMode: (sourceNodeId: string) => void
   confirmMatchingPick: (pickedNodeId: string) => void
   cancelMatchingPickMode: () => void
+  commitMatchingPickMode: () => void
 }
 
 export type NarrativeBoardStore = NarrativeBoardState & NarrativeBoardActions
@@ -314,6 +316,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   activeGroupId: null,
   matchingPickMode: false,
   matchingPickSourceNodeId: null,
+  matchingPickStagedIds: [],
   metadata: {
     projectName: 'Mystery Board',
     createdAt: new Date().toISOString(),
@@ -1035,6 +1038,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     set({
       matchingPickMode: true,
       matchingPickSourceNodeId: sourceNodeId,
+      matchingPickStagedIds: [],
       puzzleBodyOpen: false,
       contextPanelOpen: false,
       activeEditorField: null,
@@ -1043,26 +1047,46 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
 
   confirmMatchingPick: (pickedNodeId) => {
     const state = get()
+    if (!state.matchingPickSourceNodeId) return
+    if (pickedNodeId === state.matchingPickSourceNodeId) return
+    // Toggle in/out of staged set
+    const staged = state.matchingPickStagedIds
+    const next = staged.includes(pickedNodeId)
+      ? staged.filter((id) => id !== pickedNodeId)
+      : [...staged, pickedNodeId]
+    set({ matchingPickStagedIds: next })
+  },
+
+  cancelMatchingPickMode: () => {
+    const sourceNodeId = get().matchingPickSourceNodeId
+    set({
+      matchingPickMode: false,
+      matchingPickSourceNodeId: null,
+      matchingPickStagedIds: [],
+      puzzleBodyOpen: true,
+      ...(sourceNodeId ? { selectedNodeId: sourceNodeId, selectedNodeIds: [sourceNodeId] } : {}),
+    })
+  },
+
+  commitMatchingPickMode: () => {
+    const state = get()
     const sourceNodeId = state.matchingPickSourceNodeId
     if (!sourceNodeId) return
 
     const sourceNode = state.nodes.find((n) => n.id === sourceNodeId)
     if (!sourceNode) return
 
-    // Ignore clicks on the source card itself — stay in pick mode
-    if (pickedNodeId === sourceNodeId) return
-
     const existing = sourceNode.data.puzzleMatchingContent ?? { questionHtml: '', cards: [] }
-    // Ignore duplicates — stay in pick mode
-    const alreadyAdded = existing.cards.some((c) => c.nodeId === pickedNodeId)
-    if (alreadyAdded) return
+    const alreadyIds = new Set(existing.cards.map((c) => c.nodeId))
+    const newCards: MatchingCard[] = state.matchingPickStagedIds
+      .filter((id) => !alreadyIds.has(id))
+      .map((id) => ({ nodeId: id, isSolution: false, representativeLine: '' }))
 
-    const newCard: MatchingCard = { nodeId: pickedNodeId, isSolution: false, representativeLine: '' }
     const updatedNodes = state.nodes.map((n) => {
       if (n.id !== sourceNodeId) return n
-      return { ...n, data: { ...n.data, puzzleMatchingContent: { ...existing, cards: [...existing.cards, newCard] } } }
+      return { ...n, data: { ...n.data, puzzleMatchingContent: { ...existing, cards: [...existing.cards, ...newCards] } } }
     })
-    // Stay in pick mode after each pick
+
     set({
       historyPast: [...state.historyPast, createSnapshot(state)],
       historyFuture: [],
@@ -1072,16 +1096,12 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       edges: buildEdgesFromReferences(updatedNodes),
       groups: normalizeGroups(state.groups, updatedNodes),
       hasUnsavedChanges: true,
-    })
-  },
-
-  cancelMatchingPickMode: () => {
-    const sourceNodeId = get().matchingPickSourceNodeId
-    set({
       matchingPickMode: false,
       matchingPickSourceNodeId: null,
+      matchingPickStagedIds: [],
       puzzleBodyOpen: true,
-      ...(sourceNodeId ? { selectedNodeId: sourceNodeId, selectedNodeIds: [sourceNodeId] } : {}),
+      selectedNodeId: sourceNodeId,
+      selectedNodeIds: [sourceNodeId],
     })
   },
 

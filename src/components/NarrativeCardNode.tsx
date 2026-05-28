@@ -22,6 +22,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const activeGroupId = useNarrativeBoardStore((state) => state.activeGroupId)
   const matchingPickMode = useNarrativeBoardStore((state) => state.matchingPickMode)
   const matchingPickSourceNodeId = useNarrativeBoardStore((state) => state.matchingPickSourceNodeId)
+  const matchingPickStagedIds = useNarrativeBoardStore((state) => state.matchingPickStagedIds)
   const confirmMatchingPick = useNarrativeBoardStore((state) => state.confirmMatchingPick)
   const activeGroup = activeGroupId ? groups.find((g) => g.id === activeGroupId) ?? null : null
   const isGroupSelected = !!activeGroup?.nodeIds.includes(id)
@@ -34,14 +35,9 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const nodeGroups = groups.filter((group) => group.nodeIds.includes(id))
   const hasPuzzle = data.puzzleType !== 'none'
   const puzzleText = getPuzzleDisplayText(data.puzzleType, data.puzzleSummary)
-  const nodes = useNarrativeBoardStore((state) => state.nodes)
   const isPickSource = matchingPickMode && matchingPickSourceNodeId === id
-  const isPickTarget = matchingPickMode && !isPickSource
-  const isPickPicked = matchingPickMode && (() => {
-    if (!matchingPickSourceNodeId) return false
-    const sourceNode = nodes.find((n) => n.id === matchingPickSourceNodeId)
-    return sourceNode?.data.puzzleMatchingContent?.cards.some((c) => c.nodeId === id) ?? false
-  })()
+  const isPickPicked = matchingPickMode && !isPickSource && matchingPickStagedIds.includes(id)
+  const isPickTarget = matchingPickMode && !isPickSource && !isPickPicked
   const cardClassName = `card-shell relative ${isSelected ? 'card-selected' : ''} ${isHighlighted ? 'card-highlighted' : ''} ${hasPuzzle ? 'has-puzzle' : ''} ${isPickSource ? 'card-pick-source' : ''} ${isPickTarget ? 'card-pick-target' : ''} ${isPickPicked ? 'card-pick-picked' : ''}`
 
   const divRef = useRef<HTMLDivElement | null>(null)
