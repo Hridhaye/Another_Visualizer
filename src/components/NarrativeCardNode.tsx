@@ -215,9 +215,9 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
     : ''
 
   const baseShadow = isGroupSelected
-    ? `0 0 0 3px rgba(59,130,246,0.8), 0 0 20px 4px rgba(59,130,246,0.35), 0 12px 34px rgba(0,0,0,0.5)`
+    ? `0 0 0 3px rgba(59,130,246,0.9), 0 0 22px 6px rgba(59,130,246,0.45)`
     : isSelected
-      ? `0 0 0 2px rgba(59,130,246,0.55), 0 0 12px 2px rgba(59,130,246,0.2), 0 12px 34px rgba(0,0,0,0.5)`
+      ? `0 0 0 2px rgba(59,130,246,0.75), 0 0 14px 4px rgba(59,130,246,0.3)`
       : `0 0 0 2px rgba(255,255,255,0.04)`
 
   return (
@@ -228,7 +228,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
       style={{
         border: `7px solid ${slipColor}`,
         backgroundColor: '#18181b',
-        backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0.03), rgba(255,255,255,0)), linear-gradient(to bottom, ${slipColor}14, ${slipColor}0a)`,
+        backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0.03), rgba(255,255,255,0)), linear-gradient(to bottom, ${slipColor}1f, ${slipColor}12)`,
         boxShadow: `${baseShadow}${extraShadow}${highlightShadow}`,
         transform: isHighlighted ? 'scale(1.06)' : undefined,
         cursor: isPendingTarget ? 'crosshair' : undefined,
