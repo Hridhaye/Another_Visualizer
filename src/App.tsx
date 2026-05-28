@@ -20,7 +20,6 @@ import 'reactflow/dist/style.css'
 function BoardCanvas() {
   const nodes = useNarrativeBoardStore((state) => state.nodes)
   const edges = useNarrativeBoardStore((state) => state.edges)
-  const selectedNodeId = useNarrativeBoardStore((state) => state.selectedNodeId)
   const slipTypes = useNarrativeBoardStore((state) => state.slipTypes)
   const sidebarCollapsed = useNarrativeBoardStore((state) => state.sidebarCollapsed)
   const sectionsOpen = useNarrativeBoardStore((state) => state.sectionsOpen)
