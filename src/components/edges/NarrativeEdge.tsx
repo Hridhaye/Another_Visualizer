@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom'
 import { getSmoothStepPath, BaseEdge, useViewport } from 'reactflow'
 import type { EdgeProps } from 'reactflow'
 import { useEdgeOverlay } from './EdgeOverlayContext'
+import { useSelectedCardClip } from './useSelectedCardClip'
 
 const MARKER_ID_BRIGHT = 'narrative-arrow-bright'
 
@@ -20,14 +21,17 @@ function HighlightedPath({
   sourceX, sourceY, targetX, targetY,
   sourcePosition, targetPosition,
   shift,
+  clipId,
 }: {
   overlayEl: HTMLElement
   sourceX: number; sourceY: number
   targetX: number; targetY: number
   sourcePosition: string; targetPosition: string
   shift: number
+  clipId: string
 }) {
   const { x, y, zoom } = useViewport()
+  const clip = useSelectedCardClip(clipId)
 
   const [path] = getSmoothStepPath({
     sourceX,
@@ -43,15 +47,18 @@ function HighlightedPath({
   return createPortal(
     <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', overflow: 'visible', zIndex: 10, mixBlendMode: 'screen' }}>
       <NarrativeEdgeMarkerDef />
-      <g style={{ transform: `translate(${x}px, ${y}px) scale(${zoom})`, transformOrigin: '0 0' }}>
-        <path
-          d={path}
-          fill="none"
-          stroke="rgba(255,255,255,0.85)"
-          strokeWidth={2.5}
-          markerEnd={`url(#${MARKER_ID_BRIGHT})`}
-          style={{ filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.6))' }}
-        />
+      {clip?.clipDef}
+      <g clipPath={clip?.clipUrl}>
+        <g style={{ transform: `translate(${x}px, ${y}px) scale(${zoom})`, transformOrigin: '0 0' }}>
+          <path
+            d={path}
+            fill="none"
+            stroke="rgba(255,255,255,0.85)"
+            strokeWidth={2.5}
+            markerEnd={`url(#${MARKER_ID_BRIGHT})`}
+            style={{ filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.6))' }}
+          />
+        </g>
       </g>
     </svg>,
     overlayEl
@@ -106,6 +113,7 @@ export function NarrativeEdgeComponent({
           sourcePosition={sourcePosition}
           targetPosition={targetPosition}
           shift={shift}
+          clipId={`clip-narrative-${id}`}
         />
       )}
     </>

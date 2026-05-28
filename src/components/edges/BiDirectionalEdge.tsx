@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom'
 import { getSmoothStepPath, useViewport } from 'reactflow'
 import type { EdgeProps } from 'reactflow'
 import { useEdgeOverlay } from './EdgeOverlayContext'
+import { useSelectedCardClip } from './useSelectedCardClip'
 
 const MARKER_DIM = 'bidir-arrow-dim'
 const MARKER_BRIGHT = 'bidir-arrow-bright'
@@ -41,36 +42,41 @@ function buildPaths(
 function HighlightedBidirPath({
   overlayEl,
   sourceX, sourceY, targetX, targetY,
-  sourcePosition, targetPosition, shift,
+  sourcePosition, targetPosition, shift, clipId,
 }: {
   overlayEl: HTMLElement
   sourceX: number; sourceY: number
   targetX: number; targetY: number
   sourcePosition: string; targetPosition: string
   shift: number
+  clipId: string
 }) {
   const { x, y, zoom } = useViewport()
+  const clip = useSelectedCardClip(clipId)
   const { forward, reverse } = buildPaths(sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, shift)
 
   return createPortal(
     <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', overflow: 'visible', zIndex: 10, mixBlendMode: 'screen' }}>
       <BiDirectionalEdgeMarkerDef />
-      <g style={{ transform: `translate(${x}px, ${y}px) scale(${zoom})`, transformOrigin: '0 0' }}>
-        <path
-          d={forward}
-          fill="none"
-          stroke="rgba(255,255,255,0.85)"
-          strokeWidth={3}
-          markerEnd={`url(#${MARKER_BRIGHT})`}
-          style={{ filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.6))' }}
-        />
-        <path
-          d={reverse}
-          fill="none"
-          stroke="transparent"
-          strokeWidth={3}
-          markerEnd={`url(#${MARKER_BRIGHT})`}
-        />
+      {clip?.clipDef}
+      <g clipPath={clip?.clipUrl}>
+        <g style={{ transform: `translate(${x}px, ${y}px) scale(${zoom})`, transformOrigin: '0 0' }}>
+          <path
+            d={forward}
+            fill="none"
+            stroke="rgba(255,255,255,0.85)"
+            strokeWidth={3}
+            markerEnd={`url(#${MARKER_BRIGHT})`}
+            style={{ filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.6))' }}
+          />
+          <path
+            d={reverse}
+            fill="none"
+            stroke="transparent"
+            strokeWidth={3}
+            markerEnd={`url(#${MARKER_BRIGHT})`}
+          />
+        </g>
       </g>
     </svg>,
     overlayEl
@@ -78,6 +84,7 @@ function HighlightedBidirPath({
 }
 
 export function BiDirectionalEdge({
+  id,
   sourceX, sourceY, targetX, targetY,
   sourcePosition, targetPosition,
   data,
@@ -112,6 +119,7 @@ export function BiDirectionalEdge({
           sourcePosition={sourcePosition}
           targetPosition={targetPosition}
           shift={shift}
+          clipId={`clip-bidir-${id}`}
         />
       )}
     </>
