@@ -13,7 +13,6 @@ type SidebarProps = {
   slipTypes: SlipType[]
   onToggleSidebar: () => void
   onToggleSection: (key: SectionKey) => void
-  onAddCard: () => void
   onSaveProject: () => Promise<void>
   onLoadProject: (file: File) => Promise<void>
   onImportAIFormat: (text: string) => Promise<{ createdCount: number; updatedCount: number }>
@@ -53,7 +52,6 @@ export function Sidebar({
   slipTypes,
   onToggleSidebar,
   onToggleSection,
-  onAddCard,
   onSaveProject,
   onLoadProject,
   onImportAIFormat,
@@ -101,7 +99,6 @@ export function Sidebar({
               projectName={projectName}
               updatedAt={updatedAt}
               hasUnsavedChanges={hasUnsavedChanges}
-              onAddCard={onAddCard}
               onSaveProject={onSaveProject}
               onLoadProject={onLoadProject}
               onImportAIFormat={onImportAIFormat}

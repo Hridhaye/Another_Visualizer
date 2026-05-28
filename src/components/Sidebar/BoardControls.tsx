@@ -9,7 +9,6 @@ type BoardControlsProps = {
   projectName: string
   updatedAt: string
   hasUnsavedChanges: boolean
-  onAddCard: () => void
   onSaveProject: () => Promise<void>
   onLoadProject: (file: File) => Promise<void>
   onImportAIFormat: (text: string) => Promise<{ createdCount: number; updatedCount: number }>
@@ -22,7 +21,6 @@ export function BoardControls({
   projectName,
   updatedAt,
   hasUnsavedChanges,
-  onAddCard,
   onSaveProject,
   onLoadProject,
   onImportAIFormat,
@@ -107,8 +105,6 @@ export function BoardControls({
           <span className="sidebar-meta text-zinc-600">{formattedUpdatedAt}</span>
         </div>
       </div>
-
-      <button onClick={onAddCard} className="sidebar-btn sidebar-btn--primary w-full rounded-md bg-blue-600 py-1.5 text-xs font-bold text-white hover:bg-blue-500">Add Card</button>
 
       <div className="sidebar-grid-two grid grid-cols-2 gap-2">
         <button

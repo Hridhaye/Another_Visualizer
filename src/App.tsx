@@ -104,7 +104,6 @@ function BoardCanvas() {
         slipTypes={slipTypes}
         onToggleSidebar={toggleSidebar}
         onToggleSection={toggleSection}
-        onAddCard={addCard}
         onSaveProject={saveProject}
         onLoadProject={loadProject}
         onImportAIFormat={applyAIFormatImport}
@@ -148,6 +147,14 @@ function BoardCanvas() {
           />
         </ReactFlow>
         <div className="history-bar" role="toolbar" aria-label="History controls">
+          <button
+            onClick={addCard}
+            className="history-bar__btn history-bar__btn--accent"
+            aria-label="Add Card"
+          >
+            Add Card
+          </button>
+          <div className="history-bar__divider" />
           <button
             onClick={undo}
             disabled={!canUndo}
