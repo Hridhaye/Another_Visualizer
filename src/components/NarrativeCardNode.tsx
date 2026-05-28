@@ -47,6 +47,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
       {showContextPanel && (
         <ContextPanel
           node={thisNode}
+          allNodes={nodes}
           slipTypes={slipTypes}
           onUpdate={updateNode}
           onClose={closeContextPanel}
