@@ -9,6 +9,8 @@ import {
 
 import { buildEdgesFromReferences, parseReferences } from '../graph/buildEdgesFromReferences'
 import { generateNextCode } from '../graph/generateNextCode'
+import { createProjectFilename, serializeProject } from '../persistence/serializeProject'
+import { deserializeProject } from '../persistence/deserializeProject'
 import type {
   CardData,
   ContextPanelPosition,
@@ -16,7 +18,9 @@ import type {
   NarrativeNode,
   SectionKey,
   SectionOpenState,
+  SerializedMetadata,
   SerializedProjectData,
+  SerializedViewport,
   SlipType
 } from '../types/narrative'
 
@@ -79,6 +83,8 @@ type NarrativeBoardState = {
   contextPanelPosition: ContextPanelPosition
   minimapVisible: boolean
   minimapCollapsed: boolean
+  metadata: SerializedMetadata
+  viewport: SerializedViewport
 }
 
 type NarrativeBoardActions = {
@@ -89,7 +95,8 @@ type NarrativeBoardActions = {
   updateNode: (nodeId: string, patch: Partial<CardData>) => void
   createReferenceConnection: (sourceNodeId: string, targetNodeId: string) => void
   addSlipType: (name: string, color: string) => void
-  exportProject: () => void
+  saveProject: () => Promise<void>
+  loadProject: (file: File) => Promise<void>
   setSelectedNode: (nodeId: string | null) => void
   clearSelection: () => void
   toggleSidebar: () => void
@@ -98,6 +105,7 @@ type NarrativeBoardActions = {
   setConnectionSourceNode: (nodeId: string | null) => void
   openFullEditor: () => void
   cycleMinimapState: () => void
+  setViewport: (viewport: SerializedViewport) => void
 }
 
 export type NarrativeBoardStore = NarrativeBoardState & NarrativeBoardActions
@@ -132,6 +140,12 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   contextPanelPosition: { x: 0, y: 0 },
   minimapVisible: true,
   minimapCollapsed: false,
+  metadata: {
+    projectName: 'Mystery Board',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  viewport: { x: 0, y: 0, zoom: 1 },
 
   onNodesChange: (changes) => {
     set((state) => ({
@@ -311,17 +325,23 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     }))
   },
 
-  exportProject: () => {
+  saveProject: async () => {
     if (typeof window === 'undefined') {
       return
     }
 
     const state = get()
-    const projectData: SerializedProjectData = {
+    const updatedAt = new Date().toISOString()
+    const projectData: SerializedProjectData = serializeProject({
       nodes: state.nodes,
-      edges: state.edges,
-      slipTypes: state.slipTypes
-    }
+      slipTypes: state.slipTypes,
+      viewport: state.viewport,
+      metadata: {
+        projectName: state.metadata.projectName,
+        createdAt: state.metadata.createdAt,
+        updatedAt
+      }
+    })
 
     const blob = new Blob([JSON.stringify(projectData, null, 2)], {
       type: 'application/json'
@@ -330,9 +350,47 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = 'mystery-board.json'
+    link.download = createProjectFilename('mystery-board')
     link.click()
     URL.revokeObjectURL(url)
+
+    set({
+      metadata: {
+        ...state.metadata,
+        updatedAt
+      }
+    })
+  },
+
+  loadProject: async (file: File) => {
+    if (!file.name.toLowerCase().endsWith('.json')) {
+      throw new Error('Please select a .json project file.')
+    }
+
+    const text = await file.text()
+
+    try {
+      const project = deserializeProject(text)
+      const nextNodes = project.nodes.map((node) => ({ ...node }))
+      const nextEdges = buildEdgesFromReferences(nextNodes)
+
+      set({
+        nodes: nextNodes,
+        edges: nextEdges,
+        slipTypes: project.slipTypes.map((item) => ({ ...item })),
+        metadata: {
+          projectName: project.metadata.projectName || 'Mystery Board',
+          createdAt: project.metadata.createdAt || new Date().toISOString(),
+          updatedAt: project.metadata.updatedAt || new Date().toISOString()
+        },
+        viewport: project.viewport || { x: 0, y: 0, zoom: 1 },
+        selectedNodeId: nextNodes[0]?.id ?? null,
+        connectionSourceNodeId: null
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'The project file could not be loaded.'
+      throw new Error(message, { cause: error })
+    }
   },
 
   setSelectedNode: (nodeId) => {
@@ -367,6 +425,10 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
 
   setConnectionSourceNode: (nodeId) => {
     set({ connectionSourceNodeId: nodeId })
+  },
+
+  setViewport: (viewport) => {
+    set({ viewport })
   },
 
   openFullEditor: () => {

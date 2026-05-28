@@ -13,7 +13,8 @@ type SidebarProps = {
   onToggleSidebar: () => void
   onToggleSection: (key: SectionKey) => void
   onAddCard: () => void
-  onExportProject: () => void
+  onSaveProject: () => Promise<void>
+  onLoadProject: (file: File) => Promise<void>
   onAddSlipType: (name: string, color: string) => void
   onUpdateNode: (nodeId: string, patch: Partial<CardData>) => void
 }
@@ -46,7 +47,8 @@ export function Sidebar({
   onToggleSidebar,
   onToggleSection,
   onAddCard,
-  onExportProject,
+  onSaveProject,
+  onLoadProject,
   onAddSlipType,
   onUpdateNode
 }: SidebarProps) {
@@ -89,7 +91,7 @@ export function Sidebar({
               onToggleSection('boardControls')
             }}
           >
-            <BoardControls onAddCard={onAddCard} onExportProject={onExportProject} />
+            <BoardControls onAddCard={onAddCard} onSaveProject={onSaveProject} onLoadProject={onLoadProject} />
           </Section>
 
           <Section

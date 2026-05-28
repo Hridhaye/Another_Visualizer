@@ -27,7 +27,8 @@ function App() {
   const onConnect = useNarrativeBoardStore((state) => state.onConnect)
   const addCard = useNarrativeBoardStore((state) => state.addCard)
   const updateNode = useNarrativeBoardStore((state) => state.updateNode)
-  const exportProject = useNarrativeBoardStore((state) => state.exportProject)
+  const saveProject = useNarrativeBoardStore((state) => state.saveProject)
+  const loadProject = useNarrativeBoardStore((state) => state.loadProject)
   const setSelectedNode = useNarrativeBoardStore((state) => state.setSelectedNode)
   const clearSelection = useNarrativeBoardStore((state) => state.clearSelection)
   const toggleSidebar = useNarrativeBoardStore((state) => state.toggleSidebar)
@@ -38,6 +39,7 @@ function App() {
   const addSlipType = useNarrativeBoardStore((state) => state.addSlipType)
   const createReferenceConnection = useNarrativeBoardStore((state) => state.createReferenceConnection)
   const cycleMinimapState = useNarrativeBoardStore((state) => state.cycleMinimapState)
+  const setViewport = useNarrativeBoardStore((state) => state.setViewport)
 
   const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? null
   const nodeTypes = useMemo(
@@ -67,7 +69,8 @@ function App() {
           onToggleSidebar={toggleSidebar}
           onToggleSection={toggleSection}
           onAddCard={addCard}
-          onExportProject={exportProject}
+          onSaveProject={saveProject}
+          onLoadProject={loadProject}
           onAddSlipType={addSlipType}
           onUpdateNode={updateNode}
         />
@@ -82,6 +85,7 @@ function App() {
             onConnect={onConnect}
             onNodeClick={handleNodeClick}
             onPaneClick={clearSelection}
+            onMoveEnd={(_, viewport) => setViewport(viewport)}
             fitView
             fitViewOptions={{ padding: 0.15 }}
             minZoom={0.2}

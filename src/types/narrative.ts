@@ -28,9 +28,32 @@ export type CardData = {
 export type NarrativeNode = Node<CardData>
 export type NarrativeEdge = Edge
 
-export type SerializedProjectData = {
+export type SerializedMetadata = {
+  projectName: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type SerializedViewport = {
+  x: number
+  y: number
+  zoom: number
+}
+
+export type SerializedProject = {
+  version: 1
+  metadata: SerializedMetadata
+  viewport: SerializedViewport
+  slipTypes: SlipType[]
   nodes: NarrativeNode[]
-  edges: NarrativeEdge[]
+  [key: string]: unknown
+}
+
+export type SerializedProjectData = {
+  version: 1
+  metadata: SerializedMetadata
+  viewport: SerializedViewport
+  nodes: NarrativeNode[]
   slipTypes: SlipType[]
 }
 
