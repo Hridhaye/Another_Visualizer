@@ -164,39 +164,42 @@ export function CardEditorFlyout() {
           </div>
         )}
 
-        {activeEditorField === 'slipGiven' && (
+        {activeEditorField === 'slipGiven' && (() => {
+          const nodeId = node.id
+          const given = node.data.slipGivenTypeIds ?? []
+          function adjust(slipId: string, count: number, delta: number) {
+            const next = Math.max(0, count + delta)
+            const without = given.filter((id) => id !== slipId)
+            updateNode(nodeId, { slipGivenTypeIds: [...without, ...Array(next).fill(slipId)] })
+          }
+          return (
           <div className="cef-slip-given">
             <p className="cef-slip-given__hint">Set how many of each slip type this card gives out.</p>
             <div className="cef-slip-given__rows">
               {slipTypes.map((slip) => {
-                const given = node.data.slipGivenTypeIds ?? []
                 const count = given.filter((id) => id === slip.id).length
-                function adjust(delta: number) {
-                  const next = Math.max(0, count + delta)
-                  const without = given.filter((id) => id !== slip.id)
-                  updateNode(node.id, { slipGivenTypeIds: [...without, ...Array(next).fill(slip.id)] })
-                }
                 return (
                   <div key={slip.id} className="cef-slip-given__row">
                     <span className="cef-list__dot" style={{ background: slip.color }} />
                     <span className={`cef-slip-given__name ${count > 0 ? 'cef-slip-given__name--active' : ''}`}>{slip.name}</span>
-                    <button className="cef-slip-given__stepper" onClick={() => adjust(-1)} disabled={count === 0}>−</button>
+                    <button className="cef-slip-given__stepper" onClick={() => adjust(slip.id, count, -1)} disabled={count === 0}>−</button>
                     <span className="cef-slip-given__count">{count}</span>
-                    <button className="cef-slip-given__stepper" onClick={() => adjust(1)}>+</button>
+                    <button className="cef-slip-given__stepper" onClick={() => adjust(slip.id, count, 1)}>+</button>
                   </div>
                 )
               })}
             </div>
-            {(node.data.slipGivenTypeIds ?? []).length > 0 && (
+            {given.length > 0 && (
               <button
                 className="cef-slip-given__clear"
-                onClick={() => updateNode(node.id, { slipGivenTypeIds: [] })}
+                onClick={() => updateNode(nodeId, { slipGivenTypeIds: [] })}
               >
                 Clear all
               </button>
             )}
           </div>
-        )}
+          )
+        })()}
 
         {activeEditorField === 'puzzleType' && (
           <div className="cef-list">
