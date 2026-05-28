@@ -15,6 +15,12 @@ export type SlipType = {
   color: string
 }
 
+export type CardGroup = {
+  id: string
+  name: string
+  nodeIds: string[]
+}
+
 export type CardData = {
   code: string
   title: string
@@ -45,6 +51,7 @@ export type SerializedProject = {
   metadata: SerializedMetadata
   viewport: SerializedViewport
   slipTypes: SlipType[]
+  groups: CardGroup[]
   nodes: NarrativeNode[]
   [key: string]: unknown
 }
@@ -55,6 +62,7 @@ export type SerializedProjectData = {
   viewport: SerializedViewport
   nodes: NarrativeNode[]
   slipTypes: SlipType[]
+  groups: CardGroup[]
 }
 
 export type SectionKey =
@@ -63,4 +71,3 @@ export type SectionKey =
   | 'cardEditor'
 
 export type SectionOpenState = Record<SectionKey, boolean>
-

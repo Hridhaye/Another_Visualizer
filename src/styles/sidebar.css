@@ -220,6 +220,93 @@
   padding: 0 1px;
 }
 
+.group-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+  padding-top: 2px;
+}
+
+.group-picker__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.group-picker__count {
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.14);
+  color: #7dd3fc;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.group-picker__empty {
+  margin: 0;
+  font-size: 10px;
+  color: #4a5168;
+  font-style: italic;
+}
+
+.group-picker__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.group-picker__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px;
+  align-items: stretch;
+}
+
+.group-picker__select,
+.group-picker__delete {
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #c8ccdb;
+}
+
+.group-picker__select {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 9px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.group-picker__delete {
+  width: 30px;
+  cursor: pointer;
+  color: #fda4af;
+}
+
+.group-picker__name {
+  font-size: 11px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-picker__meta {
+  font-size: 10px;
+  color: #5a6275;
+  flex-shrink: 0;
+}
+
 /* ── Slip Manager ────────────────────────────────────────────────────── */
 .slip-manager {
   padding: 10px;

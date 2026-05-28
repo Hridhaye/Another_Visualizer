@@ -1,4 +1,4 @@
-import type { NarrativeNode, SerializedMetadata, SerializedProject, SerializedViewport, SlipType } from '../types/narrative'
+import type { CardGroup, NarrativeNode, SerializedMetadata, SerializedProject, SerializedViewport, SlipType } from '../types/narrative'
 
 const SUPPORTED_VERSION = 1
 
@@ -55,6 +55,28 @@ function normalizeSlipType(value: unknown): SlipType | null {
   }
 
   return { id, name, color }
+}
+
+function normalizeGroup(value: unknown): CardGroup | null {
+  if (!isRecord(value)) {
+    return null
+  }
+
+  const id = toText(value.id, '')
+  const name = toText(value.name, '')
+  const nodeIds = Array.isArray(value.nodeIds)
+    ? value.nodeIds.filter((nodeId): nodeId is string => typeof nodeId === 'string' && nodeId.trim().length > 0)
+    : []
+
+  if (!id || !name) {
+    return null
+  }
+
+  return {
+    id,
+    name,
+    nodeIds: [...new Set(nodeIds)]
+  }
 }
 
 function normalizeNode(value: unknown): NarrativeNode | null {
@@ -119,6 +141,9 @@ export function validateProject(value: unknown): { ok: true; project: Serialized
   const slipTypes = Array.isArray(value.slipTypes)
     ? value.slipTypes.map(normalizeSlipType).filter((item): item is SlipType => item !== null)
     : []
+  const groups = Array.isArray(value.groups)
+    ? value.groups.map(normalizeGroup).filter((item): item is CardGroup => item !== null)
+    : []
   const nodes = Array.isArray(value.nodes)
     ? value.nodes.map(normalizeNode).filter((item): item is NarrativeNode => item !== null)
     : []
@@ -127,11 +152,12 @@ export function validateProject(value: unknown): { ok: true; project: Serialized
     ok: true,
     project: {
       version: SUPPORTED_VERSION,
+      ...value,
       metadata,
       viewport,
       slipTypes,
-      nodes,
-      ...value
+      groups,
+      nodes
     }
   }
 }

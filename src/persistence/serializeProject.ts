@@ -1,9 +1,10 @@
-import type { SerializedMetadata, SerializedProject, SerializedViewport } from '../types/narrative'
+import type { CardGroup, SerializedMetadata, SerializedProject, SerializedViewport } from '../types/narrative'
 import type { NarrativeNode, SlipType } from '../types/narrative'
 
 export type ProjectSnapshot = {
   nodes: NarrativeNode[]
   slipTypes: SlipType[]
+  groups: CardGroup[]
   viewport: SerializedViewport
   metadata?: Partial<SerializedMetadata>
 }
@@ -21,6 +22,10 @@ export function serializeProject(snapshot: ProjectSnapshot): SerializedProject {
     },
     viewport: snapshot.viewport,
     slipTypes: snapshot.slipTypes.map((item) => ({ ...item })),
+    groups: snapshot.groups.map((group) => ({
+      ...group,
+      nodeIds: [...group.nodeIds]
+    })),
     nodes: snapshot.nodes.map((node) => ({
       ...node,
       data: { ...node.data }

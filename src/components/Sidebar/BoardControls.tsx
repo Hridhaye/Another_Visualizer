@@ -28,6 +28,9 @@ export function BoardControls({
   onProjectNameChange
 }: BoardControlsProps) {
   const selectedNodeIds = useNarrativeBoardStore((state) => state.selectedNodeIds)
+  const groups = useNarrativeBoardStore((state) => state.groups)
+  const selectGroup = useNarrativeBoardStore((state) => state.selectGroup)
+  const deleteGroup = useNarrativeBoardStore((state) => state.deleteGroup)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [showAIImportModal, setShowAIImportModal] = useState(false)
   const [importText, setImportText] = useState('')
@@ -66,7 +69,10 @@ export function BoardControls({
 
   const handleImportDSL = async () => {
     const trimmed = importText.trim()
-    if (!trimmed) { window.alert('Paste DSL text before importing.'); return }
+    if (!trimmed) {
+      window.alert('Paste DSL text before importing.')
+      return
+    }
     try {
       const result = await onImportAIFormat(trimmed)
       setFeedback(`${result.createdCount} created, ${result.updatedCount} updated.`)
@@ -80,7 +86,7 @@ export function BoardControls({
 
   const formattedDate = updatedAt
     ? new Date(updatedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
-    : '—'
+    : '-'
 
   return (
     <div className="sidebar-panel">
@@ -102,11 +108,16 @@ export function BoardControls({
       <div className="sidebar-grid-two">
         <button
           onClick={async () => {
-            try { await onSaveProject() }
-            catch (e) { window.alert(e instanceof Error ? e.message : 'Export failed.') }
+            try {
+              await onSaveProject()
+            } catch (error) {
+              window.alert(error instanceof Error ? error.message : 'Export failed.')
+            }
           }}
           className="sidebar-btn"
-        >Export</button>
+        >
+          Export
+        </button>
         <button onClick={() => fileInputRef.current?.click()} className="sidebar-btn">Import</button>
       </div>
 
@@ -116,6 +127,37 @@ export function BoardControls({
       </div>
 
       {feedback && <p className="sidebar-feedback">{feedback}</p>}
+
+      <div className="group-picker">
+        <div className="group-picker__header">
+          <span className="sidebar-label">Groups</span>
+          <span className="group-picker__count">{groups.length}</span>
+        </div>
+        {groups.length === 0 ? (
+          <p className="group-picker__empty">Create groups from a multi-card selection.</p>
+        ) : (
+          <div className="group-picker__list">
+            {groups.map((group) => (
+              <div key={group.id} className="group-picker__item">
+                <button
+                  onClick={() => selectGroup(group.id)}
+                  className="group-picker__select"
+                >
+                  <span className="group-picker__name">{group.name}</span>
+                  <span className="group-picker__meta">{group.nodeIds.length} cards</span>
+                </button>
+                <button
+                  onClick={() => deleteGroup(group.id)}
+                  className="group-picker__delete"
+                  aria-label={`Delete ${group.name} group`}
+                >
+                  x
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {showAIImportModal && (
         <div className="fixed inset-0 z-[1300] flex items-center justify-center bg-black/60 p-4">

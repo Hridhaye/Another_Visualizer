@@ -13,6 +13,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const slipTypes = useNarrativeBoardStore((state) => state.slipTypes)
   const selectedNodeId = useNarrativeBoardStore((state) => state.selectedNodeId)
   const selectedNodeIds = useNarrativeBoardStore((state) => state.selectedNodeIds)
+  const groups = useNarrativeBoardStore((state) => state.groups)
   const connectionSourceNodeId = useNarrativeBoardStore((state) => state.connectionSourceNodeId)
   const contextPanelOpen = useNarrativeBoardStore((state) => state.contextPanelOpen)
   const openContextPanel = useNarrativeBoardStore((state) => state.openContextPanel)
@@ -32,6 +33,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const isPendingTarget = !!connectionSourceNodeId && !isLinkSource
   const showContextPanel =
     selectedNodeId === id && selectedNodeIds.length === 1 && contextPanelOpen && !!thisNode
+  const nodeGroups = groups.filter((group) => group.nodeIds.includes(id))
 
   const divRef = useRef<HTMLDivElement | null>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -241,6 +243,16 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
       </div>
 
       <div className="card-summary">{data.summary}</div>
+
+      {nodeGroups.length > 0 && (
+        <div className="card-groups">
+          {nodeGroups.map((group) => (
+            <span key={group.id} className="card-group-badge">
+              {group.name}
+            </span>
+          ))}
+        </div>
+      )}
 
       {data.referencesText && (
         <div className="mt-4 border-t border-zinc-700 pt-3 text-sm text-zinc-400">

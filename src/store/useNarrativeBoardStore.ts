@@ -15,6 +15,7 @@ import { createProjectFilename, serializeProject } from '../persistence/serializ
 import { deserializeProject } from '../persistence/deserializeProject'
 import { importAIFormat } from '../ai/importAIFormat'
 import type {
+  CardGroup,
   CardData,
   NarrativeEdge,
   NarrativeNode,
@@ -79,6 +80,7 @@ type NarrativeBoardState = {
   edges: NarrativeEdge[]
   selectedNodeId: string | null
   selectedNodeIds: string[]
+  groups: CardGroup[]
   slipTypes: SlipType[]
   sidebarCollapsed: boolean
   sectionsOpen: SectionOpenState
@@ -103,6 +105,7 @@ type HistorySnapshot = {
   edges: NarrativeEdge[]
   selectedNodeId: string | null
   selectedNodeIds: string[]
+  groups: CardGroup[]
   slipTypes: SlipType[]
   metadata: SerializedMetadata
   viewport: SerializedViewport
@@ -118,6 +121,10 @@ type NarrativeBoardActions = {
   updateNode: (nodeId: string, patch: Partial<CardData>) => void
   createReferenceConnection: (sourceNodeId: string, targetNodeId: string) => void
   addSlipType: (name: string, color: string) => void
+  createGroupFromSelection: (name: string) => void
+  toggleSelectionInGroup: (groupId: string) => void
+  selectGroup: (groupId: string) => void
+  deleteGroup: (groupId: string) => void
   saveProject: () => Promise<void>
   loadProject: (file: File) => Promise<void>
   applyAIFormatImport: (rawText: string) => Promise<{ createdCount: number; updatedCount: number }>
@@ -152,6 +159,7 @@ function createSnapshot(state: NarrativeBoardState): HistorySnapshot {
     edges: state.edges.map((edge) => ({ ...edge })),
     selectedNodeId: state.selectedNodeId,
     selectedNodeIds: [...state.selectedNodeIds],
+    groups: state.groups.map((group) => ({ ...group, nodeIds: [...group.nodeIds] })),
     slipTypes: state.slipTypes.map((slip) => ({ ...slip })),
     metadata: { ...state.metadata },
     viewport: { ...state.viewport },
@@ -176,6 +184,13 @@ function removeReferenceText(currentText: string, codeToRemove: string): string 
 function dedupeNodeIds(nodeIds: string[], nodes: NarrativeNode[]): string[] {
   const validIds = new Set(nodes.map((node) => node.id))
   return [...new Set(nodeIds)].filter((nodeId) => validIds.has(nodeId))
+}
+
+function normalizeGroups(groups: CardGroup[], nodes: NarrativeNode[]): CardGroup[] {
+  return groups.map((group) => ({
+    ...group,
+    nodeIds: dedupeNodeIds(group.nodeIds, nodes)
+  }))
 }
 
 function getSelectionState(
@@ -231,6 +246,7 @@ function removeNodesByIds(state: NarrativeBoardState, nodeIds: string[]) {
   return {
     nodes: nextNodes,
     edges: buildEdgesFromReferences(nextNodes),
+    groups: normalizeGroups(state.groups, nextNodes),
     ...nextSelection,
     connectionSourceNodeId:
       state.connectionSourceNodeId && idsToDelete.has(state.connectionSourceNodeId)
@@ -258,6 +274,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   edges: buildEdgesFromReferences(initialNodes),
   selectedNodeId: '1',
   selectedNodeIds: ['1'],
+  groups: [],
   slipTypes: defaultSlipTypes,
   sidebarCollapsed: false,
   sectionsOpen: initialSectionsOpen,
@@ -287,6 +304,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       canUndo: true,
       canRedo: false,
       nodes: applyNodeChanges(changes, state.nodes),
+      groups: normalizeGroups(state.groups, applyNodeChanges(changes, state.nodes)),
       hasUnsavedChanges: true
     }))
   },
@@ -345,6 +363,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         canRedo: false,
         nodes: updatedNodes,
         edges: buildEdgesFromReferences(updatedNodes),
+        groups: normalizeGroups(state.groups, updatedNodes),
         hasUnsavedChanges: true
       }
     })
@@ -434,6 +453,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         canRedo: false,
         nodes: updatedNodes,
         edges: buildEdgesFromReferences(updatedNodes),
+        groups: normalizeGroups(state.groups, updatedNodes),
         hasUnsavedChanges: true
       }
     })
@@ -513,6 +533,109 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     }))
   },
 
+  createGroupFromSelection: (name) => {
+    const trimmedName = name.trim()
+    if (!trimmedName) {
+      return
+    }
+
+    set((state) => {
+      if (state.selectedNodeIds.length < 2) {
+        return state
+      }
+
+      return {
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
+        groups: [
+          ...state.groups,
+          {
+            id: crypto.randomUUID(),
+            name: trimmedName,
+            nodeIds: [...state.selectedNodeIds]
+          }
+        ],
+        hasUnsavedChanges: true
+      }
+    })
+  },
+
+  toggleSelectionInGroup: (groupId) => {
+    set((state) => {
+      if (state.selectedNodeIds.length < 2) {
+        return state
+      }
+
+      const group = state.groups.find((entry) => entry.id === groupId)
+      if (!group) {
+        return state
+      }
+
+      const selectedSet = new Set(state.selectedNodeIds)
+      const allSelectedAlreadyInGroup = state.selectedNodeIds.every((nodeId) => group.nodeIds.includes(nodeId))
+      const nextGroups = state.groups.map((entry) => {
+        if (entry.id !== groupId) {
+          return entry
+        }
+
+        const nextNodeIds = allSelectedAlreadyInGroup
+          ? entry.nodeIds.filter((nodeId) => !selectedSet.has(nodeId))
+          : [...new Set([...entry.nodeIds, ...state.selectedNodeIds])]
+
+        return {
+          ...entry,
+          nodeIds: nextNodeIds
+        }
+      })
+
+      return {
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
+        groups: normalizeGroups(nextGroups, state.nodes),
+        hasUnsavedChanges: true
+      }
+    })
+  },
+
+  selectGroup: (groupId) => {
+    set((state) => {
+      const group = state.groups.find((entry) => entry.id === groupId)
+      if (!group) {
+        return state
+      }
+
+      const nextSelection = getSelectionState(state.nodes, group.nodeIds, group.nodeIds[0] ?? null)
+      return {
+        ...nextSelection,
+        contextPanelOpen: false,
+        narrativeBodyOpen: false,
+        activeEditorField: null,
+        multiSelectMode: false
+      }
+    })
+  },
+
+  deleteGroup: (groupId) => {
+    set((state) => {
+      if (!state.groups.some((group) => group.id === groupId)) {
+        return state
+      }
+
+      return {
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
+        groups: state.groups.filter((group) => group.id !== groupId),
+        hasUnsavedChanges: true
+      }
+    })
+  },
+
   saveProject: async () => {
     if (typeof window === 'undefined') {
       return
@@ -523,6 +646,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     const projectData: SerializedProjectData = serializeProject({
       nodes: state.nodes,
       slipTypes: state.slipTypes,
+      groups: state.groups,
       viewport: state.viewport,
       metadata: {
         projectName: state.metadata.projectName,
@@ -571,6 +695,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         nodes: nextNodes,
         edges: nextEdges,
         slipTypes: project.slipTypes.map((item) => ({ ...item })),
+        groups: normalizeGroups(project.groups.map((group) => ({ ...group, nodeIds: [...group.nodeIds] })), nextNodes),
         metadata: {
           projectName: project.metadata.projectName || 'Mystery Board',
           createdAt: project.metadata.createdAt || new Date().toISOString(),
@@ -605,6 +730,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         canRedo: false,
         nodes: result.updatedNodes,
         edges: result.updatedEdges,
+        groups: normalizeGroups(state.groups, result.updatedNodes),
         selectedNodeId: result.updatedNodes[0]?.id ?? null,
         selectedNodeIds: result.updatedNodes[0]?.id ? [result.updatedNodes[0].id] : [],
         hasUnsavedChanges: true
@@ -712,7 +838,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       historyPast: [...state.historyPast, createSnapshot(state)],
       historyFuture: [],
       canUndo: true,
-      canRedo: false,
+        canRedo: false,
       metadata,
       hasUnsavedChanges: true
     }))

@@ -52,6 +52,9 @@ function BoardCanvas() {
   const setConnectionSourceNode = useNarrativeBoardStore((state) => state.setConnectionSourceNode)
   const multiSelectMode = useNarrativeBoardStore((state) => state.multiSelectMode)
   const setMultiSelectMode = useNarrativeBoardStore((state) => state.setMultiSelectMode)
+  const groups = useNarrativeBoardStore((state) => state.groups)
+  const createGroupFromSelection = useNarrativeBoardStore((state) => state.createGroupFromSelection)
+  const toggleSelectionInGroup = useNarrativeBoardStore((state) => state.toggleSelectionInGroup)
   const [selectionBox, setSelectionBox] = useState<{
     startX: number
     startY: number
@@ -63,6 +66,8 @@ function BoardCanvas() {
     baseIds: string[]
     additive: boolean
   } | null>(null)
+  const [groupsPanelOpen, setGroupsPanelOpen] = useState(false)
+  const [newGroupName, setNewGroupName] = useState('')
 
   const nodeTypes = useMemo(
     () => ({
@@ -218,6 +223,12 @@ function BoardCanvas() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [undo, redo])
 
+  useEffect(() => {
+    if (selectedNodeIds.length < 2 && groupsPanelOpen) {
+      setGroupsPanelOpen(false)
+    }
+  }, [groupsPanelOpen, selectedNodeIds.length])
+
   return (
     <div className="board-root">
       <NarrativeBodyPanel />
@@ -299,6 +310,75 @@ function BoardCanvas() {
           </div>
         )}
         <div className="history-bar" role="toolbar" aria-label="History controls">
+          {groupsPanelOpen && selectedNodeIds.length > 1 && (
+            <div className="history-bar__overlay">
+              <div className="group-panel">
+                <div className="group-panel__header">
+                  <div>
+                    <h3 className="group-panel__title">Groups</h3>
+                    <p className="group-panel__subtitle">
+                      Create a new group or toggle this selection into an existing one.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setGroupsPanelOpen(false)}
+                    className="group-panel__close"
+                    aria-label="Close groups panel"
+                  >
+                    x
+                  </button>
+                </div>
+
+                <div className="group-panel__create">
+                  <input
+                    value={newGroupName}
+                    onChange={(event) => setNewGroupName(event.target.value)}
+                    className="group-panel__input"
+                    placeholder="New group name"
+                  />
+                  <button
+                    onClick={() => {
+                      if (!newGroupName.trim()) {
+                        return
+                      }
+                      createGroupFromSelection(newGroupName)
+                      setNewGroupName('')
+                    }}
+                    className="group-panel__action group-panel__action--primary"
+                  >
+                    Create
+                  </button>
+                </div>
+
+                <div className="group-panel__list">
+                  {groups.length === 0 && (
+                    <p className="group-panel__empty">No groups yet.</p>
+                  )}
+                  {groups.map((group) => {
+                    const allSelectedAlreadyInGroup = selectedNodeIds.every((nodeId) =>
+                      group.nodeIds.includes(nodeId)
+                    )
+
+                    return (
+                      <button
+                        key={group.id}
+                        onClick={() => toggleSelectionInGroup(group.id)}
+                        className="group-panel__item"
+                      >
+                        <span className="group-panel__item-name">{group.name}</span>
+                        <span className="group-panel__item-meta">
+                          {group.nodeIds.length} cards
+                        </span>
+                        <span className="group-panel__item-action">
+                          {allSelectedAlreadyInGroup ? 'Remove selection' : 'Add selection'}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
           <button
             onClick={() => setMultiSelectMode(!multiSelectMode)}
             className={`history-bar__btn ${multiSelectMode ? 'history-bar__btn--active' : ''}`}
@@ -331,6 +411,15 @@ function BoardCanvas() {
             aria-label="Redo"
           >
             Redo
+          </button>
+          <div className="history-bar__divider" />
+          <button
+            onClick={() => setGroupsPanelOpen((open) => !open)}
+            disabled={selectedNodeIds.length < 2}
+            className="history-bar__btn"
+            aria-label="Manage groups for selected cards"
+          >
+            Groups
           </button>
           <div className="history-bar__divider" />
           <button
