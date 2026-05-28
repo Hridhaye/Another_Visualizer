@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useViewport } from 'reactflow'
 import { parseReferences } from '../graph/buildEdgesFromReferences'
 import { PUZZLE_TYPES, type CardData, type NarrativeNode, type SlipType } from '../types/narrative'
@@ -14,12 +14,13 @@ type ContextPanelProps = {
   onToggleLink: () => void
 }
 
-type ActiveField = 'code' | 'title' | 'summary' | 'references' | 'slipType' | 'puzzleType' | null
+type ActiveField = 'code' | 'title' | 'summary' | 'body' | 'references' | 'slipType' | 'puzzleType' | null
 
 const BUTTONS: { field: ActiveField; label: string }[] = [
   { field: 'code', label: 'Code' },
   { field: 'title', label: 'Title' },
   { field: 'summary', label: 'Summary' },
+  { field: 'body', label: 'Narrative Body' },
   { field: 'references', label: 'Reference' },
   { field: 'slipType', label: 'Slip' },
   { field: 'puzzleType', label: 'Puzzle' }
@@ -28,6 +29,7 @@ const BUTTONS: { field: ActiveField; label: string }[] = [
 export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate, onDelete, onClose, onToggleLink }: ContextPanelProps) {
   const [activeField, setActiveField] = useState<ActiveField>(null)
   const [refSearch, setRefSearch] = useState('')
+  const bodyTextareaRef = useRef<HTMLTextAreaElement | null>(null)
   const { zoom } = useViewport()
 
   function toggleField(field: ActiveField) {
@@ -58,6 +60,35 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
       n.data.title.toLowerCase().includes(searchLower)
   )
   const zoomScale = Math.max(0.85, Math.min(1.7, 1 / Math.max(zoom, 0.01)))
+
+  function applyBodyFormatting(tag: 'b' | 'i' | 'u') {
+    const textarea = bodyTextareaRef.current
+    if (!textarea) {
+      return
+    }
+
+    const start = textarea.selectionStart ?? 0
+    const end = textarea.selectionEnd ?? start
+    const openTag = `<${tag}>`
+    const closeTag = `</${tag}>`
+    const currentBody = node.data.body
+    const selectedText = currentBody.slice(start, end)
+    const nextBody =
+      currentBody.slice(0, start) +
+      openTag +
+      selectedText +
+      closeTag +
+      currentBody.slice(end)
+
+    onUpdate(node.id, { body: nextBody })
+
+    requestAnimationFrame(() => {
+      textarea.focus()
+      const selectionStart = start + openTag.length
+      const selectionEnd = selectionStart + selectedText.length
+      textarea.setSelectionRange(selectionStart, selectionEnd)
+    })
+  }
 
   return (
     <div
@@ -96,6 +127,43 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
                 onChange={(e) => onUpdate(node.id, { summary: e.target.value })}
                 rows={4}
                 className="w-full resize-none rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs text-zinc-100 outline-none focus:border-zinc-500"
+              />
+            </div>
+          )}
+
+          {activeField === 'body' && (
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Narrative Body</label>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => applyBodyFormatting('b')}
+                  className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs font-bold text-zinc-200 hover:bg-zinc-800"
+                  aria-label="Bold"
+                >
+                  B
+                </button>
+                <button
+                  onClick={() => applyBodyFormatting('i')}
+                  className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs italic text-zinc-200 hover:bg-zinc-800"
+                  aria-label="Italic"
+                >
+                  I
+                </button>
+                <button
+                  onClick={() => applyBodyFormatting('u')}
+                  className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs underline text-zinc-200 hover:bg-zinc-800"
+                  aria-label="Underline"
+                >
+                  U
+                </button>
+              </div>
+              <textarea
+                ref={bodyTextareaRef}
+                autoFocus
+                value={node.data.body}
+                onChange={(e) => onUpdate(node.id, { body: e.target.value })}
+                rows={10}
+                className="w-full resize-y rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 font-mono text-xs leading-5 text-zinc-100 outline-none focus:border-zinc-500"
               />
             </div>
           )}
