@@ -309,10 +309,10 @@
 .card-puzzle__badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  padding: 6px 14px;
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: normal;
   border-radius: 4px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);

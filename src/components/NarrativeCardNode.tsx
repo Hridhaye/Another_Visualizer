@@ -273,9 +273,9 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
       )}
 
       {(data.referencesText || hasPuzzle) && (
-        <div className="mt-6 border-t border-zinc-700 pt-5">
+        <div className="mt-10 border-t border-zinc-700 pt-8">
           {data.referencesText && (
-            <div className={`text-sm text-zinc-400 ${hasPuzzle ? 'mb-6' : ''}`}>
+            <div className={`text-sm text-zinc-400 ${hasPuzzle ? 'mb-10' : ''}`}>
               <span className="text-zinc-500 uppercase text-[10px] font-bold" style={{ letterSpacing: '0.05em' }}>
                 References:
               </span>{' '}
@@ -291,10 +291,10 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
                   fontWeight: 700,
                   border: `1px solid ${slipColor}40`,
                   borderLeft: `4px solid ${slipColor}`,
-                  color: slipColor,
+                  color: '#d4d4d8',
                 }}
               >
-                {puzzleText}
+                {puzzleText.toLowerCase()}
               </span>
             </div>
           )}
