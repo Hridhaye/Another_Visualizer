@@ -6,8 +6,10 @@ type ContextPanelProps = {
   node: NarrativeNode
   allNodes: NarrativeNode[]
   slipTypes: SlipType[]
+  isLinkSource: boolean
   onUpdate: (nodeId: string, patch: Partial<CardData>) => void
   onClose: () => void
+  onToggleLink: () => void
 }
 
 type ActiveField = 'code' | 'title' | 'summary' | 'references' | 'slipType' | 'puzzleType' | null
@@ -21,7 +23,7 @@ const BUTTONS: { field: ActiveField; label: string }[] = [
   { field: 'puzzleType', label: 'Puzzle'     },
 ]
 
-export function ContextPanel({ node, allNodes, slipTypes, onUpdate, onClose }: ContextPanelProps) {
+export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate, onClose, onToggleLink }: ContextPanelProps) {
   const [activeField, setActiveField] = useState<ActiveField>(null)
   const [refSearch, setRefSearch] = useState('')
 
@@ -197,6 +199,17 @@ export function ContextPanel({ node, allNodes, slipTypes, onUpdate, onClose }: C
         ))}
 
         <div className="mx-2 h-5 w-px bg-zinc-700" />
+
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleLink() }}
+          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
+            isLinkSource
+              ? 'bg-blue-700 text-blue-100 hover:bg-blue-600'
+              : 'text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100'
+          }`}
+        >
+          {isLinkSource ? 'Cancel' : 'Link'}
+        </button>
 
         <button
           onClick={onClose}
