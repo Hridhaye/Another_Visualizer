@@ -1,28 +1,30 @@
 import { getSmoothStepPath } from 'reactflow'
 import type { EdgeProps } from 'reactflow'
 
-function ArrowMarker({ id, color }: { id: string; color: string }) {
+const MARKER_ID = 'bidir-arrowhead'
+
+export function BiDirectionalEdgeMarkerDef() {
   return (
     <defs>
       <marker
-        id={id}
+        id={`${MARKER_ID}-dim`}
         markerWidth="8"
         markerHeight="8"
         refX="7"
         refY="4"
         orient="auto"
       >
-        <path d="M0,0 L0,8 L8,4 z" fill={color} />
+        <path d="M0,0 L0,8 L8,4 z" fill="rgba(148,163,184,0.55)" />
       </marker>
       <marker
-        id={`${id}-start`}
+        id={`${MARKER_ID}-bright`}
         markerWidth="8"
         markerHeight="8"
-        refX="1"
+        refX="7"
         refY="4"
-        orient="auto-start-reverse"
+        orient="auto"
       >
-        <path d="M0,0 L0,8 L8,4 z" fill={color} />
+        <path d="M0,0 L0,8 L8,4 z" fill="rgba(255,255,255,0.85)" />
       </marker>
     </defs>
   )
@@ -38,7 +40,7 @@ export function BiDirectionalEdge({
   targetPosition,
   data,
 }: EdgeProps) {
-  const [edgePath] = getSmoothStepPath({
+  const [forwardPath] = getSmoothStepPath({
     sourceX,
     sourceY,
     sourcePosition,
@@ -48,24 +50,48 @@ export function BiDirectionalEdge({
     borderRadius: 0,
   })
 
+  // Reversed path: swap source and target so markerEnd renders at the original source end
+  const [reversePath] = getSmoothStepPath({
+    sourceX: targetX,
+    sourceY: targetY,
+    sourcePosition: targetPosition,
+    targetX: sourceX,
+    targetY: sourceY,
+    targetPosition: sourcePosition,
+    borderRadius: 0,
+  })
+
   const isHighlighted = data?.isOutgoingFromSelected
   const color = isHighlighted ? 'rgba(255,255,255,0.85)' : 'rgba(148,163,184,0.55)'
-  const markerId = `bidir-${id}`
+  const markerSuffix = isHighlighted ? 'bright' : 'dim'
+  const strokeWidth = isHighlighted ? 3 : 2.5
+
+  const sharedStyle = {
+    filter: isHighlighted ? 'drop-shadow(0 0 4px rgba(255,255,255,0.6))' : 'none',
+    transition: 'stroke 0.15s ease, stroke-width 0.15s ease, filter 0.15s ease',
+  }
 
   return (
     <>
-      <ArrowMarker id={markerId} color={color} />
+      {/* Forward path: arrow at target end */}
       <path
-        d={edgePath}
+        id={`${id}-fwd`}
+        d={forwardPath}
         fill="none"
         stroke={color}
-        strokeWidth={isHighlighted ? 3 : 2.5}
-        markerEnd={`url(#${markerId})`}
-        markerStart={`url(#${markerId}-start)`}
-        style={{
-          filter: isHighlighted ? 'drop-shadow(0 0 4px rgba(255,255,255,0.6))' : 'none',
-          transition: 'stroke 0.15s ease, stroke-width 0.15s ease, filter 0.15s ease',
-        }}
+        strokeWidth={strokeWidth}
+        markerEnd={`url(#${MARKER_ID}-${markerSuffix})`}
+        style={sharedStyle}
+      />
+      {/* Reverse path (same geometry, opposite direction): arrow at source end */}
+      <path
+        id={`${id}-rev`}
+        d={reversePath}
+        fill="none"
+        stroke="transparent"
+        strokeWidth={strokeWidth}
+        markerEnd={`url(#${MARKER_ID}-${markerSuffix})`}
+        style={{ pointerEvents: 'none' }}
       />
     </>
   )

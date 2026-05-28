@@ -6,7 +6,7 @@ import ReactFlow, {
 
 import { NarrativeCardNode } from './components/NarrativeCardNode'
 import { NarrativeEdgeComponent } from './components/edges/NarrativeEdge'
-import { BiDirectionalEdge } from './components/edges/BiDirectionalEdge'
+import { BiDirectionalEdge, BiDirectionalEdgeMarkerDef } from './components/edges/BiDirectionalEdge'
 import { NarrativeBodyPanel } from './components/NarrativeBodyPanel'
 import { ContextPanel } from './components/ContextPanel'
 import { CardEditorFlyout } from './components/CardEditorFlyout'
@@ -261,6 +261,9 @@ function BoardCanvas() {
 
   return (
     <div className="board-root">
+      <svg style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
+        <BiDirectionalEdgeMarkerDef />
+      </svg>
       <NarrativeBodyPanel />
       <CardEditorFlyout />
       <Sidebar
