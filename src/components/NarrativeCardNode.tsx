@@ -218,9 +218,9 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
 
   const highlightShadow = isHighlighted
     ? isGroupSelected
-      ? ', 0 0 0 12px rgba(251,191,36,1), 0 0 0 16px rgba(255,255,255,0.5)'
+      ? ', 0 0 0 12px rgba(251,191,36,1), 0 0 0 18px rgba(255,255,255,0.5)'
       : isSelected
-        ? ', 0 0 0 12px rgba(251,191,36,1), 0 0 0 15px rgba(255,255,255,0.5)'
+        ? ', 0 0 0 12px rgba(251,191,36,1), 0 0 0 17px rgba(255,255,255,0.5)'
         : ', 0 0 0 12px rgba(251,191,36,1), 0 0 0 14px rgba(251,191,36,0.12)'
     : ''
 
