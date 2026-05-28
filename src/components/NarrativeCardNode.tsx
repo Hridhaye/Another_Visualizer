@@ -208,7 +208,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   else if (isPendingTarget) extraShadow = ', 0 0 0 2px rgba(99,102,241,0.3)'
 
   const highlightShadow = isHighlighted
-    ? ', 0 0 0 6px rgba(251,191,36,0.9), 0 0 0 12px rgba(251,191,36,0.35), 0 0 32px 8px rgba(251,191,36,0.2)'
+    ? ', 0 0 0 18px rgba(251,191,36,1), 0 0 0 20px rgba(251,191,36,0.15)'
     : ''
 
   const baseShadow = isSelected
