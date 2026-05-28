@@ -17,6 +17,10 @@ type SidebarProps = {
   onLoadProject: (file: File) => Promise<void>
   onAddSlipType: (name: string, color: string) => void
   onUpdateNode: (nodeId: string, patch: Partial<CardData>) => void
+  projectName: string
+  updatedAt: string
+  hasUnsavedChanges: boolean
+  onProjectNameChange: (value: string) => void
 }
 
 type SectionProps = {
@@ -50,7 +54,11 @@ export function Sidebar({
   onSaveProject,
   onLoadProject,
   onAddSlipType,
-  onUpdateNode
+  onUpdateNode,
+  projectName,
+  updatedAt,
+  hasUnsavedChanges,
+  onProjectNameChange
 }: SidebarProps) {
   return (
     <div
@@ -91,7 +99,15 @@ export function Sidebar({
               onToggleSection('boardControls')
             }}
           >
-            <BoardControls onAddCard={onAddCard} onSaveProject={onSaveProject} onLoadProject={onLoadProject} />
+            <BoardControls
+              projectName={projectName}
+              updatedAt={updatedAt}
+              hasUnsavedChanges={hasUnsavedChanges}
+              onAddCard={onAddCard}
+              onSaveProject={onSaveProject}
+              onLoadProject={onLoadProject}
+              onProjectNameChange={onProjectNameChange}
+            />
           </Section>
 
           <Section

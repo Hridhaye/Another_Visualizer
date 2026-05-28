@@ -85,6 +85,7 @@ type NarrativeBoardState = {
   minimapCollapsed: boolean
   metadata: SerializedMetadata
   viewport: SerializedViewport
+  hasUnsavedChanges: boolean
 }
 
 type NarrativeBoardActions = {
@@ -106,6 +107,7 @@ type NarrativeBoardActions = {
   openFullEditor: () => void
   cycleMinimapState: () => void
   setViewport: (viewport: SerializedViewport) => void
+  setMetadata: (metadata: SerializedMetadata) => void
 }
 
 export type NarrativeBoardStore = NarrativeBoardState & NarrativeBoardActions
@@ -146,10 +148,12 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     updatedAt: new Date().toISOString()
   },
   viewport: { x: 0, y: 0, zoom: 1 },
+  hasUnsavedChanges: false,
 
   onNodesChange: (changes) => {
     set((state) => ({
-      nodes: applyNodeChanges(changes, state.nodes)
+      nodes: applyNodeChanges(changes, state.nodes),
+      hasUnsavedChanges: true
     }))
   },
 
@@ -195,7 +199,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
 
       return {
         nodes: updatedNodes,
-        edges: buildEdgesFromReferences(updatedNodes)
+        edges: buildEdgesFromReferences(updatedNodes),
+        hasUnsavedChanges: true
       }
     })
   },
@@ -233,7 +238,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       return {
         nodes: [...state.nodes, newNode],
         selectedNodeId: newNode.id,
-        contextPanelPosition: { x: 0, y: 0 }
+        contextPanelPosition: { x: 0, y: 0 },
+        hasUnsavedChanges: true
       }
     })
   },
@@ -256,7 +262,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
 
       return {
         nodes: updatedNodes,
-        edges: buildEdgesFromReferences(updatedNodes)
+        edges: buildEdgesFromReferences(updatedNodes),
+        hasUnsavedChanges: true
       }
     })
   },
@@ -302,7 +309,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       return {
         nodes: updatedNodes,
         edges: buildEdgesFromReferences(updatedNodes),
-        connectionSourceNodeId: null
+        connectionSourceNodeId: null,
+        hasUnsavedChanges: true
       }
     })
   },
@@ -321,7 +329,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
           name: trimmedName,
           color
         }
-      ]
+      ],
+      hasUnsavedChanges: true
     }))
   },
 
@@ -358,7 +367,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       metadata: {
         ...state.metadata,
         updatedAt
-      }
+      },
+      hasUnsavedChanges: false
     })
   },
 
@@ -368,6 +378,10 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     }
 
     const text = await file.text()
+
+    if (get().hasUnsavedChanges && !window.confirm('Replace the current board with this project file? Unsaved changes will be lost.')) {
+      return
+    }
 
     try {
       const project = deserializeProject(text)
@@ -385,7 +399,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         },
         viewport: project.viewport || { x: 0, y: 0, zoom: 1 },
         selectedNodeId: nextNodes[0]?.id ?? null,
-        connectionSourceNodeId: null
+        connectionSourceNodeId: null,
+        hasUnsavedChanges: false
       })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'The project file could not be loaded.'
@@ -428,7 +443,11 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   },
 
   setViewport: (viewport) => {
-    set({ viewport })
+    set({ viewport, hasUnsavedChanges: true })
+  },
+
+  setMetadata: (metadata) => {
+    set({ metadata, hasUnsavedChanges: true })
   },
 
   openFullEditor: () => {

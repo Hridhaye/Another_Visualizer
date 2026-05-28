@@ -35,11 +35,14 @@ function App() {
   const toggleSection = useNarrativeBoardStore((state) => state.toggleSection)
   const setContextPanelPosition = useNarrativeBoardStore((state) => state.setContextPanelPosition)
   const setConnectionSourceNode = useNarrativeBoardStore((state) => state.setConnectionSourceNode)
+  const setMetadata = useNarrativeBoardStore((state) => state.setMetadata)
   const openFullEditor = useNarrativeBoardStore((state) => state.openFullEditor)
   const addSlipType = useNarrativeBoardStore((state) => state.addSlipType)
   const createReferenceConnection = useNarrativeBoardStore((state) => state.createReferenceConnection)
   const cycleMinimapState = useNarrativeBoardStore((state) => state.cycleMinimapState)
   const setViewport = useNarrativeBoardStore((state) => state.setViewport)
+  const metadata = useNarrativeBoardStore((state) => state.metadata)
+  const hasUnsavedChanges = useNarrativeBoardStore((state) => state.hasUnsavedChanges)
 
   const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? null
   const nodeTypes = useMemo(
@@ -72,6 +75,10 @@ function App() {
           onSaveProject={saveProject}
           onLoadProject={loadProject}
           onAddSlipType={addSlipType}
+          projectName={metadata.projectName}
+          updatedAt={metadata.updatedAt}
+          hasUnsavedChanges={hasUnsavedChanges}
+          onProjectNameChange={(value) => setMetadata({ ...metadata, projectName: value, updatedAt: metadata.updatedAt })}
           onUpdateNode={updateNode}
         />
 
