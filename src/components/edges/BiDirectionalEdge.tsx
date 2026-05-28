@@ -40,25 +40,29 @@ export function BiDirectionalEdge({
   targetPosition,
   data,
 }: EdgeProps) {
+  const shift: number = data?.lateralShift ?? 0
+
   const [forwardPath] = getSmoothStepPath({
     sourceX,
-    sourceY,
+    sourceY: sourceY + shift,
     sourcePosition,
     targetX,
-    targetY,
+    targetY: targetY + shift,
     targetPosition,
     borderRadius: 0,
+    offset: 40 + Math.abs(shift),
   })
 
   // Reversed path: swap source and target so markerEnd renders at the original source end
   const [reversePath] = getSmoothStepPath({
     sourceX: targetX,
-    sourceY: targetY,
+    sourceY: targetY + shift,
     sourcePosition: targetPosition,
     targetX: sourceX,
-    targetY: sourceY,
+    targetY: sourceY + shift,
     targetPosition: sourcePosition,
     borderRadius: 0,
+    offset: 40 + Math.abs(shift),
   })
 
   const isHighlighted = data?.isOutgoingFromSelected

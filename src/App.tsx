@@ -91,17 +91,33 @@ function BoardCanvas() {
     []
   )
 
-  const decoratedEdges = useMemo(
-    () =>
-      edges.map((edge) => ({
+  const decoratedEdges = useMemo(() => {
+    const LANE_SPACING = 12
+
+    // Count how many edges leave each source node to assign lane offsets
+    const sourceGroups: Record<string, string[]> = {}
+    edges.forEach((edge) => {
+      if (!sourceGroups[edge.source]) sourceGroups[edge.source] = []
+      sourceGroups[edge.source].push(edge.id)
+    })
+
+    return edges.map((edge) => {
+      const group = sourceGroups[edge.source] ?? []
+      const indexInGroup = group.indexOf(edge.id)
+      const groupSize = group.length
+      // Center the fan: e.g. 3 edges → offsets -12, 0, +12
+      const lateralShift = (indexInGroup - (groupSize - 1) / 2) * LANE_SPACING
+
+      return {
         ...edge,
         data: {
           ...edge.data,
           isOutgoingFromSelected: selectedNodeId !== null && edge.source === selectedNodeId,
+          lateralShift,
         },
-      })),
-    [edges, selectedNodeId]
-  )
+      }
+    })
+  }, [edges, selectedNodeId])
 
   const performMarqueeSelection = useCallback((box: {
     startX: number

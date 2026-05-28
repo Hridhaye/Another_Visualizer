@@ -12,14 +12,17 @@ export function NarrativeEdgeComponent({
   data,
   markerEnd,
 }: EdgeProps) {
+  const shift: number = data?.lateralShift ?? 0
+
   const [edgePath] = getSmoothStepPath({
     sourceX,
-    sourceY,
+    sourceY: sourceY + shift,
     sourcePosition,
     targetX,
-    targetY,
+    targetY: targetY + shift,
     targetPosition,
     borderRadius: 0,
+    offset: 40 + Math.abs(shift),
   })
 
   const isHighlighted = data?.isOutgoingFromSelected
