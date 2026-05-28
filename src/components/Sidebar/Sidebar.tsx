@@ -35,12 +35,12 @@ type SectionProps = {
 
 function Section({ title, toneClassName, open, onToggle, children }: SectionProps) {
   return (
-    <div className={`overflow-hidden rounded-2xl border ${toneClassName}`}>
-      <button onClick={onToggle} className="flex w-full items-center justify-between p-4 text-left">
-        <div className="text-xs font-semibold uppercase tracking-[0.2em]">{title}</div>
-        <div className="text-base">{open ? '-' : '+'}</div>
+    <div className={`overflow-hidden rounded-xl border ${toneClassName}`}>
+      <button onClick={onToggle} className="flex w-full items-center justify-between px-3 py-2.5 text-left transition-colors hover:bg-white/5">
+        <div className="text-[10px] font-bold uppercase tracking-wider">{title}</div>
+        <div className="text-xs opacity-60">{open ? '−' : '+'}</div>
       </button>
-      {open ? children : null}
+      {open ? <div className="border-t border-zinc-800/50">{children}</div> : null}
     </div>
   )
 }
@@ -68,16 +68,16 @@ export function Sidebar({
     <div
       className={
         collapsed
-          ? 'flex w-[28px] flex-col overflow-hidden border-r border-zinc-800 bg-zinc-900 transition-all duration-300'
-          : 'flex w-[360px] flex-col overflow-y-auto border-r border-zinc-800 bg-zinc-900 transition-all duration-300'
+          ? 'flex w-[32px] flex-col overflow-hidden border-r border-zinc-800 bg-zinc-900 transition-all duration-300'
+          : 'flex w-[300px] flex-col overflow-y-auto border-r border-zinc-800 bg-zinc-900 transition-all duration-300'
       }
     >
-      <div className="sticky top-0 z-10 border-b border-zinc-800 bg-zinc-950/70 p-1 backdrop-blur">
+      <div className="sticky top-0 z-10 border-b border-zinc-800 bg-zinc-950/80 px-4 py-3 backdrop-blur-md">
         <div className="flex items-start justify-between gap-3">
           {!collapsed && (
             <div>
-              <h1 className="text-2xl font-bold">Mystery Board</h1>
-              <p className="mt-1 text-sm text-zinc-400">
+              <h1 className="text-lg font-bold tracking-tight">Mystery Board</h1>
+              <p className="text-[11px] text-zinc-500">
                 Non-linear narrative plotting tool
               </p>
             </div>
@@ -85,16 +85,16 @@ export function Sidebar({
 
           <button
             onClick={onToggleSidebar}
-            className="h-6 w-6 shrink-0 rounded-md bg-zinc-800 text-[10px] font-bold transition-colors hover:bg-zinc-700"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-zinc-800 text-[10px] transition-colors hover:bg-zinc-700"
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {collapsed ? '>' : '<'}
+            {collapsed ? '→' : '←'}
           </button>
         </div>
       </div>
 
       {!collapsed && (
-        <div className="flex flex-col gap-4 p-4">
+        <div className="flex flex-col gap-3 p-3">
           <Section
             title="Board Controls"
             toneClassName="border-blue-900/40 bg-blue-950/20 text-blue-300/80"
