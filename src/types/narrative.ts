@@ -44,6 +44,24 @@ export type CardGroup = {
   nodeIds: string[]
 }
 
+export type FillBlank = {
+  id: string
+  assignedWord: string | null
+}
+
+export type FillWordBankEntry = {
+  id: string
+  word: string
+}
+
+export type FillPuzzleContent = {
+  /** HTML string of the text body, with blank placeholders rendered as <span data-blank-id="..."></span> */
+  bodyHtml: string
+  blanks: FillBlank[]
+  wordBank: FillWordBankEntry[]
+  showAnswers: boolean
+}
+
 export type CardData = {
   code: string
   title: string
@@ -54,6 +72,7 @@ export type CardData = {
   referencesText: string
   puzzleType: PuzzleType
   puzzleSummary?: string
+  puzzleFillContent?: FillPuzzleContent
 }
 
 export type NarrativeNode = Node<CardData>

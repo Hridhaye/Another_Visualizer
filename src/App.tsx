@@ -8,6 +8,7 @@ import { NarrativeCardNode } from './components/NarrativeCardNode'
 import { NarrativeEdgeComponent } from './components/edges/NarrativeEdge'
 import { BiDirectionalEdge, BiDirectionalEdgeMarkerDef } from './components/edges/BiDirectionalEdge'
 import { NarrativeBodyPanel } from './components/NarrativeBodyPanel'
+import { PuzzleFillPanel } from './components/PuzzleFillPanel'
 import { ContextPanel } from './components/ContextPanel'
 import { CardEditorFlyout } from './components/CardEditorFlyout'
 import { Sidebar } from './components/Sidebar/Sidebar'
@@ -286,6 +287,7 @@ function BoardCanvas() {
         <BiDirectionalEdgeMarkerDef />
       </svg>
       <NarrativeBodyPanel />
+      <PuzzleFillPanel />
       <CardEditorFlyout />
       <Sidebar
         collapsed={sidebarCollapsed}

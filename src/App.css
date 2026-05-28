@@ -451,6 +451,297 @@
   outline: none;
 }
 
+/* ── Puzzle Fill Panel ───────────────────────────────────────────────── */
+.puzzle-fill-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.puzzle-fill-panel__type-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #a78bfa;
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 4px;
+  padding: 1px 6px;
+  flex-shrink: 0;
+}
+
+.puzzle-fill-panel__toolbar-divider {
+  width: 1px;
+  height: 18px;
+  background: #3f3f46;
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+
+.puzzle-fill-panel__blank-btn {
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #18181b;
+  color: #a1a1aa;
+  height: 28px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-family: monospace;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+  white-space: nowrap;
+}
+
+.puzzle-fill-panel__blank-btn:hover:not(:disabled) {
+  background: #27272a;
+  color: #fafafa;
+}
+
+.puzzle-fill-panel__blank-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.puzzle-fill-panel__toggle-btn {
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #18181b;
+  color: #a1a1aa;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+  white-space: nowrap;
+}
+
+.puzzle-fill-panel__toggle-btn:hover {
+  background: #27272a;
+  color: #fafafa;
+}
+
+.puzzle-fill-panel__toggle-btn--active {
+  background: rgba(139, 92, 246, 0.15) !important;
+  border-color: rgba(139, 92, 246, 0.45) !important;
+  color: #c4b5fd !important;
+}
+
+.puzzle-fill-panel__editor--readonly {
+  cursor: default;
+  opacity: 0.85;
+}
+
+/* Blank placeholders inside the editor */
+.puzzle-fill-blank {
+  display: inline-block;
+  min-width: 48px;
+  border-bottom: 2px solid #7c3aed;
+  background: rgba(139, 92, 246, 0.08);
+  border-radius: 2px;
+  margin: 0 2px;
+  padding: 0 4px;
+  cursor: pointer;
+  vertical-align: baseline;
+  transition: background-color 120ms ease, border-color 120ms ease;
+  user-select: none;
+  color: #a78bfa;
+  font-size: 0.9em;
+}
+
+.puzzle-fill-blank:hover {
+  background: rgba(139, 92, 246, 0.18);
+  border-color: #9f67fa;
+}
+
+/* ── Word Bank ────────────────────────────────────────────────────────── */
+.puzzle-fill-panel__word-bank-section {
+  flex-shrink: 0;
+  border-top: 1px solid #27272a;
+  padding: 14px 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.puzzle-fill-panel__word-bank-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.puzzle-fill-panel__word-bank-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #71717a;
+}
+
+.puzzle-fill-panel__blank-hint {
+  font-size: 11px;
+  color: #a78bfa;
+}
+
+.puzzle-fill-panel__blanks-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.puzzle-fill-panel__blank-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #18181b;
+  color: #a1a1aa;
+  padding: 3px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.puzzle-fill-panel__blank-chip:hover {
+  border-color: #52525b;
+  background: #27272a;
+}
+
+.puzzle-fill-panel__blank-chip--selected {
+  border-color: rgba(139, 92, 246, 0.6) !important;
+  background: rgba(139, 92, 246, 0.12) !important;
+  color: #c4b5fd !important;
+}
+
+.puzzle-fill-panel__blank-index {
+  font-family: monospace;
+  font-size: 11px;
+  color: #6d28d9;
+}
+
+.puzzle-fill-panel__blank-assigned {
+  color: #e4e4e7;
+  font-weight: 500;
+}
+
+.puzzle-fill-panel__blank-empty {
+  color: #52525b;
+  font-style: italic;
+}
+
+.puzzle-fill-panel__blank-unassign {
+  border: none;
+  background: transparent;
+  color: #71717a;
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 14px;
+  line-height: 1;
+  transition: color 120ms ease;
+}
+
+.puzzle-fill-panel__blank-unassign:hover {
+  color: #f4f4f5;
+}
+
+.puzzle-fill-panel__words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.puzzle-fill-panel__word-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #18181b;
+  overflow: hidden;
+}
+
+.puzzle-fill-panel__word-label {
+  background: transparent;
+  border: none;
+  color: #e4e4e7;
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: default;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.puzzle-fill-panel__word-label--assignable {
+  cursor: pointer;
+}
+
+.puzzle-fill-panel__word-label--assignable:hover {
+  background: rgba(139, 92, 246, 0.15);
+  color: #c4b5fd;
+}
+
+.puzzle-fill-panel__word-remove {
+  border: none;
+  border-left: 1px solid #3f3f46;
+  background: transparent;
+  color: #71717a;
+  padding: 4px 7px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.puzzle-fill-panel__word-remove:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+
+.puzzle-fill-panel__add-word {
+  display: flex;
+  gap: 6px;
+}
+
+.puzzle-fill-panel__word-input {
+  flex: 1;
+  background: #18181b;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  color: #e4e4e7;
+  font-size: 12px;
+  padding: 5px 10px;
+  outline: none;
+  transition: border-color 120ms ease;
+}
+
+.puzzle-fill-panel__word-input:focus {
+  border-color: rgba(139, 92, 246, 0.55);
+}
+
+.puzzle-fill-panel__word-input::placeholder {
+  color: #52525b;
+}
+
+.puzzle-fill-panel__word-add-btn {
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #18181b;
+  color: #a1a1aa;
+  font-size: 12px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+  white-space: nowrap;
+}
+
+.puzzle-fill-panel__word-add-btn:hover:not(:disabled) {
+  background: #27272a;
+  color: #fafafa;
+}
+
+.puzzle-fill-panel__word-add-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 /* ── Context Panel ───────────────────────────────────────────────────── */
 .context-panel {
   display: flex;

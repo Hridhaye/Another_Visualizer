@@ -94,6 +94,7 @@ type NarrativeBoardState = {
   hasUnsavedChanges: boolean
   contextPanelOpen: boolean
   narrativeBodyOpen: boolean
+  puzzleBodyOpen: boolean
   activeEditorField: EditorField
   canUndo: boolean
   canRedo: boolean
@@ -146,6 +147,8 @@ type NarrativeBoardActions = {
   closeContextPanel: () => void
   openNarrativeBody: () => void
   closeNarrativeBody: () => void
+  openPuzzleBody: () => void
+  closePuzzleBody: () => void
   openEditorField: (field: EditorField) => void
   closeEditorField: () => void
   cycleMinimapState: () => void
@@ -266,6 +269,9 @@ function removeNodesByIds(state: NarrativeBoardState, nodeIds: string[]) {
     narrativeBodyOpen: activeSelectionDeleted && nextSelection.selectedNodeIds.length !== 1
       ? false
       : state.narrativeBodyOpen,
+    puzzleBodyOpen: activeSelectionDeleted && nextSelection.selectedNodeIds.length !== 1
+      ? false
+      : state.puzzleBodyOpen,
     activeEditorField: activeSelectionDeleted && nextSelection.selectedNodeIds.length !== 1
       ? null
       : state.activeEditorField
@@ -291,6 +297,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   minimapCollapsed: false,
   contextPanelOpen: false,
   narrativeBodyOpen: false,
+  puzzleBodyOpen: false,
   activeEditorField: null,
   canUndo: false,
   canRedo: false,
@@ -671,6 +678,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         ...nextSelection,
         contextPanelOpen: false,
         narrativeBodyOpen: false,
+        puzzleBodyOpen: false,
         activeEditorField: null,
         multiSelectMode: false,
         activeGroupId: groupId
@@ -811,6 +819,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       ...getSelectionState(state.nodes, nodeId ? [nodeId] : [], nodeId),
       contextPanelOpen: nodeId ? state.contextPanelOpen : false,
       narrativeBodyOpen: nodeId ? state.narrativeBodyOpen : false,
+      puzzleBodyOpen: nodeId ? state.puzzleBodyOpen : false,
       activeEditorField: nodeId ? state.activeEditorField : null,
       activeGroupId: null
     }))
@@ -825,6 +834,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         ...nextSelection,
         contextPanelOpen: hasSingleSelection ? state.contextPanelOpen : false,
         narrativeBodyOpen: hasSingleSelection ? state.narrativeBodyOpen : false,
+        puzzleBodyOpen: hasSingleSelection ? state.puzzleBodyOpen : false,
         activeEditorField: hasSingleSelection ? state.activeEditorField : null
       }
     })
@@ -847,6 +857,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         ...nextSelection,
         contextPanelOpen: hasSingleSelection ? state.contextPanelOpen : false,
         narrativeBodyOpen: hasSingleSelection ? state.narrativeBodyOpen : false,
+        puzzleBodyOpen: hasSingleSelection ? state.puzzleBodyOpen : false,
         activeEditorField: hasSingleSelection ? state.activeEditorField : null,
         activeGroupId: null
       }
@@ -860,6 +871,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       connectionSourceNodeId: null,
       contextPanelOpen: false,
       narrativeBodyOpen: false,
+      puzzleBodyOpen: false,
       activeEditorField: null,
       activeGroupId: null
     })
@@ -935,6 +947,16 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
 
   closeNarrativeBody: () => {
     set({ narrativeBodyOpen: false })
+  },
+
+  openPuzzleBody: () => {
+    set((state) => ({
+      puzzleBodyOpen: state.selectedNodeIds.length === 1
+    }))
+  },
+
+  closePuzzleBody: () => {
+    set({ puzzleBodyOpen: false })
   },
 
   openEditorField: (field) => {
@@ -1019,6 +1041,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         connectionSourceNodeId: null,
         contextPanelOpen: false,
         narrativeBodyOpen: false,
+        puzzleBodyOpen: false,
         activeEditorField: null
       }
     })
@@ -1044,6 +1067,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         connectionSourceNodeId: null,
         contextPanelOpen: false,
         narrativeBodyOpen: false,
+        puzzleBodyOpen: false,
         activeEditorField: null
       }
     })
