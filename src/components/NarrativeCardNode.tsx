@@ -231,8 +231,8 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
       className={`card-shell relative ${isSelected ? 'card-selected' : ''} ${isHighlighted ? 'card-highlighted' : ''}`}
       style={{
         border: `7px solid ${slipColor}`,
-        backgroundColor: '#18181b',
-        backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0.03), rgba(255,255,255,0)), linear-gradient(to bottom, ${slipColor}1f, ${slipColor}12)`,
+        backgroundColor: '#0f1015',
+        backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0)), linear-gradient(to bottom, ${slipColor}0d, ${slipColor}08)`,
         boxShadow: `${baseShadow}${extraShadow}${highlightShadow}`,
         transform: isHighlighted ? 'scale(1.06)' : undefined,
         cursor: isPendingTarget ? 'crosshair' : undefined,
