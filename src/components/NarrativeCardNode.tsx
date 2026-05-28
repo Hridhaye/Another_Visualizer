@@ -215,9 +215,9 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
     : ''
 
   const baseShadow = isGroupSelected
-    ? `0 0 0 3px rgba(59,130,246,0.9), 0 0 22px 6px rgba(59,130,246,0.45)`
+    ? `0 0 0 3px rgba(255,255,255,0.9), 0 0 22px 6px rgba(255,255,255,0.45)`
     : isSelected
-      ? `0 0 0 2px rgba(59,130,246,0.75), 0 0 14px 4px rgba(59,130,246,0.3)`
+      ? `0 0 0 2px rgba(255,255,255,0.75), 0 0 14px 4px rgba(255,255,255,0.3)`
       : `0 0 0 2px rgba(255,255,255,0.04)`
 
   return (
