@@ -1,123 +1,96 @@
-
-import { PUZZLE_TYPES, type CardData, type NarrativeNode, type PuzzleType, type SlipType } from '../types/narrative'
-
-const PANEL_WIDTH = 288
-const PANEL_APPROX_HEIGHT = 420
-const PADDING = 12
+import { PUZZLE_TYPES, type CardData, type NarrativeNode, type SlipType } from '../types/narrative'
 
 type ContextPanelProps = {
-  selectedNode: NarrativeNode
+  node: NarrativeNode
   slipTypes: SlipType[]
-  contextPanelPosition: { x: number; y: number }
-  onClose: () => void
   onUpdate: (nodeId: string, patch: Partial<CardData>) => void
+  onClose: () => void
 }
 
-export function ContextPanel({
-  selectedNode,
-  slipTypes,
-  contextPanelPosition,
-  onClose,
-  onUpdate
-}: ContextPanelProps) {
-  const vw = window.innerWidth
-  const vh = window.innerHeight
-  const x = Math.min(Math.max(contextPanelPosition.x, PADDING), vw - PANEL_WIDTH - PADDING)
-  const y = Math.min(Math.max(contextPanelPosition.y, PADDING), vh - PANEL_APPROX_HEIGHT - PADDING)
-
-  const fieldInputClass = "w-full bg-zinc-800/60 px-2.5 py-1.5 text-xs text-zinc-100 border border-zinc-700/60 rounded focus:outline-none focus:ring-1 focus:ring-blue-500/70 focus:border-blue-500/50 transition-colors"
-  const fieldLabelClass = "text-[10px] font-medium uppercase tracking-wide text-zinc-400"
-
+export function ContextPanel({ node, slipTypes, onUpdate, onClose }: ContextPanelProps) {
   return (
     <div
-      className="fixed z-50 w-72 rounded-lg border border-zinc-700/50 bg-zinc-900/85 shadow-lg backdrop-blur-sm"
-      style={{ left: x, top: y }}
-      onClick={e => e.stopPropagation()}
+      className="nodrag nowheel absolute z-50 w-72 rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl"
+      style={{ bottom: 'calc(100% + 12px)', left: '50%', transform: 'translateX(-50%)' }}
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2 border-b border-zinc-800/40 px-3 py-2.5">
-        <div className="min-w-0 flex-1">
-          <div className="text-[9px] uppercase tracking-widest text-zinc-500">Card</div>
-          <div className="font-medium text-zinc-100 text-sm">{selectedNode.data.code}</div>
-        </div>
+      <div className="flex items-center justify-between border-b border-zinc-700/60 px-3 py-2">
+        <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+          Quick Edit
+        </span>
         <button
-          onClick={onClose}
-          className="text-zinc-400 hover:text-zinc-200 transition-colors p-1 flex-shrink-0"
-          aria-label="Close"
+          onClick={(e) => { e.stopPropagation(); onClose() }}
+          className="rounded p-0.5 text-zinc-500 hover:bg-zinc-700 hover:text-zinc-200"
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M2 2l12 12M14 2L2 14" />
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+            <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
           </svg>
         </button>
       </div>
 
-      {/* Fields Container */}
-      <div className="space-y-3 px-3 py-3">
-        {/* Code */}
-        <div className="space-y-1.5">
-          <label className={fieldLabelClass}>Code</label>
-          <input
-            className={fieldInputClass}
-            value={selectedNode.data.code}
-            onChange={e => onUpdate(selectedNode.id, { code: e.target.value })}
-          />
+      <div className="flex flex-col gap-2 p-3">
+        <div className="flex gap-2">
+          <div className="w-20">
+            <label className="text-[11px] text-zinc-500">Code</label>
+            <input
+              value={node.data.code}
+              onChange={(e) => onUpdate(node.id, { code: e.target.value })}
+              className="mt-0.5 w-full rounded-md bg-zinc-800 px-2 py-1.5 text-sm text-zinc-100 outline-none focus:ring-1 focus:ring-zinc-600"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="text-[11px] text-zinc-500">Title</label>
+            <input
+              value={node.data.title}
+              onChange={(e) => onUpdate(node.id, { title: e.target.value })}
+              className="mt-0.5 w-full rounded-md bg-zinc-800 px-2 py-1.5 text-sm text-zinc-100 outline-none focus:ring-1 focus:ring-zinc-600"
+            />
+          </div>
         </div>
 
-        {/* Title */}
-        <div className="space-y-1.5">
-          <label className={fieldLabelClass}>Title</label>
-          <input
-            className={fieldInputClass}
-            value={selectedNode.data.title}
-            onChange={e => onUpdate(selectedNode.id, { title: e.target.value })}
-          />
-        </div>
-
-        {/* Summary */}
-        <div className="space-y-1.5">
-          <label className={fieldLabelClass}>Summary</label>
+        <div>
+          <label className="text-[11px] text-zinc-500">Summary</label>
           <textarea
-            className={`${fieldInputClass} min-h-16 resize-none`}
-            value={selectedNode.data.summary}
-            onChange={e => onUpdate(selectedNode.id, { summary: e.target.value })}
+            value={node.data.summary}
+            onChange={(e) => onUpdate(node.id, { summary: e.target.value })}
+            rows={3}
+            className="mt-0.5 w-full resize-none rounded-md bg-zinc-800 px-2 py-1.5 text-sm text-zinc-100 outline-none focus:ring-1 focus:ring-zinc-600"
           />
         </div>
 
-        {/* References */}
-        <div className="space-y-1.5">
-          <label className={fieldLabelClass}>References</label>
+        <div>
+          <label className="text-[11px] text-zinc-500">References</label>
           <input
-            className={fieldInputClass}
-            value={selectedNode.data.referencesText}
-            onChange={e => onUpdate(selectedNode.id, { referencesText: e.target.value })}
+            value={node.data.referencesText}
+            onChange={(e) => onUpdate(node.id, { referencesText: e.target.value })}
             placeholder="AA02, AB03"
+            className="mt-0.5 w-full rounded-md bg-zinc-800 px-2 py-1.5 text-sm text-zinc-100 outline-none focus:ring-1 focus:ring-zinc-600"
           />
         </div>
 
-        {/* Slip Type & Puzzle Type - Side by side */}
-        <div className="grid grid-cols-2 gap-2.5">
-          <div className="space-y-1.5">
-            <label className={fieldLabelClass}>Slip</label>
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <label className="text-[11px] text-zinc-500">Slip Type</label>
             <select
-              className={fieldInputClass}
-              value={selectedNode.data.slipTypeId}
-              onChange={e => onUpdate(selectedNode.id, { slipTypeId: e.target.value })}
+              value={node.data.slipTypeId}
+              onChange={(e) => onUpdate(node.id, { slipTypeId: e.target.value })}
+              className="mt-0.5 w-full rounded-md bg-zinc-800 px-2 py-1.5 text-sm text-zinc-100 outline-none focus:ring-1 focus:ring-zinc-600"
             >
-              {slipTypes.map(slip => (
+              {slipTypes.map((slip) => (
                 <option key={slip.id} value={slip.id}>{slip.name}</option>
               ))}
             </select>
           </div>
-
-          <div className="space-y-1.5">
-            <label className={fieldLabelClass}>Puzzle</label>
+          <div className="flex-1">
+            <label className="text-[11px] text-zinc-500">Puzzle Type</label>
             <select
-              className={fieldInputClass}
-              value={selectedNode.data.puzzleType}
-              onChange={e => onUpdate(selectedNode.id, { puzzleType: e.target.value as PuzzleType })}
+              value={node.data.puzzleType}
+              onChange={(e) => onUpdate(node.id, { puzzleType: e.target.value as CardData['puzzleType'] })}
+              className="mt-0.5 w-full rounded-md bg-zinc-800 px-2 py-1.5 text-sm text-zinc-100 outline-none focus:ring-1 focus:ring-zinc-600"
             >
-              {PUZZLE_TYPES.map(type => (
-                <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+              {PUZZLE_TYPES.map((pt) => (
+                <option key={pt} value={pt}>{pt.charAt(0).toUpperCase() + pt.slice(1)}</option>
               ))}
             </select>
           </div>

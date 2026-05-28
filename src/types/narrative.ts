@@ -64,7 +64,3 @@ export type SectionKey =
 
 export type SectionOpenState = Record<SectionKey, boolean>
 
-export type ContextPanelPosition = {
-  x: number
-  y: number
-}

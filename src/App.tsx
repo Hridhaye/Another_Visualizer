@@ -3,11 +3,9 @@ import ReactFlow, {
   Background,
   Controls,
   ReactFlowProvider,
-  useReactFlow,
   type NodeMouseHandler
 } from 'reactflow'
 
-import { ContextPanel } from './components/ContextPanel'
 import { MinimapControls } from './components/MinimapControls'
 import { NarrativeCardNode } from './components/NarrativeCardNode'
 import { Sidebar } from './components/Sidebar/Sidebar'
@@ -17,14 +15,12 @@ import './styles/card.css'
 import 'reactflow/dist/style.css'
 
 function BoardCanvas() {
-  const reactFlow = useReactFlow()
   const nodes = useNarrativeBoardStore((state) => state.nodes)
   const edges = useNarrativeBoardStore((state) => state.edges)
   const selectedNodeId = useNarrativeBoardStore((state) => state.selectedNodeId)
   const slipTypes = useNarrativeBoardStore((state) => state.slipTypes)
   const sidebarCollapsed = useNarrativeBoardStore((state) => state.sidebarCollapsed)
   const sectionsOpen = useNarrativeBoardStore((state) => state.sectionsOpen)
-  const contextPanelPosition = useNarrativeBoardStore((state) => state.contextPanelPosition)
   const connectionSourceNodeId = useNarrativeBoardStore((state) => state.connectionSourceNodeId)
   const minimapVisible = useNarrativeBoardStore((state) => state.minimapVisible)
   const minimapCollapsed = useNarrativeBoardStore((state) => state.minimapCollapsed)
@@ -41,7 +37,6 @@ function BoardCanvas() {
   const clearSelection = useNarrativeBoardStore((state) => state.clearSelection)
   const toggleSidebar = useNarrativeBoardStore((state) => state.toggleSidebar)
   const toggleSection = useNarrativeBoardStore((state) => state.toggleSection)
-  const setContextPanelPosition = useNarrativeBoardStore((state) => state.setContextPanelPosition)
   const setMetadata = useNarrativeBoardStore((state) => state.setMetadata)
   const addSlipType = useNarrativeBoardStore((state) => state.addSlipType)
   const createReferenceConnection = useNarrativeBoardStore((state) => state.createReferenceConnection)
@@ -61,18 +56,6 @@ function BoardCanvas() {
   const handleNodeClick: NodeMouseHandler = (_event, node) => {
     setSelectedNode(node.id)
 
-    const cardX = node.positionAbsolute?.x ?? node.position.x
-    const cardY = node.positionAbsolute?.y ?? node.position.y
-    const cardWidth = node.width ?? 420
-
-    // Convert flow coordinates to screen coordinates
-    const screenPos = reactFlow.flowToScreenPosition({
-      x: cardX + cardWidth + 12,
-      y: cardY
-    })
-
-    setContextPanelPosition({ x: screenPos.x, y: screenPos.y })
-
     if (connectionSourceNodeId && connectionSourceNodeId !== node.id) {
       createReferenceConnection(connectionSourceNodeId, node.id)
     }
@@ -80,65 +63,55 @@ function BoardCanvas() {
 
   return (
     <div className="board-root">
-        <Sidebar
-          collapsed={sidebarCollapsed}
-          sectionsOpen={sectionsOpen}
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        sectionsOpen={sectionsOpen}
+        nodes={nodes}
+        selectedNode={selectedNode}
+        slipTypes={slipTypes}
+        onToggleSidebar={toggleSidebar}
+        onToggleSection={toggleSection}
+        onAddCard={addCard}
+        onSaveProject={saveProject}
+        onLoadProject={loadProject}
+        onImportAIFormat={applyAIFormatImport}
+        onAddSlipType={addSlipType}
+        projectName={metadata.projectName}
+        updatedAt={metadata.updatedAt}
+        hasUnsavedChanges={hasUnsavedChanges}
+        onProjectNameChange={(value) => setMetadata({ ...metadata, projectName: value, updatedAt: metadata.updatedAt })}
+        onUpdateNode={updateNode}
+      />
+
+      <div className="board-canvas">
+        <ReactFlow
           nodes={nodes}
-          selectedNode={selectedNode}
-          slipTypes={slipTypes}
-          onToggleSidebar={toggleSidebar}
-          onToggleSection={toggleSection}
-          onAddCard={addCard}
-          onSaveProject={saveProject}
-          onLoadProject={loadProject}
-          onImportAIFormat={applyAIFormatImport}
-          onAddSlipType={addSlipType}
-          projectName={metadata.projectName}
-          updatedAt={metadata.updatedAt}
-          hasUnsavedChanges={hasUnsavedChanges}
-          onProjectNameChange={(value) => setMetadata({ ...metadata, projectName: value, updatedAt: metadata.updatedAt })}
-          onUpdateNode={updateNode}
-        />
-
-        <div className="board-canvas">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeClick={handleNodeClick}
-            onPaneClick={clearSelection}
-            onMoveEnd={(_, viewport) => setViewport(viewport)}
-            fitView
-            fitViewOptions={{ padding: 0.15 }}
-            minZoom={0.2}
-            maxZoom={1.8}
-            className="reactflow-dark"
-          >
-            <Background color="#3f3f46" gap={26} />
-            <Controls />
-            <MinimapControls
-              minimapVisible={minimapVisible}
-              minimapCollapsed={minimapCollapsed}
-              slipTypes={slipTypes}
-              onCycleState={cycleMinimapState}
-            />
-          </ReactFlow>
-
-          {selectedNode && (
-            <ContextPanel
-              selectedNode={selectedNode}
-              slipTypes={slipTypes}
-              contextPanelPosition={contextPanelPosition}
-              onClose={clearSelection}
-              onUpdate={updateNode}
-            />
-          )}
-        </div>
+          edges={edges}
+          nodeTypes={nodeTypes}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeClick={handleNodeClick}
+          onPaneClick={clearSelection}
+          onMoveEnd={(_, viewport) => setViewport(viewport)}
+          fitView
+          fitViewOptions={{ padding: 0.15 }}
+          minZoom={0.2}
+          maxZoom={1.8}
+          className="reactflow-dark"
+        >
+          <Background color="#3f3f46" gap={26} />
+          <Controls />
+          <MinimapControls
+            minimapVisible={minimapVisible}
+            minimapCollapsed={minimapCollapsed}
+            slipTypes={slipTypes}
+            onCycleState={cycleMinimapState}
+          />
+        </ReactFlow>
       </div>
-    )
+    </div>
+  )
 }
 
 function App() {

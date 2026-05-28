@@ -14,7 +14,6 @@ import { deserializeProject } from '../persistence/deserializeProject'
 import { importAIFormat } from '../ai/importAIFormat'
 import type {
   CardData,
-  ContextPanelPosition,
   NarrativeEdge,
   NarrativeNode,
   SectionKey,
@@ -81,12 +80,12 @@ type NarrativeBoardState = {
   sidebarCollapsed: boolean
   sectionsOpen: SectionOpenState
   connectionSourceNodeId: string | null
-  contextPanelPosition: ContextPanelPosition
   minimapVisible: boolean
   minimapCollapsed: boolean
   metadata: SerializedMetadata
   viewport: SerializedViewport
   hasUnsavedChanges: boolean
+  contextPanelOpen: boolean
 }
 
 type NarrativeBoardActions = {
@@ -104,9 +103,10 @@ type NarrativeBoardActions = {
   clearSelection: () => void
   toggleSidebar: () => void
   toggleSection: (key: SectionKey) => void
-  setContextPanelPosition: (position: ContextPanelPosition) => void
   setConnectionSourceNode: (nodeId: string | null) => void
   openFullEditor: () => void
+  openContextPanel: () => void
+  closeContextPanel: () => void
   cycleMinimapState: () => void
   setViewport: (viewport: SerializedViewport) => void
   setMetadata: (metadata: SerializedMetadata) => void
@@ -141,9 +141,9 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   sidebarCollapsed: false,
   sectionsOpen: initialSectionsOpen,
   connectionSourceNodeId: null,
-  contextPanelPosition: { x: 0, y: 0 },
   minimapVisible: true,
   minimapCollapsed: false,
+  contextPanelOpen: false,
   metadata: {
     projectName: 'Mystery Board',
     createdAt: new Date().toISOString(),
@@ -240,7 +240,6 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       return {
         nodes: [...state.nodes, newNode],
         selectedNodeId: newNode.id,
-        contextPanelPosition: { x: 0, y: 0 },
         hasUnsavedChanges: true
       }
     })
@@ -434,13 +433,17 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   },
 
   setSelectedNode: (nodeId) => {
-    set({ selectedNodeId: nodeId })
+    set((state) => ({
+      selectedNodeId: nodeId,
+      contextPanelOpen: nodeId === state.selectedNodeId ? state.contextPanelOpen : false
+    }))
   },
 
   clearSelection: () => {
     set({
       selectedNodeId: null,
-      connectionSourceNodeId: null
+      connectionSourceNodeId: null,
+      contextPanelOpen: false
     })
   },
 
@@ -459,9 +462,6 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     }))
   },
 
-  setContextPanelPosition: (position) => {
-    set({ contextPanelPosition: position })
-  },
 
   setConnectionSourceNode: (nodeId) => {
     set({ connectionSourceNodeId: nodeId })
@@ -483,6 +483,14 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         cardEditor: true
       }
     }))
+  },
+
+  openContextPanel: () => {
+    set({ contextPanelOpen: true })
+  },
+
+  closeContextPanel: () => {
+    set({ contextPanelOpen: false })
   },
 
   cycleMinimapState: () => {

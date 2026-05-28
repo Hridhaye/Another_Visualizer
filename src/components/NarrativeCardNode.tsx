@@ -1,5 +1,6 @@
 import { Handle, Position, type NodeProps } from 'reactflow'
 
+import { ContextPanel } from './ContextPanel'
 import { getSlipColor, useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
 import type { CardData } from '../types/narrative'
 
@@ -8,14 +9,22 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const connectionSourceNodeId = useNarrativeBoardStore(
     (state) => state.connectionSourceNodeId
   )
+  const contextPanelOpen = useNarrativeBoardStore((state) => state.contextPanelOpen)
   const setConnectionSourceNode = useNarrativeBoardStore(
     (state) => state.setConnectionSourceNode
   )
   const setSelectedNode = useNarrativeBoardStore((state) => state.setSelectedNode)
   const openFullEditor = useNarrativeBoardStore((state) => state.openFullEditor)
+  const openContextPanel = useNarrativeBoardStore((state) => state.openContextPanel)
+  const closeContextPanel = useNarrativeBoardStore((state) => state.closeContextPanel)
+  const updateNode = useNarrativeBoardStore((state) => state.updateNode)
+  const nodes = useNarrativeBoardStore((state) => state.nodes)
+  const thisNode = nodes.find((n) => n.id === id)
 
   const slipColor = getSlipColor(slipTypes, data.slipTypeId)
   const isLinkSource = connectionSourceNodeId === id
+
+  const showContextPanel = selected && contextPanelOpen && !!thisNode
 
   return (
     <div
@@ -29,7 +38,20 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
           ? `0 0 0 2px rgba(59,130,246,0.45), 0 12px 34px rgba(0,0,0,0.5), inset 0 0 80px ${slipColor}22`
           : `0 0 0 2px rgba(255,255,255,0.04), inset 0 0 80px ${slipColor}22`
       }}
+      onClick={() => {
+        if (selected && !connectionSourceNodeId) {
+          openContextPanel()
+        }
+      }}
     >
+      {showContextPanel && (
+        <ContextPanel
+          node={thisNode}
+          slipTypes={slipTypes}
+          onUpdate={updateNode}
+          onClose={closeContextPanel}
+        />
+      )}
       <Handle type="target" position={Position.Left} />
 
       <div className="card-header">
