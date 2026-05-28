@@ -1,13 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react'
 import { Handle, Position, type NodeProps } from 'reactflow'
 
 import { ContextPanel } from './ContextPanel'
 import { getSlipColor, useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
 import type { CardData } from '../types/narrative'
-
-const HOLD_MS = 180
-// How many px of movement cancels the hold timer (normal drag/pan tolerance)
-const DRIFT_PX = 8
 
 export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   void selected
@@ -20,8 +15,8 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const updateNode = useNarrativeBoardStore((state) => state.updateNode)
   const deleteCard = useNarrativeBoardStore((state) => state.deleteCard)
   const setConnectionSourceNode = useNarrativeBoardStore((state) => state.setConnectionSourceNode)
-  const createReferenceConnection = useNarrativeBoardStore((state) => state.createReferenceConnection)
   const setLinkDrag = useNarrativeBoardStore((state) => state.setLinkDrag)
+  const createReferenceConnection = useNarrativeBoardStore((state) => state.createReferenceConnection)
   const linkDragSourceId = useNarrativeBoardStore((state) => state.linkDragSourceId)
   const linkDragTargetId = useNarrativeBoardStore((state) => state.linkDragTargetId)
   const nodes = useNarrativeBoardStore((state) => state.nodes)
@@ -34,176 +29,21 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const isDragSource = linkDragSourceId === id
   const isDragTarget = linkDragTargetId === id
 
-  // Ephemeral gesture state — none of this belongs in the store
-  const divRef = useRef<HTMLDivElement | null>(null)
-  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const downPos = useRef<{ x: number; y: number } | null>(null)
-  const linkDragActive = useRef(false)
-  const suppressNextClick = useRef(false)
-
-  // Keep a stable ref to setLinkDrag so the touch handlers (attached once) don't stale-close
-  const setLinkDragRef = useRef(setLinkDrag)
-  const createRefRef = useRef(createReferenceConnection)
-  useEffect(() => { setLinkDragRef.current = setLinkDrag }, [setLinkDrag])
-  useEffect(() => { createRefRef.current = createReferenceConnection }, [createReferenceConnection])
-
-  function getCardIdAtPoint(x: number, y: number): string | null {
-    const els = document.elementsFromPoint(x, y)
-    for (const el of els) {
-      const node = (el as HTMLElement).closest('[data-card-id]') as HTMLElement | null
-      if (node?.dataset.cardId && node.dataset.cardId !== id) {
-        return node.dataset.cardId
-      }
-    }
-    return null
-  }
-
-  function cancelHold() {
-    if (holdTimer.current) {
-      clearTimeout(holdTimer.current)
-      holdTimer.current = null
-    }
-  }
-
-  function commitLinkDrag(clientX: number, clientY: number) {
-    linkDragActive.current = false
-    divRef.current?.classList.remove('nodrag')
-    suppressNextClick.current = true
-    const targetId = getCardIdAtPoint(clientX, clientY)
-    setLinkDragRef.current(null, null)
-    if (targetId) createRefRef.current(id, targetId)
-    // clear suppress after the synthetic click that follows touch/mouseup fires
-    setTimeout(() => { suppressNextClick.current = false }, 0)
-  }
-
-  function abortLinkDrag() {
-    linkDragActive.current = false
-    divRef.current?.classList.remove('nodrag')
-    setLinkDragRef.current(null, null)
-  }
-
-  // ── Imperative touch listeners (passive:false lets us preventDefault) ──
-  // Attached once on mount to the card div so we can call preventDefault
-  // on touchmove/touchend before the browser hands the gesture to ReactFlow.
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    const t = e.touches[0]
-    if (!t) return
-
-    if (!linkDragActive.current) {
-      if (!downPos.current) return
-      const dx = t.clientX - downPos.current.x
-      const dy = t.clientY - downPos.current.y
-      if (Math.sqrt(dx * dx + dy * dy) > DRIFT_PX) {
-        // Too much drift before hold — cancel and let ReactFlow pan
-        cancelHold()
-        downPos.current = null
+  function handleClick(e: React.MouseEvent) {
+    if (e.altKey) {
+      if (linkDragSourceId === null) {
+        // First alt+click: set this card as the link source
+        setLinkDrag(id, null)
+      } else if (linkDragSourceId !== id) {
+        // Second alt+click on a different card: complete the link
+        createReferenceConnection(linkDragSourceId, id)
+        setLinkDrag(null, null)
+      } else {
+        // Alt+click the source card again: cancel
+        setLinkDrag(null, null)
       }
       return
     }
-
-    // Hold is active: take ownership of this touch, stop pan
-    e.preventDefault()
-    e.stopPropagation()
-    const targetId = getCardIdAtPoint(t.clientX, t.clientY)
-    setLinkDragRef.current(id, targetId)
-  }, [id])
-
-  const handleTouchEnd = useCallback((e: TouchEvent) => {
-    if (!linkDragActive.current) {
-      cancelHold()
-      downPos.current = null
-      return
-    }
-    e.preventDefault()
-    e.stopPropagation()
-    const t = e.changedTouches[0]
-    if (t) commitLinkDrag(t.clientX, t.clientY)
-    downPos.current = null
-  }, [id])
-
-  const handleTouchCancel = useCallback(() => {
-    cancelHold()
-    if (linkDragActive.current) abortLinkDrag()
-    downPos.current = null
-  }, [])
-
-  useEffect(() => {
-    const el = divRef.current
-    if (!el) return
-    // passive:false is required to be able to call preventDefault in these handlers
-    el.addEventListener('touchmove', handleTouchMove, { passive: false })
-    el.addEventListener('touchend', handleTouchEnd, { passive: false })
-    el.addEventListener('touchcancel', handleTouchCancel)
-    return () => {
-      el.removeEventListener('touchmove', handleTouchMove)
-      el.removeEventListener('touchend', handleTouchEnd)
-      el.removeEventListener('touchcancel', handleTouchCancel)
-    }
-  }, [handleTouchMove, handleTouchEnd, handleTouchCancel])
-
-  // ── React synthetic pointer handlers (mouse + pointer-device fallback) ──
-  function onPointerDown(e: React.PointerEvent) {
-    if (e.pointerType === 'touch') return  // handled by native touch listeners above
-    if (e.button !== 0) return
-    downPos.current = { x: e.clientX, y: e.clientY }
-    linkDragActive.current = false
-
-    holdTimer.current = setTimeout(() => {
-      linkDragActive.current = true
-      divRef.current?.classList.add('nodrag')
-      setLinkDragRef.current(id, null)
-    }, HOLD_MS)
-  }
-
-  function onPointerMove(e: React.PointerEvent) {
-    if (e.pointerType === 'touch') return
-    if (!downPos.current) return
-
-    if (!linkDragActive.current) {
-      const dx = e.clientX - downPos.current.x
-      const dy = e.clientY - downPos.current.y
-      if (Math.sqrt(dx * dx + dy * dy) > DRIFT_PX) {
-        cancelHold()
-        downPos.current = null
-      }
-      return
-    }
-
-    const targetId = getCardIdAtPoint(e.clientX, e.clientY)
-    setLinkDragRef.current(id, targetId)
-  }
-
-  function onPointerUp(e: React.PointerEvent) {
-    if (e.pointerType === 'touch') return
-    downPos.current = null
-    if (!linkDragActive.current) { cancelHold(); return }
-    commitLinkDrag(e.clientX, e.clientY)
-  }
-
-  function onPointerCancel(e: React.PointerEvent) {
-    if (e.pointerType === 'touch') return
-    cancelHold()
-    if (linkDragActive.current) abortLinkDrag()
-    downPos.current = null
-  }
-
-  // touchstart via React synthetic (passive) — just records start position and
-  // kicks off the hold timer; actual gesture capture happens in the native listeners
-  function onTouchStart(e: React.TouchEvent) {
-    const t = e.touches[0]
-    if (!t) return
-    downPos.current = { x: t.clientX, y: t.clientY }
-    linkDragActive.current = false
-
-    holdTimer.current = setTimeout(() => {
-      linkDragActive.current = true
-      divRef.current?.classList.add('nodrag')
-      setLinkDragRef.current(id, null)
-    }, HOLD_MS)
-  }
-
-  function handleClick() {
-    if (suppressNextClick.current) return
     if (connectionSourceNodeId) return
     openContextPanel()
   }
@@ -214,7 +54,6 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
 
   return (
     <div
-      ref={divRef}
       data-card-id={id}
       className={`card-shell relative ${isSelected ? 'card-selected' : ''}`}
       style={{
@@ -225,15 +64,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
           ? `0 0 0 2px rgba(59,130,246,0.45), 0 12px 34px rgba(0,0,0,0.5), inset 0 0 80px ${slipColor}22${extraShadow}`
           : `0 0 0 2px rgba(255,255,255,0.04), inset 0 0 80px ${slipColor}22${extraShadow}`,
         cursor: isDragSource ? 'crosshair' : undefined,
-        // Disable browser touch-action while link drag is active so
-        // the OS scroll/zoom gesture doesn't compete
-        touchAction: linkDragActive.current ? 'none' : undefined,
       }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerCancel}
-      onTouchStart={onTouchStart}
       onClick={handleClick}
     >
       {showContextPanel && (
@@ -266,7 +97,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
 
       {isDragSource && (
         <div className="absolute -top-7 left-1/2 z-50 -translate-x-1/2 whitespace-nowrap rounded-md border border-indigo-700/60 bg-indigo-950/90 px-2.5 py-1 text-[10px] font-semibold text-indigo-300 shadow-lg">
-          {linkDragTargetId ? 'Release to link' : 'Drag to a card to link'}
+          {linkDragTargetId ? 'Release to link' : 'Drag to a card…'}
         </div>
       )}
 

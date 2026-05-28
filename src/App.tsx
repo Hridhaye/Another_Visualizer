@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import ReactFlow, {
   Background,
   Controls,
@@ -50,6 +50,8 @@ function BoardCanvas() {
   const undo = useNarrativeBoardStore((state) => state.undo)
   const redo = useNarrativeBoardStore((state) => state.redo)
 
+  const [altHeld, setAltHeld] = useState(false)
+
   const nodeTypes = useMemo(
     () => ({
       narrativeCard: NarrativeCardNode
@@ -72,9 +74,9 @@ function BoardCanvas() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!event.ctrlKey || event.altKey) {
-        return
-      }
+      if (event.key === 'Alt') setAltHeld(true)
+
+      if (!event.ctrlKey || event.altKey) return
 
       const key = event.key.toLowerCase()
       if (key === 'z' && !event.shiftKey) {
@@ -82,15 +84,26 @@ function BoardCanvas() {
         undo()
         return
       }
-
       if (key === 'z' && event.shiftKey) {
         event.preventDefault()
         redo()
       }
     }
 
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === 'Alt') setAltHeld(false)
+    }
+
+    const handleBlur = () => setAltHeld(false)
+
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    window.addEventListener('blur', handleBlur)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+      window.removeEventListener('blur', handleBlur)
+    }
   }, [undo, redo])
 
   return (
@@ -114,11 +127,12 @@ function BoardCanvas() {
         onProjectNameChange={(value) => setMetadata({ ...metadata, projectName: value, updatedAt: metadata.updatedAt })}
       />
 
-      <div className="board-canvas">
+      <div className="board-canvas" style={{ cursor: altHeld ? 'crosshair' : undefined }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          nodesDraggable={!altHeld}
           elementsSelectable={!connectionSourceNodeId}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
