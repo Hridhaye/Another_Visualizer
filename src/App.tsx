@@ -5,7 +5,6 @@ import ReactFlow, {
   ReactFlowProvider,
 } from 'reactflow'
 
-import { MinimapControls } from './components/MinimapControls'
 import { NarrativeCardNode } from './components/NarrativeCardNode'
 import { NarrativeBodyPanel } from './components/NarrativeBodyPanel'
 import { ContextPanel } from './components/ContextPanel'
@@ -24,8 +23,6 @@ function BoardCanvas() {
   const slipTypes = useNarrativeBoardStore((state) => state.slipTypes)
   const sidebarCollapsed = useNarrativeBoardStore((state) => state.sidebarCollapsed)
   const sectionsOpen = useNarrativeBoardStore((state) => state.sectionsOpen)
-  const minimapVisible = useNarrativeBoardStore((state) => state.minimapVisible)
-  const minimapCollapsed = useNarrativeBoardStore((state) => state.minimapCollapsed)
 
   const selectedNodeId = useNarrativeBoardStore((state) => state.selectedNodeId)
   const contextPanelOpen = useNarrativeBoardStore((state) => state.contextPanelOpen)
@@ -48,7 +45,6 @@ function BoardCanvas() {
   const addSlipType = useNarrativeBoardStore((state) => state.addSlipType)
   const renameSlipType = useNarrativeBoardStore((state) => state.renameSlipType)
   const deleteSlipType = useNarrativeBoardStore((state) => state.deleteSlipType)
-  const cycleMinimapState = useNarrativeBoardStore((state) => state.cycleMinimapState)
   const setViewport = useNarrativeBoardStore((state) => state.setViewport)
   const metadata = useNarrativeBoardStore((state) => state.metadata)
   const hasUnsavedChanges = useNarrativeBoardStore((state) => state.hasUnsavedChanges)
@@ -304,12 +300,6 @@ function BoardCanvas() {
           className="reactflow-dark"
         >
           <Background color="#3f3f46" gap={26} />
-          <MinimapControls
-            minimapVisible={minimapVisible}
-            minimapCollapsed={minimapCollapsed}
-            slipTypes={slipTypes}
-            onCycleState={cycleMinimapState}
-          />
         </ReactFlow>
         {(multiSelectMode || selectionBox) && (
           <div className={`selection-surface ${multiSelectMode ? 'selection-surface--active' : ''}`}>

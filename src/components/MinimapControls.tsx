@@ -1,4 +1,4 @@
-import { MiniMap, type Node } from 'reactflow'
+import { MiniMap, Panel, type Node } from 'reactflow'
 
 import { getSlipColor } from '../store/useNarrativeBoardStore'
 import type { CardData, SlipType } from '../types/narrative'
@@ -35,7 +35,14 @@ export function MinimapControls({
   const minimapNodeStrokeWidth = minimapCollapsed ? 2 : 1
 
   return (
-    <>
+    <Panel position="top-right" style={{ margin: '12px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+      <button
+        onClick={onCycleState}
+        className="minimap-toggle"
+        aria-label="Toggle minimap state"
+      >
+        {minimapVisible ? (minimapCollapsed ? '+' : '−') : '⊞'}
+      </button>
       {minimapVisible && (
         <MiniMap
           pannable
@@ -47,17 +54,9 @@ export function MinimapControls({
           maskColor="rgba(0,0,0,0.75)"
           nodeStrokeWidth={minimapNodeStrokeWidth}
           nodeBorderRadius={2}
-          style={minimapStyle}
+          style={{ ...minimapStyle, position: 'relative', top: 'unset', right: 'unset', margin: 0 }}
         />
       )}
-
-      <button
-        onClick={onCycleState}
-        className="absolute bottom-4 right-4 z-50 flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-sm hover:bg-zinc-800"
-        aria-label="Toggle minimap state"
-      >
-        {minimapVisible ? (minimapCollapsed ? '+' : '-') : '[]'}
-      </button>
-    </>
+    </Panel>
   )
 }
