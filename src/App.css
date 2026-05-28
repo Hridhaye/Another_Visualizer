@@ -304,6 +304,7 @@
 /* ── Puzzle Indicators ──────────────────────────────────────────────── */
 .card-puzzle {
   display: flex;
+  margin-top: 10px;
 }
 
 .card-puzzle__badge {
@@ -312,8 +313,7 @@
   padding: 4px 10px;
   font-size: 16px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   border-radius: 4px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
