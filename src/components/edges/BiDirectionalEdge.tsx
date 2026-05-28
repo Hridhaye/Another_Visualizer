@@ -1,104 +1,119 @@
-import { getSmoothStepPath } from 'reactflow'
+import { createPortal } from 'react-dom'
+import { getSmoothStepPath, useViewport } from 'reactflow'
 import type { EdgeProps } from 'reactflow'
+import { useEdgeOverlay } from './EdgeOverlayContext'
 
-const MARKER_ID = 'bidir-arrowhead'
+const MARKER_DIM = 'bidir-arrow-dim'
+const MARKER_BRIGHT = 'bidir-arrow-bright'
 
-export function BiDirectionalEdgeMarkerDef({ bright }: { bright?: boolean } = {}) {
+export function BiDirectionalEdgeMarkerDef() {
   return (
     <defs>
-      {!bright && (
-        <marker
-          id={`${MARKER_ID}-dim`}
-          markerWidth="8"
-          markerHeight="8"
-          refX="7"
-          refY="4"
-          orient="auto"
-        >
-          <path d="M0,0 L0,8 L8,4 z" fill="rgba(148,163,184,0.55)" />
-        </marker>
-      )}
-      <marker
-        id={`${MARKER_ID}-bright`}
-        markerWidth="8"
-        markerHeight="8"
-        refX="7"
-        refY="4"
-        orient="auto"
-      >
+      <marker id={MARKER_DIM} markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+        <path d="M0,0 L0,8 L8,4 z" fill="rgba(148,163,184,0.55)" />
+      </marker>
+      <marker id={MARKER_BRIGHT} markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
         <path d="M0,0 L0,8 L8,4 z" fill="rgba(255,255,255,0.85)" />
       </marker>
     </defs>
   )
 }
 
+function buildPaths(
+  sourceX: number, sourceY: number, sourcePosition: string,
+  targetX: number, targetY: number, targetPosition: string,
+  shift: number
+) {
+  const offset = 40 + Math.abs(shift)
+  const [forward] = getSmoothStepPath({
+    sourceX, sourceY: sourceY + shift, sourcePosition: sourcePosition as never,
+    targetX, targetY: targetY + shift, targetPosition: targetPosition as never,
+    borderRadius: 0, offset,
+  })
+  const [reverse] = getSmoothStepPath({
+    sourceX: targetX, sourceY: targetY + shift, sourcePosition: targetPosition as never,
+    targetX: sourceX, targetY: sourceY + shift, targetPosition: sourcePosition as never,
+    borderRadius: 0, offset,
+  })
+  return { forward, reverse }
+}
+
+function HighlightedBidirPath({
+  overlayEl,
+  sourceX, sourceY, targetX, targetY,
+  sourcePosition, targetPosition, shift,
+}: {
+  overlayEl: HTMLElement
+  sourceX: number; sourceY: number
+  targetX: number; targetY: number
+  sourcePosition: string; targetPosition: string
+  shift: number
+}) {
+  const { x, y, zoom } = useViewport()
+  const { forward, reverse } = buildPaths(sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, shift)
+
+  return createPortal(
+    <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', overflow: 'visible', zIndex: 10 }}>
+      <BiDirectionalEdgeMarkerDef />
+      <g style={{ transform: `translate(${x}px, ${y}px) scale(${zoom})`, transformOrigin: '0 0' }}>
+        <path
+          d={forward}
+          fill="none"
+          stroke="rgba(255,255,255,0.85)"
+          strokeWidth={3}
+          markerEnd={`url(#${MARKER_BRIGHT})`}
+          style={{ filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.6))' }}
+        />
+        <path
+          d={reverse}
+          fill="none"
+          stroke="transparent"
+          strokeWidth={3}
+          markerEnd={`url(#${MARKER_BRIGHT})`}
+        />
+      </g>
+    </svg>,
+    overlayEl
+  )
+}
+
 export function BiDirectionalEdge({
-  id,
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  sourcePosition,
-  targetPosition,
+  sourceX, sourceY, targetX, targetY,
+  sourcePosition, targetPosition,
   data,
 }: EdgeProps) {
   const shift: number = data?.lateralShift ?? 0
+  const isHighlighted: boolean = data?.isOutgoingFromSelected ?? false
+  const overlayEl = useEdgeOverlay()
 
-  const [forwardPath] = getSmoothStepPath({
-    sourceX,
-    sourceY: sourceY + shift,
-    sourcePosition,
-    targetX,
-    targetY: targetY + shift,
-    targetPosition,
-    borderRadius: 0,
-    offset: 40 + Math.abs(shift),
-  })
-
-  // Reversed path: swap source and target so markerEnd renders at the original source end
-  const [reversePath] = getSmoothStepPath({
-    sourceX: targetX,
-    sourceY: targetY + shift,
-    sourcePosition: targetPosition,
-    targetX: sourceX,
-    targetY: sourceY + shift,
-    targetPosition: sourcePosition,
-    borderRadius: 0,
-    offset: 40 + Math.abs(shift),
-  })
-
-  const isHighlighted = data?.isOutgoingFromSelected
-  const color = isHighlighted ? 'rgba(255,255,255,0.85)' : 'rgba(148,163,184,0.55)'
-  const markerSuffix = isHighlighted ? 'bright' : 'dim'
-  const strokeWidth = isHighlighted ? 3 : 2.5
-
-  const sharedStyle = {
-    filter: isHighlighted ? 'drop-shadow(0 0 4px rgba(255,255,255,0.6))' : 'none',
-    transition: 'stroke 0.15s ease, stroke-width 0.15s ease, filter 0.15s ease',
-  }
+  const { forward, reverse } = buildPaths(sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, shift)
 
   return (
     <>
-      {/* Forward path: arrow at target end */}
       <path
-        id={`${id}-fwd`}
-        d={forwardPath}
+        d={forward}
         fill="none"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        markerEnd={`url(#${MARKER_ID}-${markerSuffix})`}
-        style={sharedStyle}
+        stroke="rgba(148,163,184,0.55)"
+        strokeWidth={2.5}
+        markerEnd={`url(#${MARKER_DIM})`}
       />
-      {/* Reverse path (same geometry, opposite direction): arrow at source end */}
       <path
-        id={`${id}-rev`}
-        d={reversePath}
+        d={reverse}
         fill="none"
         stroke="transparent"
-        strokeWidth={strokeWidth}
-        markerEnd={`url(#${MARKER_ID}-${markerSuffix})`}
-        style={{ pointerEvents: 'none' }}
+        strokeWidth={2.5}
+        markerEnd={`url(#${MARKER_DIM})`}
       />
+      {isHighlighted && overlayEl && (
+        <HighlightedBidirPath
+          overlayEl={overlayEl}
+          sourceX={sourceX} sourceY={sourceY}
+          targetX={targetX} targetY={targetY}
+          sourcePosition={sourcePosition}
+          targetPosition={targetPosition}
+          shift={shift}
+        />
+      )}
     </>
   )
 }

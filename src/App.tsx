@@ -7,7 +7,7 @@ import ReactFlow, {
 import { NarrativeCardNode } from './components/NarrativeCardNode'
 import { NarrativeEdgeComponent } from './components/edges/NarrativeEdge'
 import { BiDirectionalEdge, BiDirectionalEdgeMarkerDef } from './components/edges/BiDirectionalEdge'
-import { HighlightOverlay } from './components/edges/HighlightOverlay'
+import { EdgeOverlayContext } from './components/edges/EdgeOverlayContext'
 import { NarrativeBodyPanel } from './components/NarrativeBodyPanel'
 import { ContextPanel } from './components/ContextPanel'
 import { CardEditorFlyout } from './components/CardEditorFlyout'
@@ -76,6 +76,7 @@ function BoardCanvas() {
   } | null>(null)
   const [groupsPanelOpen, setGroupsPanelOpen] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
+  const [overlayEl, setOverlayEl] = useState<HTMLDivElement | null>(null)
 
   const nodeTypes = useMemo(
     () => ({
@@ -109,11 +110,16 @@ function BoardCanvas() {
       // Center the fan: e.g. 3 edges → offsets -12, 0, +12
       const lateralShift = (indexInGroup - (groupSize - 1) / 2) * LANE_SPACING
 
+      const isBidir = edge.data?.bidirectional === true
+      const isOutgoingFromSelected =
+        selectedNodeId !== null &&
+        (edge.source === selectedNodeId || (isBidir && edge.target === selectedNodeId))
+
       return {
         ...edge,
         data: {
           ...edge.data,
-          isOutgoingFromSelected: selectedNodeId !== null && edge.source === selectedNodeId,
+          isOutgoingFromSelected,
           lateralShift,
         },
       }
@@ -277,6 +283,7 @@ function BoardCanvas() {
   const showContextPanel = !!activeNode && contextPanelOpen
 
   return (
+    <EdgeOverlayContext.Provider value={overlayEl}>
     <div className="board-root">
       <svg style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
         <BiDirectionalEdgeMarkerDef />
@@ -329,8 +336,8 @@ function BoardCanvas() {
           className="reactflow-dark"
         >
           <Background color="#3f3f46" gap={26} />
-          <HighlightOverlay containerEl={boardCanvasRef.current} />
         </ReactFlow>
+        <div ref={setOverlayEl} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
         {(multiSelectMode || selectionBox) && (
           <div className={`selection-surface ${multiSelectMode ? 'selection-surface--active' : ''}`}>
             {multiSelectMode && (
@@ -492,6 +499,7 @@ function BoardCanvas() {
         </div>
       </div>
     </div>
+    </EdgeOverlayContext.Provider>
   )
 }
 

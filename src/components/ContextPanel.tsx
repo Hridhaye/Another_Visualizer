@@ -22,8 +22,8 @@ const BUTTONS: { field: ActiveField | 'body'; label: string }[] = [
   { field: 'summary',    label: 'Summary' },
   { field: 'body',       label: 'Body' },
   { field: 'references', label: 'Refs' },
-  { field: 'slipType',   label: 'Slip' },
-  { field: 'slipGiven',  label: 'Given' },
+  { field: 'slipType',   label: 'Card Slip' },
+  { field: 'slipGiven',  label: 'Given Slip' },
   { field: 'puzzleType', label: 'Puzzle' },
 ]
 
