@@ -29,6 +29,7 @@ function App() {
   const updateNode = useNarrativeBoardStore((state) => state.updateNode)
   const saveProject = useNarrativeBoardStore((state) => state.saveProject)
   const loadProject = useNarrativeBoardStore((state) => state.loadProject)
+  const applyAIFormatImport = useNarrativeBoardStore((state) => state.applyAIFormatImport)
   const setSelectedNode = useNarrativeBoardStore((state) => state.setSelectedNode)
   const clearSelection = useNarrativeBoardStore((state) => state.clearSelection)
   const toggleSidebar = useNarrativeBoardStore((state) => state.toggleSidebar)
@@ -67,6 +68,7 @@ function App() {
         <Sidebar
           collapsed={sidebarCollapsed}
           sectionsOpen={sectionsOpen}
+          nodes={nodes}
           selectedNode={selectedNode}
           slipTypes={slipTypes}
           onToggleSidebar={toggleSidebar}
@@ -74,6 +76,7 @@ function App() {
           onAddCard={addCard}
           onSaveProject={saveProject}
           onLoadProject={loadProject}
+          onImportAIFormat={applyAIFormatImport}
           onAddSlipType={addSlipType}
           projectName={metadata.projectName}
           updatedAt={metadata.updatedAt}

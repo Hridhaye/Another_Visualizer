@@ -8,6 +8,7 @@ import { SlipManager } from './SlipManager'
 type SidebarProps = {
   collapsed: boolean
   sectionsOpen: SectionOpenState
+  nodes: NarrativeNode[]
   selectedNode: NarrativeNode | null
   slipTypes: SlipType[]
   onToggleSidebar: () => void
@@ -15,6 +16,7 @@ type SidebarProps = {
   onAddCard: () => void
   onSaveProject: () => Promise<void>
   onLoadProject: (file: File) => Promise<void>
+  onImportAIFormat: (text: string) => Promise<{ createdCount: number; updatedCount: number }>
   onAddSlipType: (name: string, color: string) => void
   onUpdateNode: (nodeId: string, patch: Partial<CardData>) => void
   projectName: string
@@ -46,6 +48,7 @@ function Section({ title, toneClassName, open, onToggle, children }: SectionProp
 export function Sidebar({
   collapsed,
   sectionsOpen,
+  nodes,
   selectedNode,
   slipTypes,
   onToggleSidebar,
@@ -53,6 +56,7 @@ export function Sidebar({
   onAddCard,
   onSaveProject,
   onLoadProject,
+  onImportAIFormat,
   onAddSlipType,
   onUpdateNode,
   projectName,
@@ -100,12 +104,15 @@ export function Sidebar({
             }}
           >
             <BoardControls
+              nodes={nodes}
+              slipTypes={slipTypes}
               projectName={projectName}
               updatedAt={updatedAt}
               hasUnsavedChanges={hasUnsavedChanges}
               onAddCard={onAddCard}
               onSaveProject={onSaveProject}
               onLoadProject={onLoadProject}
+              onImportAIFormat={onImportAIFormat}
               onProjectNameChange={onProjectNameChange}
             />
           </Section>

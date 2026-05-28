@@ -11,6 +11,7 @@ import { buildEdgesFromReferences, parseReferences } from '../graph/buildEdgesFr
 import { generateNextCode } from '../graph/generateNextCode'
 import { createProjectFilename, serializeProject } from '../persistence/serializeProject'
 import { deserializeProject } from '../persistence/deserializeProject'
+import { importAIFormat } from '../ai/importAIFormat'
 import type {
   CardData,
   ContextPanelPosition,
@@ -98,6 +99,7 @@ type NarrativeBoardActions = {
   addSlipType: (name: string, color: string) => void
   saveProject: () => Promise<void>
   loadProject: (file: File) => Promise<void>
+  applyAIFormatImport: (rawText: string) => Promise<{ createdCount: number; updatedCount: number }>
   setSelectedNode: (nodeId: string | null) => void
   clearSelection: () => void
   toggleSidebar: () => void
@@ -404,6 +406,29 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'The project file could not be loaded.'
+      throw new Error(message, { cause: error })
+    }
+  },
+
+  applyAIFormatImport: async (rawText) => {
+    const state = get()
+
+    try {
+      const result = importAIFormat(rawText, state.nodes, state.slipTypes)
+
+      set({
+        nodes: result.updatedNodes,
+        edges: result.updatedEdges,
+        selectedNodeId: result.updatedNodes[0]?.id ?? null,
+        hasUnsavedChanges: true
+      })
+
+      return {
+        createdCount: result.createdCount,
+        updatedCount: result.updatedCount
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to import the AI format.'
       throw new Error(message, { cause: error })
     }
   },
