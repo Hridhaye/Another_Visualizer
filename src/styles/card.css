@@ -359,11 +359,104 @@
   overflow-wrap: anywhere;
 }
 
-@media (max-width: 980px) {
+/* ── Tablet (≤1024px): widen the detailed card and scale its typography down so
+   long titles/summaries stop wrapping every couple of words. The desktop sizes
+   are tuned for a 483px card; here the card is wider (relative to content) but
+   the type must shrink to match the reduced viewport. ───────────────────────── */
+@media (max-width: 1024px) {
   .card-shell {
-    width: min(92vw, 357px);
-    max-width: 92vw;
+    width: min(94vw, 560px);
+    max-width: 94vw;
     min-height: 126px;
-    padding: 17px;
+    padding: 20px;
   }
+
+  /* Detailed overview: trim the heavy horizontal padding so more of the card
+     width is usable for text, and dial typography down to fit. */
+  .card-shell.overview,
+  .card-shell.overview.has-puzzle {
+    padding: 26px 24px;
+  }
+
+  .card-overview {
+    gap: 20px;
+  }
+
+  .card-overview__code { font-size: 16px; }
+  .card-overview__title { font-size: 40px; }
+  .card-overview__summary { font-size: 20px; }
+  .card-overview__tag { font-size: 24px; }
+  .card-overview__chip-glyph { font-size: 30px; }
+  .card-overview__chip-count,
+  .card-overview__chip-label { font-size: 26px; }
+  .card-overview__slip-dot { width: 30px; height: 30px; }
+  .card-overview__ref-item { font-size: 26px; }
+  .card-overview__ref-code { font-size: 16px; }
+  .card-overview__puzzle-label,
+  .card-overview__puzzle-summary { font-size: 26px; }
+
+  /* Minimized cards: shrink the fixed 620px shell and its oversized type. */
+  .card-shell.overview.minimized,
+  .card-shell.overview.minimized.has-puzzle {
+    width: min(94vw, 560px);
+    max-width: 94vw;
+  }
+
+  .card-minimized__band { padding: 28px 30px; }
+  .card-minimized__title { font-size: 52px; }
+  .card-minimized__tag { font-size: 28px; }
+  .card-minimized__body { padding: 20px 24px; gap: 16px; }
+  .card-minimized__slip-dot { width: 40px; height: 40px; }
+  .card-minimized__slip-count { font-size: 30px; }
+  .card-minimized__ref { font-size: 38px; padding: 14px 20px; }
+  .card-minimized__puzzle { padding: 12px 24px; }
+  .card-minimized__puzzle-type { font-size: 38px; }
+  .card-minimized__puzzle-title { font-size: 36px; }
+}
+
+/* ── Phone (≤640px): one more step down. Cards take nearly the full width and
+   typography is sized for a hand-held screen. ───────────────────────────────── */
+@media (max-width: 640px) {
+  .card-shell {
+    width: min(96vw, 420px);
+    max-width: 96vw;
+    padding: 16px;
+  }
+
+  .card-shell.overview,
+  .card-shell.overview.has-puzzle {
+    padding: 20px 18px;
+  }
+
+  .card-overview { gap: 16px; }
+  .card-overview__code { font-size: 14px; }
+  .card-overview__title { font-size: 30px; }
+  .card-overview__summary { font-size: 16px; }
+  .card-overview__tag { font-size: 20px; }
+  .card-overview__chip { padding: 8px 14px; gap: 8px; }
+  .card-overview__chip-glyph { font-size: 24px; }
+  .card-overview__chip-count,
+  .card-overview__chip-label { font-size: 20px; }
+  .card-overview__slip-dot { width: 24px; height: 24px; }
+  .card-overview__ref-item { font-size: 20px; }
+  .card-overview__ref-code { font-size: 14px; }
+  .card-overview__puzzle { padding: 12px 16px; }
+  .card-overview__puzzle-label,
+  .card-overview__puzzle-summary { font-size: 20px; }
+
+  .card-shell.overview.minimized,
+  .card-shell.overview.minimized.has-puzzle {
+    width: min(96vw, 420px);
+    max-width: 96vw;
+  }
+
+  .card-minimized__band { padding: 22px 22px; }
+  .card-minimized__title { font-size: 38px; }
+  .card-minimized__tag { font-size: 22px; }
+  .card-minimized__body { padding: 16px 18px; gap: 12px; }
+  .card-minimized__slip-dot { width: 30px; height: 30px; }
+  .card-minimized__slip-count { font-size: 24px; }
+  .card-minimized__ref { font-size: 28px; padding: 12px 16px; }
+  .card-minimized__puzzle-type { font-size: 28px; }
+  .card-minimized__puzzle-title { font-size: 26px; }
 }
