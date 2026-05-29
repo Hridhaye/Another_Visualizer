@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { User } from 'firebase/auth'
 
-import { exportAIFormat } from '../../ai/exportAIFormat'
+import { exportAIFormat, type ExportMode } from '../../ai/exportAIFormat'
 import { signInWithGoogle, signOut } from '../../firebase/auth'
 import { useNarrativeBoardStore } from '../../store/useNarrativeBoardStore'
 import type { NarrativeNode, SlipType } from '../../types/narrative'
@@ -53,6 +54,7 @@ export function BoardControls({
   const [showAIImportModal, setShowAIImportModal] = useState(false)
   const [importText, setImportText] = useState('')
   const [feedback, setFeedback] = useState('')
+  const [exportMode, setExportMode] = useState<ExportMode>('standard')
 
   const handleCopyDSL = async () => {
     try {
@@ -60,7 +62,7 @@ export function BoardControls({
         selectedNodeIds.length > 1
           ? nodes.filter((node) => selectedNodeIds.includes(node.id))
           : nodes
-      const text = exportAIFormat(nodesToExport, slipTypes, tags)
+      const text = exportAIFormat(nodesToExport, slipTypes, tags, exportMode)
       await navigator.clipboard.writeText(text)
       setFeedback(
         selectedNodeIds.length > 1
@@ -177,9 +179,22 @@ export function BoardControls({
         </div>
       </div>
 
-      <div className="sidebar-grid-two">
-        <button onClick={handleCopyDSL} className="sidebar-btn sidebar-btn--violet">Copy DSL</button>
-        <button onClick={() => setShowAIImportModal(true)} className="sidebar-btn sidebar-btn--amber">Import DSL</button>
+      <div className="dsl-export">
+        <div className="dsl-export__modes">
+          {(['standard', 'narrative', 'narrative-puzzle'] as ExportMode[]).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setExportMode(mode)}
+              className={`dsl-export__mode${exportMode === mode ? ' dsl-export__mode--active' : ''}`}
+            >
+              {mode === 'standard' ? 'Standard' : mode === 'narrative' ? 'Narrative' : '+ Puzzle'}
+            </button>
+          ))}
+        </div>
+        <div className="dsl-export__actions">
+          <button onClick={handleCopyDSL} className="sidebar-btn sidebar-btn--violet">Copy DSL</button>
+          <button onClick={() => setShowAIImportModal(true)} className="sidebar-btn sidebar-btn--amber">Import DSL</button>
+        </div>
       </div>
 
       {feedback && <p className="sidebar-feedback">{feedback}</p>}
@@ -300,29 +315,30 @@ export function BoardControls({
         </button>
       )}
 
-      {showAIImportModal && (
-        <div className="fixed inset-0 z-[1300] flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-xl rounded-2xl border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
-            <div className="mb-3 flex items-start justify-between gap-3">
+      {showAIImportModal && createPortal(
+        <div className="dsl-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) setShowAIImportModal(false) }}>
+          <div className="dsl-modal">
+            <div className="dsl-modal__header">
               <div>
-                <h3 className="text-sm font-bold text-white">Import DSL</h3>
-                <p className="text-[10px] text-zinc-500 mt-0.5">Paste DSL text. Existing codes are updated; new codes are created.</p>
+                <p className="dsl-modal__title">Import DSL</p>
+                <p className="dsl-modal__subtitle">Paste DSL text. Existing codes are updated; new codes are created.</p>
               </div>
-              <button onClick={() => setShowAIImportModal(false)} className="rounded bg-zinc-800 px-2 py-1 text-[10px] text-zinc-400 hover:text-zinc-200">Close</button>
+              <button onClick={() => setShowAIImportModal(false)} className="dsl-modal__close">Close</button>
             </div>
             <textarea
               value={importText}
               onChange={(e) => setImportText(e.target.value)}
               rows={12}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 p-3 font-mono text-xs text-zinc-200 outline-none focus:border-violet-500"
-              placeholder="@CARD AA01&#10;TITLE: Forest Arrival&#10;CARD_SLIP: Blue Slip&#10;SLIP_GIVEN: Red Slip ×2, Green Slip&#10;..."
+              className="dsl-modal__textarea"
+              placeholder={"@CARD AA01\nTITLE: Forest Arrival\nCARD_SLIP: Blue Slip\nSLIP_GIVEN: Red Slip ×2, Green Slip\n..."}
             />
-            <div className="mt-3 flex justify-end gap-2">
-              <button onClick={() => setShowAIImportModal(false)} className="rounded bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700">Cancel</button>
-              <button onClick={handleImportDSL} className="rounded bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-600">Import</button>
+            <div className="dsl-modal__footer">
+              <button onClick={() => setShowAIImportModal(false)} className="dsl-modal__btn-cancel">Cancel</button>
+              <button onClick={handleImportDSL} className="dsl-modal__btn-import">Import</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

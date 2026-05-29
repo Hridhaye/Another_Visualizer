@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
+import { exportBodyDSL, importBodyDSL } from '../ai/panelDSL'
+import { PanelDSLControls } from './PanelDSLControls'
 
 export function NarrativeBodyPanel() {
   const narrativeBodyOpen = useNarrativeBoardStore((s) => s.narrativeBodyOpen)
@@ -25,6 +27,14 @@ export function NarrativeBodyPanel() {
     editor.focus()
     document.execCommand(command)
     syncBody()
+  }
+
+  function handleImportBody(raw: string): string {
+    if (!node) return ''
+    const html = importBodyDSL(raw)
+    updateNode(node.id, { body: html })
+    if (bodyEditorRef.current) bodyEditorRef.current.innerHTML = html
+    return 'Body imported'
   }
 
   useEffect(() => {
@@ -75,6 +85,12 @@ export function NarrativeBodyPanel() {
             className="narrative-body-panel__fmt-btn narrative-body-panel__fmt-btn--underline"
             aria-label="Underline"
           >U</button>
+          <div className="panel-dsl-divider" />
+          <PanelDSLControls
+            label="Narrative Body"
+            onExport={() => exportBodyDSL(node.data.body)}
+            onImport={handleImportBody}
+          />
         </div>
         <button
           onClick={closeNarrativeBody}

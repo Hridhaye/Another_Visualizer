@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
 import type { ReorderBox, ReorderPuzzleContent } from '../types/narrative'
+import { exportReorderDSL, importReorderDSL } from '../ai/panelDSL'
+import { PanelDSLControls } from './PanelDSLControls'
 
 function emptyReorder(): ReorderPuzzleContent {
   return { boxes: [], scrambledOrder: [], solutionOrder: [] }
@@ -77,6 +79,15 @@ export function PuzzleReorderPanel() {
     // immediately enter edit mode for the new box
     setEditingId(id)
     setEditText('')
+  }
+
+  function handleImportReorder(raw: string): string {
+    if (!node) return ''
+    const content = importReorderDSL(raw)
+    updateNode(node.id, { puzzleReorderContent: content })
+    setEditingId(null)
+    setEditingSection(null)
+    return `Imported ${content.boxes.length} box${content.boxes.length !== 1 ? 'es' : ''}`
   }
 
   function deleteBox(id: string) {
@@ -230,6 +241,12 @@ export function PuzzleReorderPanel() {
             onClick={addBox}
             className="puzzle-reorder-panel__add-btn"
           >+ Box</button>
+          <div className="panel-dsl-divider" />
+          <PanelDSLControls
+            label="Reorder Puzzle"
+            onExport={() => exportReorderDSL(reorder)}
+            onImport={handleImportReorder}
+          />
         </div>
 
         <button

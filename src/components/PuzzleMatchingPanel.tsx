@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
 import type { MatchingPuzzleContent } from '../types/narrative'
+import { exportMatchingDSL, importMatchingDSL } from '../ai/panelDSL'
+import { PanelDSLControls } from './PanelDSLControls'
 
 function emptyMatching(): MatchingPuzzleContent {
   return { questionHtml: '', cards: [] }
@@ -58,6 +60,17 @@ export function PuzzleMatchingPanel() {
     syncQuestion()
   }
 
+  function handleImportMatching(raw: string): string {
+    if (!node) return ''
+    const { content, unresolved } = importMatchingDSL(raw, nodes)
+    updateNode(node.id, { puzzleMatchingContent: content })
+    if (questionRef.current) questionRef.current.innerHTML = content.questionHtml
+    if (unresolved.length > 0) {
+      return `Imported ${content.cards.length} card${content.cards.length !== 1 ? 's' : ''}; unknown codes skipped: ${unresolved.join(', ')}`
+    }
+    return `Imported ${content.cards.length} card${content.cards.length !== 1 ? 's' : ''}`
+  }
+
   function removeCard(nodeId: string) {
     save({ cards: matching.cards.filter((c) => c.nodeId !== nodeId) })
   }
@@ -96,6 +109,12 @@ export function PuzzleMatchingPanel() {
           <button onClick={() => applyFormat('bold')} className="narrative-body-panel__fmt-btn narrative-body-panel__fmt-btn--bold" aria-label="Bold">B</button>
           <button onClick={() => applyFormat('italic')} className="narrative-body-panel__fmt-btn narrative-body-panel__fmt-btn--italic" aria-label="Italic">I</button>
           <button onClick={() => applyFormat('underline')} className="narrative-body-panel__fmt-btn narrative-body-panel__fmt-btn--underline" aria-label="Underline">U</button>
+          <div className="panel-dsl-divider" />
+          <PanelDSLControls
+            label="Matching Puzzle"
+            onExport={() => exportMatchingDSL(matching, nodes)}
+            onImport={handleImportMatching}
+          />
         </div>
 
         <button onClick={closePuzzleBody} className="narrative-body-panel__close" aria-label="Close puzzle panel">

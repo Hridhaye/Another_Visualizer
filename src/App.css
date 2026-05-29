@@ -503,6 +503,49 @@
 .narrative-body-panel__fmt-btn--italic { font-style: italic; }
 .narrative-body-panel__fmt-btn--underline { text-decoration: underline; }
 
+/* ── Per-panel DSL controls ──────────────────────────────────────────── */
+.panel-dsl-divider {
+  width: 1px;
+  height: 18px;
+  background: #3f3f46;
+  margin: 0 2px;
+}
+
+.panel-dsl-btn {
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #18181b;
+  color: #a1a1aa;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.panel-dsl-btn:hover {
+  background: #27272a;
+  color: #fafafa;
+}
+
+.panel-dsl-btn--amber {
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #f0c060;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.panel-dsl-btn--amber:hover {
+  background: rgba(245, 158, 11, 0.16);
+  color: #f5d089;
+}
+
+.panel-dsl-feedback {
+  font-size: 11px;
+  color: #34a96a;
+  align-self: center;
+}
+
 .narrative-body-panel__close {
   border: none;
   border-radius: 6px;

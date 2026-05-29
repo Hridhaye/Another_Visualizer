@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
 import type { FillBlank, FillPuzzleContent, FillWordBankEntry } from '../types/narrative'
+import { exportFillDSL, importFillDSL } from '../ai/panelDSL'
+import { PanelDSLControls } from './PanelDSLControls'
 
 const BLANK_TAG = 'span'
 const BLANK_ATTR = 'data-blank-id'
@@ -103,6 +105,15 @@ export function PuzzleFillPanel() {
     editorRef.current?.focus()
     document.execCommand(command)
     syncBodyHtml()
+  }
+
+  function handleImportFill(raw: string): string {
+    if (!node) return ''
+    const content = importFillDSL(raw)
+    updateNode(node.id, { puzzleFillContent: content })
+    if (editorRef.current) editorRef.current.innerHTML = content.bodyHtml
+    setSelectedBlankId(null)
+    return `Imported ${content.blanks.length} blank${content.blanks.length !== 1 ? 's' : ''}`
   }
 
   function insertBlank() {
@@ -226,6 +237,12 @@ export function PuzzleFillPanel() {
             className={`puzzle-fill-panel__toggle-btn${fill.showAnswers ? ' puzzle-fill-panel__toggle-btn--active' : ''}`}
             aria-label="Toggle answers"
           >{fill.showAnswers ? 'Hide answers' : 'Show answers'}</button>
+          <div className="panel-dsl-divider" />
+          <PanelDSLControls
+            label="Fill Puzzle"
+            onExport={() => exportFillDSL(fill)}
+            onImport={handleImportFill}
+          />
         </div>
 
         <button

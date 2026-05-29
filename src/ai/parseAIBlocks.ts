@@ -55,9 +55,9 @@ function collectReferences(lines: string[], startIndex: number): { references: s
     }
 
     if (/^[-*]\s*/.test(trimmed)) {
-      references.push(trimmed.replace(/^[-*]\s*/, '').trim())
+      references.push(trimmed.replace(/^[-*]\s*/, '').replace(/\s+"[^"]*"$/, '').trim())
     } else if (trimmed) {
-      references.push(...trimmed.split(',').map((part) => part.trim()).filter(Boolean))
+      references.push(...trimmed.split(',').map((part) => part.replace(/\s+"[^"]*"$/, '').trim()).filter(Boolean))
     }
 
     index += 1
