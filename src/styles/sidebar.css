@@ -96,6 +96,12 @@
   color: #d4d7e2;
 }
 
+@media (max-width: 1024px) {
+  .sidebar__collapse-btn--desktop {
+    display: none !important;
+  }
+}
+
 /* ── Content ─────────────────────────────────────────────────────────── */
 .sidebar__content {
   padding: 8px;

@@ -334,12 +334,14 @@ function BoardCanvas() {
       <PuzzleReorderPanel />
       <PuzzleMatchingPanel />
       <CardEditorFlyout />
+      {/* Hamburger toggle: only visible on mobile/tablet when sidebar is collapsed */}
       <button
         type="button"
         className={`mobile-sidebar-toggle${sidebarCollapsed ? ' mobile-sidebar-toggle--visible' : ''}`}
         onClick={toggleSidebar}
         aria-label="Open sidebar"
         aria-expanded={!sidebarCollapsed}
+        style={{ display: 'none' }}
       >
         ☰
       </button>

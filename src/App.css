@@ -168,8 +168,11 @@
 }
 
 @media (max-width: 1024px) {
-  .mobile-sidebar-toggle--visible {
-    display: flex;
+  .mobile-sidebar-toggle {
+    display: flex !important;
+  }
+  .sidebar__collapse-btn--desktop {
+    display: none !important;
   }
 }
 

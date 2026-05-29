@@ -83,9 +83,10 @@ export function Sidebar({
               <p className="sidebar__subtitle">Non-linear narrative plotting</p>
             </div>
           )}
+          {/* Collapse/expand button: only visible on desktop */}
           <button
             onClick={onToggleSidebar}
-            className="sidebar__collapse-btn"
+            className="sidebar__collapse-btn sidebar__collapse-btn--desktop"
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? '→' : '←'}
