@@ -61,6 +61,8 @@ function BoardCanvas() {
   const setSelectedNodes = useNarrativeBoardStore((state) => state.setSelectedNodes)
   const linkMode = useNarrativeBoardStore((state) => state.linkMode)
   const setLinkMode = useNarrativeBoardStore((state) => state.setLinkMode)
+  const overviewMode = useNarrativeBoardStore((state) => state.overviewMode)
+  const setOverviewMode = useNarrativeBoardStore((state) => state.setOverviewMode)
   const multiSelectMode = useNarrativeBoardStore((state) => state.multiSelectMode)
   const setMultiSelectMode = useNarrativeBoardStore((state) => state.setMultiSelectMode)
   const matchingPickMode = useNarrativeBoardStore((state) => state.matchingPickMode)
@@ -497,6 +499,16 @@ function BoardCanvas() {
             title="Route connector lines around cards"
           >
             Tidy Lines
+          </button>
+          <div className="history-bar__divider" />
+          <button
+            onClick={() => setOverviewMode(!overviewMode)}
+            className={`history-bar__btn${overviewMode ? ' history-bar__btn--active' : ''}`}
+            aria-pressed={overviewMode}
+            aria-label="Toggle overview view"
+            title="Toggle a simplified, distance-readable card view"
+          >
+            {overviewMode ? 'Detailed View' : 'Overview'}
           </button>
           <div className="history-bar__divider" />
           <button

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { Handle, Position, type NodeProps, useViewport } from 'reactflow'
 
 import { getSlipColor, useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
-import { getPuzzleLabel, type CardData } from '../types/narrative'
+import { getPuzzleLabel, type CardData, type NarrativeNode, type SlipType, type Tag } from '../types/narrative'
 import { computeTagLogos } from '../graph/tagLogos'
 import { parseReferences } from '../graph/buildEdgesFromReferences'
 
@@ -30,6 +30,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const matchingPickSourceNodeId = useNarrativeBoardStore((state) => state.matchingPickSourceNodeId)
   const matchingPickStagedIds = useNarrativeBoardStore((state) => state.matchingPickStagedIds)
   const confirmMatchingPick = useNarrativeBoardStore((state) => state.confirmMatchingPick)
+  const overviewMode = useNarrativeBoardStore((state) => state.overviewMode)
   const activeGroup = activeGroupId ? groups.find((g) => g.id === activeGroupId) ?? null : null
   const isGroupSelected = !!activeGroup?.nodeIds.includes(id)
 
@@ -49,7 +50,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const isPickSource = matchingPickMode && matchingPickSourceNodeId === id
   const isPickPicked = matchingPickMode && !isPickSource && matchingPickStagedIds.includes(id)
   const isPickTarget = matchingPickMode && !isPickSource && !isPickPicked
-  const cardClassName = `card-shell relative ${isSelected ? 'card-selected' : ''} ${isHighlighted ? 'card-highlighted' : ''} ${hasPuzzle ? 'has-puzzle' : ''} ${isPickSource ? 'card-pick-source' : ''} ${isPickTarget ? 'card-pick-target' : ''} ${isPickPicked ? 'card-pick-picked' : ''}`
+  const cardClassName = `card-shell relative ${overviewMode ? 'overview' : ''} ${isSelected ? 'card-selected' : ''} ${isHighlighted ? 'card-highlighted' : ''} ${hasPuzzle ? 'has-puzzle' : ''} ${isPickSource ? 'card-pick-source' : ''} ${isPickTarget ? 'card-pick-target' : ''} ${isPickPicked ? 'card-pick-picked' : ''}`
 
   const divRef = useRef<HTMLDivElement | null>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -271,6 +272,17 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
     >
       <Handle type="target" position={Position.Left} />
 
+      {overviewMode ? (
+        <OverviewContent
+          data={data}
+          slipTypes={slipTypes}
+          tags={tags}
+          nodes={nodes}
+          slipColor={slipColor}
+          hasPuzzle={hasPuzzle}
+        />
+      ) : (
+      <>
       <div className="card-header">
         <div className="card-code">{data.code}</div>
         <div className="card-title">{data.title}</div>
@@ -338,18 +350,18 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
                     background: 'rgba(255,255,255,0.07)',
                     borderLeft: `6px solid ${slipColor}`,
                     borderRadius: '8px',
-                    padding: '24px 28px',
+                    padding: '17px 20px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '24px',
+                    gap: '17px',
                     minWidth: 0,
                   }}
                 >
-                  <span style={{ color: slipColor, fontWeight: 700, fontSize: '40px', flexShrink: 0, lineHeight: 1.4 }}>
+                  <span style={{ color: slipColor, fontWeight: 700, fontSize: '28px', flexShrink: 0, lineHeight: 1.4 }}>
                     {code}
                   </span>
                   {title && (
-                    <span style={{ color: '#ffffff', fontSize: '40px', fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>
+                    <span style={{ color: '#ffffff', fontSize: '28px', fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>
                       {title}
                     </span>
                   )}
@@ -366,21 +378,20 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
             return (
               <div
                 style={{
-                  background: `${slipColor}40`,
-                  border: `1px solid ${slipColor}99`,
+                  background: `${slipColor}55`,
                   borderRadius: '8px',
-                  padding: '24px 28px',
+                  padding: '17px 20px',
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: '24px',
                   minWidth: 0,
                 }}
               >
-                <span style={{ color: slipColor, fontWeight: 700, fontSize: '40px', flexShrink: 0, lineHeight: 1.4, textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
-                  {label}
+                <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '28px', flexShrink: 0, lineHeight: 1.4, textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
+                  {label}:
                 </span>
                 {summary && (
-                  <span style={{ color: '#ffffff', fontSize: '40px', fontWeight: 400, lineHeight: 1.4, textShadow: '0 1px 3px rgba(0,0,0,0.5)', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                  <span style={{ color: '#ffffff', fontSize: '28px', fontWeight: 400, lineHeight: 1.4, textShadow: '0 1px 3px rgba(0,0,0,0.5)', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                     {summary}
                   </span>
                 )}
@@ -388,6 +399,8 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
             )
           })()}
         </div>
+      )}
+      </>
       )}
 
       {isLinkSource && (
@@ -397,6 +410,87 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
       )}
 
       <Handle type="source" position={Position.Right} />
+    </div>
+  )
+}
+
+type OverviewContentProps = {
+  data: CardData
+  slipTypes: SlipType[]
+  tags: Tag[]
+  nodes: NarrativeNode[]
+  slipColor: string
+  hasPuzzle: boolean
+}
+
+function OverviewContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }: OverviewContentProps) {
+  const given = data.slipGivenTypeIds ?? []
+  const slipEntries = slipTypes
+    .map((slip) => ({ slip, count: given.filter((id) => id === slip.id).length }))
+    .filter(({ count }) => count > 0)
+
+  const refCodes = data.referencesText ? parseReferences(data.referencesText) : []
+  const refTitles = refCodes
+    .map((code) => nodes.find((n) => n.data.code === code)?.data.title ?? code)
+
+  const assignedTags = (data.tagIds ?? [])
+    .map((id) => tags.find((t) => t.id === id))
+    .filter((t): t is NonNullable<typeof t> => Boolean(t))
+  const tagLogos = assignedTags.length > 0 ? computeTagLogos(tags) : null
+  const tagGlyphColor = `color-mix(in srgb, ${slipColor} 30%, #d4d4d8)`
+
+  const summarySnippet = data.summary?.trim() || null
+  const puzzleSnippet = hasPuzzle && data.puzzleSummary ? data.puzzleSummary.trim() : null
+
+  return (
+    <div className="card-overview">
+      {assignedTags.length > 0 && tagLogos && (
+        <div className="card-overview__tags">
+          {assignedTags.map((tag) => (
+            <span key={tag.id} className="card-overview__tag" title={tag.name} style={{ color: tagGlyphColor }}>
+              {tagLogos.get(tag.id) ?? tag.name.charAt(0).toUpperCase()}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="card-overview__title">{data.title}</div>
+
+      {summarySnippet && (
+        <div className="card-overview__summary">{summarySnippet}</div>
+      )}
+
+      {slipEntries.length > 0 && (
+        <div className="card-overview__chips">
+          <span className="card-overview__chip" title="Slips given">
+            {slipEntries.map(({ slip, count }) => (
+              <span key={slip.id} className="card-overview__slip" title={`${slip.name} ×${count}`}>
+                <span className="card-overview__slip-dot" style={{ background: slip.color }} />
+                {count > 1 && <span className="card-overview__chip-count">×{count}</span>}
+              </span>
+            ))}
+          </span>
+        </div>
+      )}
+
+      {refTitles.length > 0 && (
+        <div className="card-overview__refs">
+          {refTitles.map((title, i) => (
+            <div key={i} className="card-overview__ref-item" style={{ borderLeftColor: slipColor }}>
+              {title}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {hasPuzzle && (
+        <div className="card-overview__puzzle" style={{ background: `${slipColor}44` }}>
+          <span className="card-overview__puzzle-label">{getPuzzleLabel(data.puzzleType)}</span>
+          {puzzleSnippet && (
+            <span className="card-overview__puzzle-summary">{puzzleSnippet}</span>
+          )}
+        </div>
+      )}
     </div>
   )
 }
