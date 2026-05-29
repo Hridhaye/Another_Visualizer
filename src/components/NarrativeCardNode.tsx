@@ -45,6 +45,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const matchingPickStagedIds = useNarrativeBoardStore((state) => state.matchingPickStagedIds)
   const confirmMatchingPick = useNarrativeBoardStore((state) => state.confirmMatchingPick)
   const minimizedMode = useNarrativeBoardStore((state) => state.minimizedMode)
+  const multiSelectMode = useNarrativeBoardStore((state) => state.multiSelectMode)
   const activeGroup = activeGroupId ? groups.find((g) => g.id === activeGroupId) ?? null : null
   const isGroupSelected = !!activeGroup?.nodeIds.includes(id)
 
@@ -181,6 +182,13 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
       event.preventDefault()
       event.stopPropagation()
       confirmMatchingPick(id)
+      return
+    }
+
+    if (multiSelectMode) {
+      event.preventDefault()
+      event.stopPropagation()
+      toggleNodeSelection(id)
       return
     }
 

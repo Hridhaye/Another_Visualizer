@@ -435,7 +435,7 @@ function BoardCanvas() {
           <div className={`selection-surface ${multiSelectMode ? 'selection-surface--active' : ''}`}>
             {multiSelectMode && (
               <div className="selection-surface__hint">
-                Drag across cards to select multiple
+                Click or drag to select cards
               </div>
             )}
             {!multiSelectMode && selectionBox && (

@@ -1802,6 +1802,32 @@
     padding: 8px 13px;
     font-size: 13px;
   }
+
+  /* The popover (e.g. the Puzzle field editor) is a flex child of the stretched
+     panel, so align-self defaults to stretch and it grows edge-to-edge & very tall.
+     Constrain it to fit the space above the bar and tidy its inner controls. */
+  .context-panel__popover {
+    align-self: stretch;
+    width: auto;
+    /* fit between the top safe-area and the panel's bottom anchor (bar + gap) */
+    max-height: calc(100dvh - var(--history-bar-height, 90px)
+      - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px) - 130px);
+    padding: 14px 16px;
+    gap: 10px;
+  }
+
+  /* puzzle-type / choice buttons: give them a visible box so the list reads as
+     selectable rows instead of loose floating labels */
+  .context-panel__popover .context-panel__slip-item {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .context-panel__popover .context-panel__slip-item--active {
+    border-color: rgba(139, 92, 246, 0.5);
+  }
 }
 
 /* ── Full-screen side panels (narrative body + puzzle editors) on phone ──
