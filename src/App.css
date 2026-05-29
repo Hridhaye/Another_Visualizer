@@ -1004,6 +1004,43 @@
   min-height: 40px;
 }
 
+.puzzle-reorder-panel__box-controls {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  align-self: flex-start;
+  margin-top: 1px;
+}
+
+.puzzle-reorder-panel__box-move {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  background: #18181b;
+  color: #a1a1aa;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 120ms ease, color 120ms ease, opacity 120ms ease;
+}
+
+.puzzle-reorder-panel__box-move:hover:not(:disabled) {
+  background: #27272a;
+  color: #fafafa;
+  border-color: #52525b;
+}
+
+.puzzle-reorder-panel__box-move:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .puzzle-reorder-panel__box-delete {
   flex-shrink: 0;
   border: none;
@@ -1014,8 +1051,6 @@
   padding: 0 2px;
   cursor: pointer;
   transition: color 120ms ease;
-  align-self: flex-start;
-  margin-top: 1px;
 }
 
 .puzzle-reorder-panel__box-delete:hover {
@@ -1718,6 +1753,14 @@
   }
 }
 
+/* ── iOS Safari zoom fix: inputs below 16px trigger auto-zoom on focus.
+   Setting font-size to 16px on mobile prevents this without blocking pinch-zoom. */
+@media (max-width: 600px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
 /* ── Mobile (≤600px) ── wrap buttons across rows (like the history bar) so all
    are visible at once; edge-to-edge, title hidden to fit more per row. */
 @media (max-width: 600px) {
@@ -1758,5 +1801,50 @@
     flex: 0 0 auto;
     padding: 8px 13px;
     font-size: 13px;
+  }
+}
+
+/* ── Full-screen side panels (narrative body + puzzle editors) on phone ──
+   The header packs meta + a long toolbar + close into one row, which overflows
+   off-screen on a phone. Let it wrap so the toolbar drops to its own line and
+   the close button stays reachable. Panel is full-width on phones already. */
+@media (max-width: 600px) {
+  .narrative-body-panel {
+    width: 100vw;
+    max-width: 100vw;
+  }
+
+  .narrative-body-panel__header {
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    padding: 12px 14px;
+    /* keep the close button clear of the iPhone status bar / notch */
+    padding-top: max(12px, env(safe-area-inset-top, 0px));
+  }
+
+  /* meta takes the first row; close button pins to its right */
+  .narrative-body-panel__meta {
+    flex: 1 1 auto;
+    order: 1;
+  }
+
+  .narrative-body-panel__close {
+    order: 2;
+  }
+
+  /* toolbar wraps onto its own full-width row beneath meta + close */
+  .narrative-body-panel__toolbar {
+    order: 3;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* the body editor / word bank should not get hidden behind the home indicator */
+  .narrative-body-panel__body,
+  .puzzle-fill-panel__word-bank-section,
+  .puzzle-reorder-panel__body,
+  .puzzle-matching-panel__body {
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
   }
 }

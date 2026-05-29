@@ -29,6 +29,8 @@ function BoardCanvas() {
   const edges = useNarrativeBoardStore((state) => state.edges)
   const slipTypes = useNarrativeBoardStore((state) => state.slipTypes)
   const sidebarCollapsed = useNarrativeBoardStore((state) => state.sidebarCollapsed)
+  const narrativeBodyOpen = useNarrativeBoardStore((state) => state.narrativeBodyOpen)
+  const puzzleBodyOpen = useNarrativeBoardStore((state) => state.puzzleBodyOpen)
   const sectionsOpen = useNarrativeBoardStore((state) => state.sectionsOpen)
 
   const selectedNodeId = useNarrativeBoardStore((state) => state.selectedNodeId)
@@ -341,6 +343,7 @@ function BoardCanvas() {
 
   const activeNode = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) ?? null : null
   const showContextPanel = !!activeNode && contextPanelOpen
+  const fullScreenPanelOpen = narrativeBodyOpen || puzzleBodyOpen
 
   return (
     <div className="board-root">
@@ -352,16 +355,19 @@ function BoardCanvas() {
       <PuzzleReorderPanel />
       <PuzzleMatchingPanel />
       <CardEditorFlyout />
-      {/* Hamburger toggle: visible on mobile/tablet */}
-      <button
-        type="button"
-        className={`mobile-sidebar-toggle mobile-sidebar-toggle--visible${!sidebarCollapsed ? ' mobile-sidebar-toggle--open' : ''}`}
-        onClick={toggleSidebar}
-        aria-label={sidebarCollapsed ? 'Open sidebar' : 'Close sidebar'}
-        aria-expanded={!sidebarCollapsed}
-      >
-        {sidebarCollapsed ? '☰' : '✕'}
-      </button>
+      {/* Hamburger toggle: visible on mobile/tablet, but hidden while a full-screen
+          panel (narrative body / puzzle editor) is open so it can't overlap the panel. */}
+      {!fullScreenPanelOpen && (
+        <button
+          type="button"
+          className={`mobile-sidebar-toggle mobile-sidebar-toggle--visible${!sidebarCollapsed ? ' mobile-sidebar-toggle--open' : ''}`}
+          onClick={toggleSidebar}
+          aria-label={sidebarCollapsed ? 'Open sidebar' : 'Close sidebar'}
+          aria-expanded={!sidebarCollapsed}
+        >
+          {sidebarCollapsed ? '☰' : '✕'}
+        </button>
+      )}
 
       {/* Backdrop: closes sidebar when tapping outside on mobile/tablet */}
       {!sidebarCollapsed && (

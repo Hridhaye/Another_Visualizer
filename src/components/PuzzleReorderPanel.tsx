@@ -121,6 +121,16 @@ export function PuzzleReorderPanel() {
     return next
   }
 
+  // Touch-friendly reorder: HTML5 drag-and-drop doesn't fire on touch devices,
+  // so each box also has up/down buttons that move it within its section.
+  function moveBox(section: SectionKey, index: number, direction: -1 | 1) {
+    const key = section === 'scrambled' ? 'scrambledOrder' : 'solutionOrder'
+    const order = reorder[key]
+    const to = index + direction
+    if (to < 0 || to >= order.length) return
+    save({ [key]: reorderIds(order, index, to) })
+  }
+
   function onDragStart(section: SectionKey, index: number) {
     dragRef.current = { section, fromIndex: index }
   }
@@ -205,11 +215,27 @@ export function PuzzleReorderPanel() {
                   </span>
                 )}
 
-                <button
-                  onClick={() => deleteBox(box.id)}
-                  className="puzzle-reorder-panel__box-delete"
-                  aria-label="Delete box"
-                >×</button>
+                <div className="puzzle-reorder-panel__box-controls">
+                  <button
+                    onClick={() => moveBox(section, i, -1)}
+                    disabled={i === 0}
+                    className="puzzle-reorder-panel__box-move"
+                    aria-label="Move up"
+                    title="Move up"
+                  >▲</button>
+                  <button
+                    onClick={() => moveBox(section, i, 1)}
+                    disabled={i === boxes.length - 1}
+                    className="puzzle-reorder-panel__box-move"
+                    aria-label="Move down"
+                    title="Move down"
+                  >▼</button>
+                  <button
+                    onClick={() => deleteBox(box.id)}
+                    className="puzzle-reorder-panel__box-delete"
+                    aria-label="Delete box"
+                  >×</button>
+                </div>
               </div>
             )
           })}
