@@ -447,14 +447,14 @@ function MinimizedContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }
               {slipEntries.map(({ slip, count }) => (
                 <span key={slip.id} className="card-minimized__slip" title={`${slip.name} ×${count}`}>
                   <span className="card-minimized__slip-dot" style={{ background: slip.color }} />
-                  {count > 1 && <span className="card-minimized__slip-count"style={{ color: contrastText }}>×{count}</span>}
+                  {count > 1 && <span className="card-minimized__slip-count">×{count}</span>}
                 </span>
               ))}
             </div>
           )}
 
           {refTitles.map((title, i) => (
-            <div key={i} className="card-minimized__ref" style={{ borderLeftColor: slipColor, color: contrastText }}>
+            <div key={i} className="card-minimized__ref" style={{ borderLeftColor: slipColor }}>
               {title}
             </div>
           ))}

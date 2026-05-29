@@ -1,4 +1,4 @@
-import { type EdgeProps } from 'reactflow'
+import { type EdgeProps, useViewport } from 'reactflow'
 
 import { useNarrativeBoardStore } from '../../store/useNarrativeBoardStore'
 import { useEdgePath } from './useObstacleRoute'
@@ -18,6 +18,9 @@ export function MovableEdge({
 }: EdgeProps) {
   const isHighlighted: boolean = data?.isOutgoingFromSelected ?? false
   const sourceColor = useNarrativeBoardStore((state) => state.edgeColors[id])
+  const { zoom } = useViewport()
+  // Scale stroke inversely with zoom so lines stay visually consistent when zoomed out.
+  const scale = Math.min(2, 1 / zoom)
 
   // Floating elbow by default (anchors face the partner card); replaced by an
   // A*-routed path once "Tidy lines" runs. Manual middle-segment offsetting
@@ -33,12 +36,12 @@ export function MovableEdge({
   const highlightStyle = isHighlighted
     ? {
         stroke: 'rgba(255,255,255,0.85)',
-        strokeWidth: 3,
+        strokeWidth: 3 * scale,
         filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.6))',
       }
     : {
         stroke: dimColor,
-        strokeWidth: 2.25,
+        strokeWidth: 2.25 * scale,
       }
 
   return (

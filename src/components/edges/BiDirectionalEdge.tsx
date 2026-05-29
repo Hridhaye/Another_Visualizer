@@ -67,11 +67,13 @@ export function BiDirectionalEdge({
   const isHighlighted: boolean = data?.isOutgoingFromSelected ?? false
 
   const path = useEdgePath({ edgeId: id, sourceNodeId: source, targetNodeId: target })
+  const { zoom } = useViewport()
+  const scale = Math.min(2, 1 / zoom)
 
   const color = isHighlighted ? 'rgba(255,255,255,0.85)' : 'rgba(148,163,184,0.55)'
   const markerEnd = isHighlighted ? `url(#${EDGE_ARROW_BRIGHT})` : `url(#${EDGE_ARROW_DIM})`
   const markerStart = isHighlighted ? `url(#${EDGE_ARROW_REV_BRIGHT})` : `url(#${EDGE_ARROW_REV_DIM})`
-  const strokeWidth = isHighlighted ? 3 : 2.25
+  const strokeWidth = (isHighlighted ? 3 : 2.25) * scale
 
   return (
     <path
