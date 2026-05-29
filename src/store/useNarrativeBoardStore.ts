@@ -88,6 +88,12 @@ type NarrativeBoardState = {
   edgeShapes: Record<string, number>
   /** Per-edge A*-routed polylines (flow coords), keyed by edge id. Empty until "Tidy lines" runs. */
   routedPaths: Record<string, { x: number; y: number }[]>
+  /**
+   * When true, connectors leaving a common card share a fanned exit + trunk
+   * before branching (flow-chart bundling). Default on; no visible toggle, but
+   * exposed in state so it can be flipped off. See setBundleEdges.
+   */
+  bundleEdges: boolean
   selectedNodeId: string | null
   selectedNodeIds: string[]
   groups: CardGroup[]
@@ -138,6 +144,7 @@ type NarrativeBoardActions = {
   setEdgeOffset: (edgeId: string, offset: number) => void
   setRoutedPaths: (paths: Record<string, { x: number; y: number }[]>) => void
   clearRoutedPaths: () => void
+  setBundleEdges: (enabled: boolean) => void
   addCard: () => void
   deleteCard: (nodeId: string) => void
   updateNode: (nodeId: string, patch: Partial<CardData>) => void
@@ -332,6 +339,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   edges: buildEdgesFromReferences(initialNodes),
   edgeShapes: {},
   routedPaths: {},
+  bundleEdges: true,
   selectedNodeId: '1',
   selectedNodeIds: ['1'],
   groups: [],
@@ -503,6 +511,10 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     set((state) =>
       Object.keys(state.routedPaths).length === 0 ? state : { routedPaths: {} }
     )
+  },
+
+  setBundleEdges: (enabled) => {
+    set((state) => (state.bundleEdges === enabled ? state : { bundleEdges: enabled }))
   },
 
   addCard: () => {

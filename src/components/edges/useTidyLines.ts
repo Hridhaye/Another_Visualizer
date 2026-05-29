@@ -2,8 +2,15 @@ import { useCallback, useEffect, useRef } from 'react'
 import { useReactFlow } from 'reactflow'
 
 import { useNarrativeBoardStore } from '../../store/useNarrativeBoardStore'
+import { bundleEdgesBySource, type EdgeEndpoints, type RouteTail } from './bundleEdges'
 import { buildFloatingElbow, computeFloatingAnchors, polylineHitsObstacle } from './floatingEdge'
-import { routeOrthogonal, type Point, type Rect } from './routeOrthogonal'
+import {
+  orthogonalize,
+  routeOrthogonal,
+  simplify,
+  type Point,
+  type Rect,
+} from './routeOrthogonal'
 
 const DEBOUNCE_MS = 900
 
@@ -32,6 +39,31 @@ export function useTidyLines() {
       rects.set(node.id, { x: pos.x, y: pos.y, width, height })
     })
 
+    const bundleEdges = useNarrativeBoardStore.getState().bundleEdges
+
+    // Tail re-router: when a bundled line's final leg (trunk branch -> target)
+    // would cross a card, the bundler hands that leg here for A* avoidance while
+    // keeping the shared exit/trunk/branch intact.
+    const routeTail: RouteTail = ({ from, fromPosition, target, targetPosition, obstacles }) =>
+      routeOrthogonal({
+        source: from,
+        target,
+        sourcePosition: fromPosition,
+        targetPosition,
+        obstacles,
+      })
+
+    // Trunk-bundled polylines (source-grouped, fanned exits + shared spine, with
+    // a clear trunk lane and obstacle-avoiding tails) for every routable edge.
+    // When bundling is off this stays empty and each edge falls back to its
+    // independent elbow / A* route below.
+    const endpoints: EdgeEndpoints[] = edges.map((e) => ({
+      edgeId: e.id,
+      source: e.source,
+      target: e.target,
+    }))
+    const bundled = bundleEdges ? bundleEdgesBySource(endpoints, rects, routeTail) : {}
+
     const result: Record<string, Point[]> = {}
     edges.forEach((edge) => {
       const sourceRect = rects.get(edge.source)
@@ -44,10 +76,19 @@ export function useTidyLines() {
         if (nodeId !== edge.source && nodeId !== edge.target) obstacles.push(rect)
       })
 
-      // Only override with A* when the clean floating elbow actually crosses a
-      // card. When the elbow is already clear (the common case), leave this edge
-      // out of routedPaths so the live elbow renders — A* tends to pick more
-      // awkward entry sides/bends than the elbow when there's nothing to avoid.
+      // Preferred path: the bundled polyline. It already routes a clear trunk
+      // lane and avoids cards on its tails, so use it as-is (orthogonalized so the
+      // exit/branch joins stay axis-aligned). This keeps same-source lines sharing
+      // a trunk before diverging, even when a card blocks a straight branch.
+      const bundledRaw = bundled[edge.id]
+      if (bundledRaw && bundledRaw.length >= 2) {
+        result[edge.id] = simplify(orthogonalize(bundledRaw, anchors.sourcePosition))
+        return
+      }
+
+      // Bundling off (or edge not bundled): only override with A* when the clean
+      // floating elbow actually crosses a card. When the elbow is already clear,
+      // leave this edge out of routedPaths so the live elbow renders.
       const elbow = buildFloatingElbow(anchors)
       if (!polylineHitsObstacle(elbow, obstacles)) return
 

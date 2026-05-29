@@ -273,7 +273,7 @@ export function routeOrthogonal(params: RouteParams): Point[] {
  * both axes, so the whole polyline is axis-aligned. The first corner turns along
  * the source side's normal so the initial segment stays perpendicular.
  */
-function orthogonalize(points: Point[], sourcePosition: Position): Point[] {
+export function orthogonalize(points: Point[], sourcePosition: Position): Point[] {
   if (points.length < 2) return points
   const sDir = directionOffset(sourcePosition)
   const startAxis: 'h' | 'v' = sDir.x !== 0 ? 'h' : 'v'
@@ -302,7 +302,7 @@ function orthogonalize(points: Point[], sourcePosition: Position): Point[] {
   return out
 }
 
-function simplify(raw: Point[]): Point[] {
+export function simplify(raw: Point[]): Point[] {
   if (raw.length <= 2) return raw
   const simplified: Point[] = [raw[0]]
   for (let i = 1; i < raw.length - 1; i += 1) {
