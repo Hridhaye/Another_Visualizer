@@ -9,6 +9,20 @@ import { parseReferences } from '../graph/buildEdgesFromReferences'
 const LONG_PRESS_MS = 400
 const DRIFT_PX = 8
 
+/** Returns a text color (white or near-black) that contrasts well against the given hex slip color. */
+function getContrastText(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  // Relative luminance per WCAG 2.x
+  const toLinear = (c: number) => {
+    const s = c / 255
+    return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+  }
+  const L = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
+  return L > 0.35 ? '#3a3a3a' : '#f5f5f5'
+}
+
 export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   void selected
   const slipTypes = useNarrativeBoardStore((state) => state.slipTypes)
@@ -408,24 +422,22 @@ function MinimizedContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }
     .map((id) => tags.find((t) => t.id === id))
     .filter((t): t is NonNullable<typeof t> => Boolean(t))
   const tagLogos = assignedTags.length > 0 ? computeTagLogos(tags) : null
-  const tagGlyphColor = `color-mix(in srgb, ${slipColor} 30%, #d4d4d8)`
-
+  const contrastText = getContrastText(slipColor)
   const hasBody = slipEntries.length > 0 || refTitles.length > 0 || hasPuzzle
 
   return (
     <div className="card-minimized">
-      {/* Slip-color header band: the card's identity reads by color first, then title. */}
       <div className="card-minimized__band" style={{ background: slipColor }}>
         {assignedTags.length > 0 && tagLogos && (
           <div className="card-minimized__tags">
             {assignedTags.map((tag) => (
-              <span key={tag.id} className="card-minimized__tag" title={tag.name} style={{ color: tagGlyphColor }}>
+              <span key={tag.id} className="card-minimized__tag" title={tag.name} style={{ color: contrastText }}>
                 {tagLogos.get(tag.id) ?? tag.name.charAt(0).toUpperCase()}
               </span>
             ))}
           </div>
         )}
-        <div className="card-minimized__title">{data.title}</div>
+        <div className="card-minimized__title" style={{ color: contrastText }}>{data.title}</div>
       </div>
 
       {hasBody && (
@@ -435,20 +447,20 @@ function MinimizedContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }
               {slipEntries.map(({ slip, count }) => (
                 <span key={slip.id} className="card-minimized__slip" title={`${slip.name} ×${count}`}>
                   <span className="card-minimized__slip-dot" style={{ background: slip.color }} />
-                  {count > 1 && <span className="card-minimized__slip-count">×{count}</span>}
+                  {count > 1 && <span className="card-minimized__slip-count"style={{ color: contrastText }}>×{count}</span>}
                 </span>
               ))}
             </div>
           )}
 
           {refTitles.map((title, i) => (
-            <div key={i} className="card-minimized__ref" style={{ borderLeftColor: slipColor }}>
+            <div key={i} className="card-minimized__ref" style={{ borderLeftColor: slipColor, color: contrastText }}>
               {title}
             </div>
           ))}
 
           {hasPuzzle && (
-            <div className="card-minimized__puzzle" style={{ background: slipColor }}>
+            <div className="card-minimized__puzzle" style={{ background: slipColor, color: contrastText }}>
               <span className="card-minimized__puzzle-type">{getPuzzleLabel(data.puzzleType)}:</span>
               {data.puzzleTitle?.trim() && (
                 <span className="card-minimized__puzzle-title">{data.puzzleTitle.trim()}</span>
