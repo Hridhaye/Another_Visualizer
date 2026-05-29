@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useReactFlow } from 'reactflow'
 
-import { getSlipColor, useNarrativeBoardStore } from '../../store/useNarrativeBoardStore'
+import { getSlipColor, HIGHLIGHT_SCALE, useNarrativeBoardStore } from '../../store/useNarrativeBoardStore'
 import { bundleEdgesBySource, type EdgeEndpoints, type RouteTail } from './bundleEdges'
 import { computeEdgeColors, type EdgeRef } from './edgeColors'
-import { buildFloatingElbow, computeFloatingAnchors, polylineHitsObstacle } from './floatingEdge'
+import { buildFloatingElbow, computeFloatingAnchors, inflateRect, polylineHitsObstacle } from './floatingEdge'
 import {
   orthogonalize,
   routeOrthogonal,
@@ -48,13 +48,19 @@ export function useTidyLines() {
     const edges = useNarrativeBoardStore.getState().edges
     const { zoom } = getViewport()
 
+    // Highlighted cards are grown with a centered CSS transform that doesn't change
+    // the measured box, so inflate their rect by the same factor — otherwise the
+    // A* route would anchor (and the arrow/dot markers would land) under the card.
+    const highlightedNodeIds = useNarrativeBoardStore.getState().highlightedNodeIds
     const rects = new Map<string, Rect>()
     nodes.forEach((node) => {
       const pos = node.positionAbsolute ?? node.position
       const width = node.width ?? 0
       const height = node.height ?? 0
       if (!width || !height) return
-      rects.set(node.id, { x: pos.x, y: pos.y, width, height })
+      const rect = { x: pos.x, y: pos.y, width, height }
+      const scale = highlightedNodeIds.includes(node.id) ? HIGHLIGHT_SCALE : 1
+      rects.set(node.id, inflateRect(rect, scale) ?? rect)
     })
 
     const bundleEdges = useNarrativeBoardStore.getState().bundleEdges

@@ -142,6 +142,21 @@ function BoardCanvas() {
     slipTypes.map((s) => `${s.id}:${s.color}`).join(',')
   )
 
+  // A highlighted card grows via CSS transform, which the measured node box (and
+  // thus any already-routed A* path) doesn't reflect. Re-tidy when the highlight
+  // set changes so routed endpoints re-anchor to the grown card's visible edge.
+  const highlightSignature = useNarrativeBoardStore(
+    (state) => state.highlightedNodeIds.join(',')
+  )
+  const didMountHighlight = useRef(false)
+  useEffect(() => {
+    if (!didMountHighlight.current) {
+      didMountHighlight.current = true
+      return
+    }
+    tidyLines()
+  }, [highlightSignature, tidyLines])
+
   const performMarqueeSelection = useCallback((box: {
     startX: number
     startY: number

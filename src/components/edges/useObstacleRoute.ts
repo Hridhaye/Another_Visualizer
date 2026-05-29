@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { useStore, type ReactFlowState } from 'reactflow'
 
-import { useNarrativeBoardStore } from '../../store/useNarrativeBoardStore'
-import { computeFloatingAnchors, buildFloatingElbow } from './floatingEdge'
+import { HIGHLIGHT_SCALE, useNarrativeBoardStore } from '../../store/useNarrativeBoardStore'
+import { computeFloatingAnchors, buildFloatingElbow, inflateRect } from './floatingEdge'
 import { pointsToPath, type Rect } from './routeOrthogonal'
 
 interface UseEdgePathParams {
@@ -30,6 +30,13 @@ export function useEdgePath(params: UseEdgePathParams): string {
 
   const routed = useNarrativeBoardStore((state) => state.routedPaths[edgeId])
 
+  // A highlighted card is grown via a centered CSS transform, which does NOT
+  // change the layout box ReactFlow measures. We inflate the endpoint rect by
+  // the same factor here so the connector meets the card's visible (grown) edge
+  // instead of ending under it.
+  const sourceHighlighted = useNarrativeBoardStore((state) => state.highlightedNodeIds.includes(sourceNodeId))
+  const targetHighlighted = useNarrativeBoardStore((state) => state.highlightedNodeIds.includes(targetNodeId))
+
   // Pull just the two endpoint rects from the ReactFlow store.
   const sourceSig = useStore((state: ReactFlowState) => rectSignature(rectOf(state, sourceNodeId)))
   const targetSig = useStore((state: ReactFlowState) => rectSignature(rectOf(state, targetNodeId)))
@@ -39,15 +46,15 @@ export function useEdgePath(params: UseEdgePathParams): string {
       return pointsToPath(routed)
     }
 
-    const sourceRect = parseRect(sourceSig)
-    const targetRect = parseRect(targetSig)
+    const sourceRect = inflateRect(parseRect(sourceSig), sourceHighlighted ? HIGHLIGHT_SCALE : 1)
+    const targetRect = inflateRect(parseRect(targetSig), targetHighlighted ? HIGHLIGHT_SCALE : 1)
     if (!sourceRect || !targetRect) {
       return ''
     }
 
     const anchors = computeFloatingAnchors(sourceRect, targetRect)
     return pointsToPath(buildFloatingElbow(anchors))
-  }, [routed, sourceSig, targetSig])
+  }, [routed, sourceSig, targetSig, sourceHighlighted, targetHighlighted])
 }
 
 function rectOf(state: ReactFlowState, nodeId: string): Rect | null {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { Handle, Position, type NodeProps, useViewport } from 'reactflow'
 
-import { getSlipColor, useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
+import { getSlipColor, HIGHLIGHT_SCALE, useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
 import { getPuzzleLabel, type CardData, type NarrativeNode, type SlipType, type Tag } from '../types/narrative'
 import { computeTagLogos } from '../graph/tagLogos'
 import { parseReferences } from '../graph/buildEdgesFromReferences'
@@ -57,13 +57,15 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const isLinkSource = connectionSourceNodeId === id
   const isSelected = selectedNodeIds.includes(id)
   const isHighlighted = highlightedNodeIds.includes(id)
+  const anyHighlighted = highlightedNodeIds.length > 0
+  const isDimmed = anyHighlighted && !isHighlighted
   const isPendingTarget = !!connectionSourceNodeId && !isLinkSource
   const hasPuzzle = data.puzzleType !== 'none'
 
   const isPickSource = matchingPickMode && matchingPickSourceNodeId === id
   const isPickPicked = matchingPickMode && !isPickSource && matchingPickStagedIds.includes(id)
   const isPickTarget = matchingPickMode && !isPickSource && !isPickPicked
-  const cardClassName = `card-shell relative overview ${minimizedMode ? 'minimized' : ''} ${isSelected ? 'card-selected' : ''} ${isHighlighted ? 'card-highlighted' : ''} ${hasPuzzle ? 'has-puzzle' : ''} ${isPickSource ? 'card-pick-source' : ''} ${isPickTarget ? 'card-pick-target' : ''} ${isPickPicked ? 'card-pick-picked' : ''}`
+  const cardClassName = `card-shell relative overview ${minimizedMode ? 'minimized' : ''} ${isSelected ? 'card-selected' : ''} ${isHighlighted ? 'card-highlighted' : ''} ${isDimmed ? 'card-dimmed' : ''} ${hasPuzzle ? 'has-puzzle' : ''} ${isPickSource ? 'card-pick-source' : ''} ${isPickTarget ? 'card-pick-target' : ''} ${isPickPicked ? 'card-pick-picked' : ''}`
 
   const divRef = useRef<HTMLDivElement | null>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -258,12 +260,8 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
         ? `0 0 0 ${r(2)} rgba(255,255,255,0.6)`
         : `0 0 0 ${r(2)} rgba(255,255,255,0.04)`
 
-  const highlightShadow = isHighlighted
-    ? isGroupSelected
-      ? `, 0 0 0 ${r(12)} rgba(251,191,36,1), 0 0 0 ${r(18)} rgba(255,255,255,0.5)`
-      : isSelected
-        ? `, 0 0 0 ${r(12)} rgba(251,191,36,1), 0 0 0 ${r(17)} rgba(255,255,255,0.5)`
-        : `, 0 0 0 ${r(12)} rgba(251,191,36,1), 0 0 0 ${r(14)} rgba(251,191,36,0.12)`
+  const highlightGlow = isHighlighted
+    ? `, 0 0 ${r(20)} ${r(4)} rgba(255,255,255,0.09), 0 0 ${r(6)} ${r(1)} rgba(255,255,255,0.11)`
     : ''
 
   return (
@@ -275,8 +273,8 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
         border: `7px solid ${slipColor}`,
         backgroundColor: '#0f1015',
         backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0)), linear-gradient(to bottom, ${slipColor}0d, ${slipColor}08)`,
-        boxShadow: `${baseShadow}${extraShadow}${highlightShadow}`,
-        transform: isHighlighted ? 'scale(1.06)' : undefined,
+        boxShadow: `${baseShadow}${extraShadow}${highlightGlow}`,
+        transform: isHighlighted ? `scale(${HIGHLIGHT_SCALE})` : undefined,
         cursor: isPendingTarget ? 'crosshair' : undefined,
       }}
       onClick={handleClick}
@@ -332,10 +330,14 @@ function OverviewContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }:
     .filter(({ count }) => count > 0)
 
   const refCodes = data.referencesText ? parseReferences(data.referencesText) : []
-  const refs = refCodes.map((code) => ({
-    code,
-    title: nodes.find((n) => n.data.code === code)?.data.title ?? null,
-  }))
+  const refs = refCodes.map((code) => {
+    const refNode = nodes.find((n) => n.data.code === code)
+    return {
+      code,
+      title: refNode?.data.title ?? null,
+      slipColor: getSlipColor(slipTypes, refNode?.data.slipTypeId ?? ''),
+    }
+  })
 
   const assignedTags = (data.tagIds ?? [])
     .map((id) => tags.find((t) => t.id === id))
@@ -382,8 +384,8 @@ function OverviewContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }:
 
       {refs.length > 0 && (
         <div className="card-overview__refs">
-          {refs.map(({ code, title }) => (
-            <div key={code} className="card-overview__ref-item" style={{ borderLeftColor: slipColor }}>
+          {refs.map(({ code, title, slipColor: refSlipColor }) => (
+            <div key={code} className="card-overview__ref-item" style={{ borderLeftColor: refSlipColor }}>
               <span className="card-overview__ref-code">{code}</span>
               {title}
             </div>
@@ -415,15 +417,18 @@ function MinimizedContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }
     .map((slip) => ({ slip, count: given.filter((id) => id === slip.id).length }))
     .filter(({ count }) => count > 0)
 
-  const refTitles = (data.referencesText ? parseReferences(data.referencesText) : [])
-    .map((code) => nodes.find((n) => n.data.code === code)?.data.title ?? code)
+  const refItems = (data.referencesText ? parseReferences(data.referencesText) : [])
+    .map((code) => {
+      const refNode = nodes.find((n) => n.data.code === code)
+      return { title: refNode?.data.title ?? code, slipColor: getSlipColor(slipTypes, refNode?.data.slipTypeId ?? '') }
+    })
 
   const assignedTags = (data.tagIds ?? [])
     .map((id) => tags.find((t) => t.id === id))
     .filter((t): t is NonNullable<typeof t> => Boolean(t))
   const tagLogos = assignedTags.length > 0 ? computeTagLogos(tags) : null
   const contrastText = getContrastText(slipColor)
-  const hasBody = slipEntries.length > 0 || refTitles.length > 0 || hasPuzzle
+  const hasBody = slipEntries.length > 0 || refItems.length > 0 || hasPuzzle
 
   return (
     <div className="card-minimized">
@@ -453,8 +458,8 @@ function MinimizedContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }
             </div>
           )}
 
-          {refTitles.map((title, i) => (
-            <div key={i} className="card-minimized__ref" style={{ borderLeftColor: slipColor }}>
+          {refItems.map(({ title, slipColor: refSlipColor }, i) => (
+            <div key={i} className="card-minimized__ref" style={{ borderLeftColor: refSlipColor }}>
               {title}
             </div>
           ))}

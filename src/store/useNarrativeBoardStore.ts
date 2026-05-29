@@ -29,6 +29,12 @@ import type {
   Tag
 } from '../types/narrative'
 
+/** Scale factor applied to a highlighted card. Shared so edge routing can inflate
+ *  the endpoint rect to match the card's visually grown boundary (a CSS transform
+ *  does not change the layout box ReactFlow measures, so lines would otherwise end
+ *  under the enlarged card). */
+export const HIGHLIGHT_SCALE = 1.15
+
 const defaultSlipTypes: SlipType[] = [
   { id: 'blue', name: 'Blue Slip', color: '#3b82f6' },
   { id: 'red', name: 'Red Slip', color: '#ef4444' },

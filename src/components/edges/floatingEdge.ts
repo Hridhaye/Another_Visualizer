@@ -10,6 +10,25 @@ export interface FloatingAnchors {
 }
 
 /**
+ * Grows a rect about its center by `scale` (1 = unchanged), matching a centered
+ * CSS transform. A highlighted card is scaled visually with `transform: scale`,
+ * which does NOT change the layout box ReactFlow measures; inflating the rect by
+ * the same factor keeps connectors meeting the card's visible (grown) edge
+ * instead of ending under it.
+ */
+export function inflateRect(rect: Rect | null, scale: number): Rect | null {
+  if (!rect || scale === 1) return rect
+  const dw = rect.width * (scale - 1)
+  const dh = rect.height * (scale - 1)
+  return {
+    x: rect.x - dw / 2,
+    y: rect.y - dh / 2,
+    width: rect.width + dw,
+    height: rect.height + dh,
+  }
+}
+
+/**
  * Picks the side of a card a line should attach to, based on which direction the
  * other card lies. We compare the centre-to-centre delta and attach to the side
  * facing the larger axis, so a line always exits/enters the face pointing toward

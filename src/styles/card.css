@@ -12,7 +12,7 @@
   box-sizing: border-box;
   border-radius: 19px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  transition: box-shadow 0.2s ease, transform 0.2s ease, z-index 0s;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease, filter 0.2s ease, z-index 0s;
   overflow: visible;
 }
 
@@ -24,6 +24,20 @@
 
 .card-shell.card-highlighted {
   z-index: 10;
+}
+
+.card-shell.card-dimmed {
+  position: relative;
+}
+
+.card-shell.card-dimmed::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+  transition: background 0.2s ease;
 }
 
 .card-shell:hover {
