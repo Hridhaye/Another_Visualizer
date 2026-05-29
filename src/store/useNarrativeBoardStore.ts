@@ -1,4 +1,9 @@
 import { create } from 'zustand'
+import type { User } from 'firebase/auth'
+import {
+  cloudSaveProject as cloudSaveProjectFn,
+  cloudLoadProject as cloudLoadProjectFn,
+} from '../firebase/cloudStorage'
 
 export type EditorField = 'codeRefs' | 'title' | 'summary' | 'slipType' | 'slipGiven' | 'tags' | 'puzzleType' | null
 
@@ -138,6 +143,11 @@ type NarrativeBoardState = {
   matchingPickMode: boolean
   matchingPickSourceNodeId: string | null
   matchingPickStagedIds: string[]
+  currentUser: User | null
+  authLoading: boolean
+  cloudSaveLoading: boolean
+  cloudLoadLoading: boolean
+  lastCloudSyncAt: Date | null
 }
 
 type HistorySnapshot = {
@@ -181,6 +191,9 @@ type NarrativeBoardActions = {
   deleteGroup: (groupId: string) => void
   saveProject: () => Promise<void>
   loadProject: (file: File) => Promise<void>
+  setCurrentUser: (user: User | null) => void
+  cloudSaveProject: () => Promise<void>
+  cloudLoadProject: () => Promise<void>
   applyAIFormatImport: (rawText: string) => Promise<{ createdCount: number; updatedCount: number }>
   setSelectedNode: (nodeId: string | null) => void
   setSelectedNodes: (nodeIds: string[], primaryNodeId?: string | null) => void
@@ -397,6 +410,11 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   },
   viewport: { x: 0, y: 0, zoom: 1 },
   hasUnsavedChanges: false,
+  currentUser: null,
+  authLoading: true,
+  cloudSaveLoading: false,
+  cloudLoadLoading: false,
+  lastCloudSyncAt: null,
 
   onNodesChange: (changes) => {
     set((state) => {
@@ -1048,6 +1066,97 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     } catch (error) {
       const message = error instanceof Error ? error.message : 'The project file could not be loaded.'
       throw new Error(message, { cause: error })
+    }
+  },
+
+  setCurrentUser: (user) => {
+    set({ currentUser: user, authLoading: false })
+  },
+
+  cloudSaveProject: async () => {
+    const state = get()
+    if (!state.currentUser) {
+      throw new Error('You must be signed in to save to the cloud.')
+    }
+    set({ cloudSaveLoading: true })
+    try {
+      const updatedAt = new Date().toISOString()
+      const projectData = serializeProject({
+        nodes: state.nodes,
+        slipTypes: state.slipTypes,
+        tags: state.tags,
+        groups: state.groups,
+        viewport: state.viewport,
+        edgeShapes: state.edgeShapes,
+        metadata: {
+          projectName: state.metadata.projectName,
+          createdAt: state.metadata.createdAt,
+          updatedAt
+        }
+      })
+      await cloudSaveProjectFn(state.currentUser.uid, projectData)
+      set({
+        metadata: { ...state.metadata, updatedAt },
+        hasUnsavedChanges: false,
+        lastCloudSyncAt: new Date(),
+        cloudSaveLoading: false
+      })
+    } catch (error) {
+      set({ cloudSaveLoading: false })
+      throw error
+    }
+  },
+
+  cloudLoadProject: async () => {
+    const state = get()
+    if (!state.currentUser) {
+      throw new Error('You must be signed in to load from the cloud.')
+    }
+    if (
+      state.hasUnsavedChanges &&
+      !window.confirm('Replace the current board with your cloud save? Unsaved changes will be lost.')
+    ) {
+      return
+    }
+    set({ cloudLoadLoading: true })
+    try {
+      const result = await cloudLoadProjectFn(state.currentUser.uid)
+      if (!result.found) {
+        set({ cloudLoadLoading: false })
+        throw new Error('No cloud save found for your account.')
+      }
+      const project = deserializeProject(result.jsonText)
+      const nextNodes = project.nodes.map((node) => ({ ...node }))
+      const nextEdgeShapes: Record<string, number> =
+        (project.edgeShapes as Record<string, number> | undefined) ?? {}
+      const nextEdges = buildEdges(nextNodes, nextEdgeShapes)
+      set({
+        nodes: nextNodes,
+        edges: nextEdges,
+        edgeShapes: nextEdgeShapes,
+        slipTypes: project.slipTypes.map((item) => ({ ...item })),
+        tags: project.tags.map((item) => ({ ...item })),
+        groups: normalizeGroups(project.groups.map((group) => ({ ...group, nodeIds: [...group.nodeIds] })), nextNodes),
+        metadata: {
+          projectName: project.metadata.projectName || 'Mystery Board',
+          createdAt: project.metadata.createdAt || new Date().toISOString(),
+          updatedAt: project.metadata.updatedAt || new Date().toISOString()
+        },
+        viewport: project.viewport || { x: 0, y: 0, zoom: 1 },
+        selectedNodeId: nextNodes[0]?.id ?? null,
+        selectedNodeIds: nextNodes[0]?.id ? [nextNodes[0].id] : [],
+        connectionSourceNodeId: null,
+        historyPast: [],
+        historyFuture: [],
+        canUndo: false,
+        canRedo: false,
+        hasUnsavedChanges: false,
+        lastCloudSyncAt: result.updatedAt ?? new Date(),
+        cloudLoadLoading: false
+      })
+    } catch (error) {
+      set({ cloudLoadLoading: false })
+      throw error
     }
   },
 

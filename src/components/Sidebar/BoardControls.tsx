@@ -1,6 +1,8 @@
 import { useRef, useState, type ChangeEvent } from 'react'
+import type { User } from 'firebase/auth'
 
 import { exportAIFormat } from '../../ai/exportAIFormat'
+import { signInWithGoogle, signOut } from '../../firebase/auth'
 import { useNarrativeBoardStore } from '../../store/useNarrativeBoardStore'
 import type { NarrativeNode, SlipType } from '../../types/narrative'
 import { PUZZLE_TYPES } from '../../types/narrative'
@@ -16,6 +18,13 @@ type BoardControlsProps = {
   onLoadProject: (file: File) => Promise<void>
   onImportAIFormat: (text: string) => Promise<{ createdCount: number; updatedCount: number }>
   onProjectNameChange: (value: string) => void
+  currentUser: User | null
+  authLoading: boolean
+  onCloudSave: () => Promise<void>
+  onCloudLoad: () => Promise<void>
+  cloudSaveLoading: boolean
+  cloudLoadLoading: boolean
+  lastCloudSyncAt: Date | null
 }
 
 export function BoardControls({
@@ -27,7 +36,14 @@ export function BoardControls({
   onSaveProject,
   onLoadProject,
   onImportAIFormat,
-  onProjectNameChange
+  onProjectNameChange,
+  currentUser,
+  authLoading,
+  onCloudSave,
+  onCloudLoad,
+  cloudSaveLoading,
+  cloudLoadLoading,
+  lastCloudSyncAt,
 }: BoardControlsProps) {
   const selectedNodeIds = useNarrativeBoardStore((state) => state.selectedNodeIds)
   const tags = useNarrativeBoardStore((state) => state.tags)
@@ -97,6 +113,72 @@ export function BoardControls({
 
   return (
     <div className="sidebar-panel">
+      <div className="sidebar-auth-block">
+        {authLoading ? (
+          <span className="sidebar-meta">Signing in…</span>
+        ) : currentUser ? (
+          <div className="sidebar-auth-user">
+            {currentUser.photoURL && (
+              <img
+                src={currentUser.photoURL}
+                alt=""
+                className="sidebar-auth-avatar"
+                referrerPolicy="no-referrer"
+              />
+            )}
+            <span className="sidebar-auth-email">{currentUser.email}</span>
+            <button
+              onClick={() => signOut().catch((err: Error) => window.alert(err.message))}
+              className="sidebar-btn sidebar-auth-signout"
+            >
+              Sign Out
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => signInWithGoogle().catch((err: Error) => window.alert(err.message))}
+            className="sidebar-btn sidebar-btn--google"
+          >
+            Sign in with Google
+          </button>
+        )}
+      </div>
+
+      {currentUser && (
+        <div className="sidebar-grid-two">
+          <button
+            onClick={async () => {
+              try { await onCloudSave() }
+              catch (err) { window.alert(err instanceof Error ? err.message : 'Cloud save failed.') }
+            }}
+            disabled={cloudSaveLoading || cloudLoadLoading}
+            className="sidebar-btn sidebar-btn--cloud"
+          >
+            {cloudSaveLoading ? 'Saving…' : 'Cloud Save'}
+          </button>
+          <button
+            onClick={async () => {
+              try { await onCloudLoad() }
+              catch (err) { window.alert(err instanceof Error ? err.message : 'Cloud load failed.') }
+            }}
+            disabled={cloudSaveLoading || cloudLoadLoading}
+            className="sidebar-btn sidebar-btn--cloud"
+          >
+            {cloudLoadLoading ? 'Loading…' : 'Cloud Load'}
+          </button>
+        </div>
+      )}
+
+      {currentUser && lastCloudSyncAt && (
+        <span className="sidebar-meta">
+          Last synced: {lastCloudSyncAt.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+        </span>
+      )}
+
+      {!authLoading && !currentUser && (
+        <span className="sidebar-meta sidebar-meta--hint">Sign in to enable cloud save/load</span>
+      )}
+
       <div className="sidebar-project-block">
         <input
           value={projectName}
@@ -123,9 +205,9 @@ export function BoardControls({
           }}
           className="sidebar-btn"
         >
-          Export
+          Export JSON
         </button>
-        <button onClick={() => fileInputRef.current?.click()} className="sidebar-btn">Import</button>
+        <button onClick={() => fileInputRef.current?.click()} className="sidebar-btn">Import JSON</button>
       </div>
 
       <div className="sidebar-grid-two">

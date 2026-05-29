@@ -16,6 +16,7 @@ import { ContextPanel } from './components/ContextPanel'
 import { CardEditorFlyout } from './components/CardEditorFlyout'
 import { Sidebar } from './components/Sidebar/Sidebar'
 import { useNarrativeBoardStore } from './store/useNarrativeBoardStore'
+import { subscribeAuthState } from './firebase/auth'
 import './App.css'
 import './styles/card.css'
 import './styles/sidebar.css'
@@ -42,6 +43,14 @@ function BoardCanvas() {
   const saveProject = useNarrativeBoardStore((state) => state.saveProject)
   const loadProject = useNarrativeBoardStore((state) => state.loadProject)
   const applyAIFormatImport = useNarrativeBoardStore((state) => state.applyAIFormatImport)
+  const setCurrentUser = useNarrativeBoardStore((state) => state.setCurrentUser)
+  const currentUser = useNarrativeBoardStore((state) => state.currentUser)
+  const authLoading = useNarrativeBoardStore((state) => state.authLoading)
+  const cloudSaveProject = useNarrativeBoardStore((state) => state.cloudSaveProject)
+  const cloudLoadProject = useNarrativeBoardStore((state) => state.cloudLoadProject)
+  const cloudSaveLoading = useNarrativeBoardStore((state) => state.cloudSaveLoading)
+  const cloudLoadLoading = useNarrativeBoardStore((state) => state.cloudLoadLoading)
+  const lastCloudSyncAt = useNarrativeBoardStore((state) => state.lastCloudSyncAt)
   const clearSelection = useNarrativeBoardStore((state) => state.clearSelection)
   const toggleSidebar = useNarrativeBoardStore((state) => state.toggleSidebar)
   const toggleSection = useNarrativeBoardStore((state) => state.toggleSection)
@@ -282,6 +291,10 @@ function BoardCanvas() {
   }, [multiSelectMode, selectedNodeIds, setLinkMode])
 
   useEffect(() => {
+    return subscribeAuthState((user) => setCurrentUser(user))
+  }, [setCurrentUser])
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!event.ctrlKey || event.altKey) {
         return
@@ -350,6 +363,13 @@ function BoardCanvas() {
         updatedAt={metadata.updatedAt}
         hasUnsavedChanges={hasUnsavedChanges}
         onProjectNameChange={(value) => setMetadata({ ...metadata, projectName: value, updatedAt: metadata.updatedAt })}
+        currentUser={currentUser}
+        authLoading={authLoading}
+        onCloudSave={cloudSaveProject}
+        onCloudLoad={cloudLoadProject}
+        cloudSaveLoading={cloudSaveLoading}
+        cloudLoadLoading={cloudLoadLoading}
+        lastCloudSyncAt={lastCloudSyncAt}
       />
 
       <div

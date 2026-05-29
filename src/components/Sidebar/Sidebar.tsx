@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import type { User } from 'firebase/auth'
 
 import type { NarrativeNode, SectionKey, SectionOpenState, SlipType } from '../../types/narrative'
 import { BoardControls } from './BoardControls'
@@ -22,6 +23,13 @@ type SidebarProps = {
   updatedAt: string
   hasUnsavedChanges: boolean
   onProjectNameChange: (value: string) => void
+  currentUser: User | null
+  authLoading: boolean
+  onCloudSave: () => Promise<void>
+  onCloudLoad: () => Promise<void>
+  cloudSaveLoading: boolean
+  cloudLoadLoading: boolean
+  lastCloudSyncAt: Date | null
 }
 
 type SectionProps = {
@@ -60,7 +68,14 @@ export function Sidebar({
   projectName,
   updatedAt,
   hasUnsavedChanges,
-  onProjectNameChange
+  onProjectNameChange,
+  currentUser,
+  authLoading,
+  onCloudSave,
+  onCloudLoad,
+  cloudSaveLoading,
+  cloudLoadLoading,
+  lastCloudSyncAt,
 }: SidebarProps) {
   return (
     <aside className={collapsed ? 'sidebar sidebar--collapsed' : 'sidebar'}>
@@ -100,6 +115,13 @@ export function Sidebar({
               onLoadProject={onLoadProject}
               onImportAIFormat={onImportAIFormat}
               onProjectNameChange={onProjectNameChange}
+              currentUser={currentUser}
+              authLoading={authLoading}
+              onCloudSave={onCloudSave}
+              onCloudLoad={onCloudLoad}
+              cloudSaveLoading={cloudSaveLoading}
+              cloudLoadLoading={cloudLoadLoading}
+              lastCloudSyncAt={lastCloudSyncAt}
             />
           </Section>
 
