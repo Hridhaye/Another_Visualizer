@@ -304,11 +304,8 @@
 
 @media (max-width: 1280px) {
   .history-bar {
-    flex-wrap: wrap;
-    justify-content: center;
     max-width: calc(100vw - 16px);
-    padding: 8px 10px;
-    border-radius: 18px;
+    padding: 6px 10px;
   }
 
   .history-bar__divider {
@@ -328,18 +325,30 @@
     right: 8px;
     transform: none;
     width: auto;
+    flex-wrap: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
     justify-content: flex-start;
+    /* hide scrollbar visually but keep it functional */
+    scrollbar-width: none;
+    border-radius: 16px;
+    padding: 6px 8px;
+  }
+
+  .history-bar::-webkit-scrollbar {
+    display: none;
   }
 
   .history-bar__btn {
     flex: 0 0 auto;
+    padding: 8px 14px;
+    font-size: 13px;
   }
 
   .context-panel {
     left: 8px;
     right: 8px;
+    bottom: 68px;
     width: auto;
     transform: none;
     align-items: stretch;
@@ -347,22 +356,32 @@
 
   .context-panel__bar {
     width: 100%;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    padding: 10px 12px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    justify-content: flex-start;
+    padding: 8px 10px;
+    gap: 4px;
+    border-radius: 16px;
+  }
+
+  .context-panel__bar::-webkit-scrollbar {
+    display: none;
   }
 
   .context-panel__identity {
-    flex: 1 1 100%;
-    max-width: none;
-    border-right: none;
-    margin-right: 0;
-    padding-bottom: 6px;
+    flex: 0 0 auto;
+    max-width: 9rem;
+    border-right: 1px solid rgba(113, 113, 122, 0.35);
+    padding-right: 8px;
+    margin-right: 4px;
   }
 
   .context-panel__bar .history-bar__btn {
-    flex: 1 1 calc(50% - 6px);
-    min-width: 0;
+    flex: 0 0 auto;
+    padding: 6px 12px;
+    font-size: 13px;
   }
 
   .context-panel__popover {
@@ -1284,6 +1303,10 @@
   align-items: center;
   gap: 6px;
   pointer-events: none;
+  /* Desktop positioning (overridden by media query on mobile) */
+  bottom: 76px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .context-panel__bar {

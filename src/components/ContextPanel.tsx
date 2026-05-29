@@ -109,7 +109,7 @@ export function ContextPanel({ node, allNodes, slipTypes, onUpdate, onClose }: C
       className="nodrag nowheel context-panel"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
-      style={{ position: 'absolute', bottom: '76px', left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}
+      style={{ position: 'absolute', zIndex: 50 }}
     >
       {activeField && (
         <div className="context-panel__popover">
