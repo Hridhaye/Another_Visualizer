@@ -341,7 +341,6 @@ function BoardCanvas() {
         onClick={toggleSidebar}
         aria-label="Open sidebar"
         aria-expanded={!sidebarCollapsed}
-        style={{ display: 'none' }}
       >
         ☰
       </button>

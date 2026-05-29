@@ -182,9 +182,9 @@
 
 .card-overview__summary {
   text-align: center;
-  font-size: 28px;
+  font-size: 34px;
   line-height: 1.4;
-  color: #a1a1aa;
+  color: #c4c4cc;
   font-style: italic;
   overflow-wrap: anywhere;
 }
@@ -384,7 +384,7 @@
 
   .card-overview__code { font-size: 16px; }
   .card-overview__title { font-size: 40px; }
-  .card-overview__summary { font-size: 20px; }
+  .card-overview__summary { font-size: 26px; }
   .card-overview__tag { font-size: 24px; }
   .card-overview__chip-glyph { font-size: 30px; }
   .card-overview__chip-count,
@@ -431,7 +431,7 @@
   .card-overview { gap: 16px; }
   .card-overview__code { font-size: 14px; }
   .card-overview__title { font-size: 30px; }
-  .card-overview__summary { font-size: 16px; }
+  .card-overview__summary { font-size: 22px; }
   .card-overview__tag { font-size: 20px; }
   .card-overview__chip { padding: 8px 14px; gap: 8px; }
   .card-overview__chip-glyph { font-size: 24px; }
