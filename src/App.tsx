@@ -337,7 +337,7 @@ function BoardCanvas() {
       {/* Hamburger toggle: visible on mobile/tablet */}
       <button
         type="button"
-        className="mobile-sidebar-toggle mobile-sidebar-toggle--visible"
+        className={`mobile-sidebar-toggle mobile-sidebar-toggle--visible${!sidebarCollapsed ? ' mobile-sidebar-toggle--open' : ''}`}
         onClick={toggleSidebar}
         aria-label={sidebarCollapsed ? 'Open sidebar' : 'Close sidebar'}
         aria-expanded={!sidebarCollapsed}

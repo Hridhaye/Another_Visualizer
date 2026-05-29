@@ -161,6 +161,7 @@
   color: #e4e4e7;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
   cursor: pointer;
+  transition: left 220ms ease;
 }
 
 .mobile-sidebar-toggle--visible {
@@ -174,6 +175,10 @@
 
   .mobile-sidebar-toggle--visible {
     display: flex !important;
+  }
+
+  .mobile-sidebar-toggle--open {
+    left: calc(min(88vw, 320px) + 10px);
   }
 }
 
