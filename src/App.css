@@ -321,7 +321,7 @@
 /* ── Tablet (≤1024px) ── wrap history bar, fix overlap */
 @media (max-width: 1024px) {
   .history-bar {
-    bottom: 8px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
     left: 8px;
     right: 8px;
     transform: none;
@@ -340,11 +340,11 @@
   }
 
   /* context panel: wrap on tablet (wide enough), sit above history bar.
-     2 rows of tablet buttons ≈ 82px + 8px bottom = 90px; add 10px gap → 100px */
+     2 rows of tablet buttons ≈ 82px + 20px bottom + safe-area + 12px gap → 114px */
   .context-panel {
     left: 8px;
     right: 8px;
-    bottom: 100px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 114px);
     width: auto;
     transform: none;
     align-items: stretch;
@@ -401,31 +401,38 @@
     font-size: 12px;
   }
 
-  /* history bar 2 rows of mobile buttons ≈ 71px + 8px bottom + 12px gap → 91px */
+  /* history bar 2 rows ≈ 71px + 20px bottom + safe-area + 12px gap → 103px */
   .context-panel {
-    bottom: 91px;
+    left: 0;
+    right: 0;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 103px);
   }
 
-  /* single scrollable row — keeps the panel to one line height on mobile */
+  /* edge-to-edge bar, single scrollable row */
   .context-panel__bar {
     flex-wrap: nowrap;
     justify-content: flex-start;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
-    padding: 6px 10px;
-    gap: 4px;
+    padding: 6px 12px;
+    gap: 3px;
     white-space: nowrap;
+    border-radius: 14px 14px 0 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
   }
 
   .context-panel__bar::-webkit-scrollbar {
     display: none;
   }
 
-  /* identity sits inline, not full-width, with a right-side divider */
+  /* show only the code, hide the title — frees most of the bar width for buttons */
   .context-panel__identity {
     flex: 0 0 auto;
-    max-width: 8rem;
+    max-width: none;
+    width: auto;
     border-bottom: none;
     border-right: 1px solid rgba(113, 113, 122, 0.3);
     padding-bottom: 0;
@@ -434,9 +441,13 @@
     margin-right: 4px;
   }
 
+  .context-panel__identity-title {
+    display: none;
+  }
+
   .context-panel__bar .history-bar__btn {
     flex: 0 0 auto;
-    padding: 6px 12px;
+    padding: 6px 11px;
     font-size: 12px;
   }
 }
