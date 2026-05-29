@@ -169,7 +169,7 @@
 
 @media (max-width: 1024px) {
   .mobile-sidebar-toggle--visible {
-    display: flex;
+    display: flex !important;
   }
 }
 
