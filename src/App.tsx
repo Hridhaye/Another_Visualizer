@@ -24,6 +24,7 @@ import 'reactflow/dist/style.css'
 
 function BoardCanvas() {
   const boardCanvasRef = useRef<HTMLDivElement | null>(null)
+  const historyBarRef = useRef<HTMLDivElement | null>(null)
   const nodes = useNarrativeBoardStore((state) => state.nodes)
   const edges = useNarrativeBoardStore((state) => state.edges)
   const slipTypes = useNarrativeBoardStore((state) => state.slipTypes)
@@ -321,6 +322,23 @@ function BoardCanvas() {
     }
   }, [groupsPanelOpen, selectedNodeIds.length])
 
+  // Publish the history bar's rendered height to a CSS variable so the context
+  // panel can sit just above it without overlap, regardless of how many rows it
+  // wraps to on narrow screens.
+  useEffect(() => {
+    const bar = historyBarRef.current
+    const canvas = boardCanvasRef.current
+    if (!bar || !canvas) {
+      return
+    }
+    const observer = new ResizeObserver(() => {
+      canvas.style.setProperty('--history-bar-height', `${bar.offsetHeight}px`)
+    })
+    observer.observe(bar)
+    canvas.style.setProperty('--history-bar-height', `${bar.offsetHeight}px`)
+    return () => observer.disconnect()
+  }, [])
+
   const activeNode = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) ?? null : null
   const showContextPanel = !!activeNode && contextPanelOpen
 
@@ -447,7 +465,7 @@ function BoardCanvas() {
             onClose={closeContextPanel}
           />
         )}
-        <div className="history-bar" role="toolbar" aria-label="History controls">
+        <div ref={historyBarRef} className="history-bar" role="toolbar" aria-label="History controls">
           {groupsPanelOpen && selectedNodeIds.length > 1 && (
             <div className="history-bar__overlay">
               <div className="group-panel">
