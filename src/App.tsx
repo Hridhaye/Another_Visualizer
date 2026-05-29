@@ -390,8 +390,8 @@ function BoardCanvas() {
       <PuzzleMatchingPanel />
       <CardEditorFlyout />
       {/* Hamburger toggle: visible on mobile/tablet, but hidden while a full-screen
-          panel (narrative body / puzzle editor) is open so it can't overlap the panel. */}
-      {!fullScreenPanelOpen && (
+          panel or the context panel (with its popovers) is open. */}
+      {!fullScreenPanelOpen && !showContextPanel && (
         <button
           type="button"
           className={`mobile-sidebar-toggle mobile-sidebar-toggle--visible${!sidebarCollapsed ? ' mobile-sidebar-toggle--open' : ''}`}
