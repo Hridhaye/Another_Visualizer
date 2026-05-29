@@ -102,6 +102,7 @@ type NarrativeBoardState = {
   sidebarCollapsed: boolean
   sectionsOpen: SectionOpenState
   connectionSourceNodeId: string | null
+  linkMode: boolean
   minimapVisible: boolean
   minimapCollapsed: boolean
   metadata: SerializedMetadata
@@ -171,6 +172,7 @@ type NarrativeBoardActions = {
   toggleSidebar: () => void
   toggleSection: (key: SectionKey) => void
   setConnectionSourceNode: (nodeId: string | null) => void
+  setLinkMode: (enabled: boolean) => void
   openFullEditor: () => void
   openContextPanel: () => void
   closeContextPanel: () => void
@@ -348,6 +350,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   sidebarCollapsed: false,
   sectionsOpen: initialSectionsOpen,
   connectionSourceNodeId: null,
+  linkMode: false,
   minimapVisible: true,
   minimapCollapsed: false,
   contextPanelOpen: false,
@@ -1132,6 +1135,10 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
 
   setConnectionSourceNode: (nodeId) => {
     set({ connectionSourceNodeId: nodeId })
+  },
+
+  setLinkMode: (enabled) => {
+    set({ linkMode: enabled, connectionSourceNodeId: null })
   },
 
   setViewport: (viewport) => {

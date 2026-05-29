@@ -22,6 +22,8 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const toggleNodeSelection = useNarrativeBoardStore((state) => state.toggleNodeSelection)
   const highlightedNodeIds = useNarrativeBoardStore((state) => state.highlightedNodeIds)
   const activeGroupId = useNarrativeBoardStore((state) => state.activeGroupId)
+  const linkMode = useNarrativeBoardStore((state) => state.linkMode)
+  const setLinkMode = useNarrativeBoardStore((state) => state.setLinkMode)
   const matchingPickMode = useNarrativeBoardStore((state) => state.matchingPickMode)
   const matchingPickSourceNodeId = useNarrativeBoardStore((state) => state.matchingPickSourceNodeId)
   const matchingPickStagedIds = useNarrativeBoardStore((state) => state.matchingPickStagedIds)
@@ -177,15 +179,24 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
     if (event.ctrlKey || event.metaKey) {
       event.preventDefault()
       event.stopPropagation()
-      if (connectionSourceNodeId) {
-        setConnectionSourceNode(null)
+      if (connectionSourceNodeId || linkMode) {
+        setLinkMode(false)
       }
       toggleNodeSelection(id)
       return
     }
 
-    if (connectionSourceNodeId) {
-      setConnectionSourceNode(null)
+    if (linkMode || connectionSourceNodeId) {
+      if (!connectionSourceNodeId) {
+        setConnectionSourceNode(id)
+      } else if (connectionSourceNodeId !== id) {
+        createReferenceConnection(connectionSourceNodeId, id)
+        setConnectionSourceNode(null)
+        setLinkMode(false)
+      } else {
+        setConnectionSourceNode(null)
+        setLinkMode(false)
+      }
       return
     }
 

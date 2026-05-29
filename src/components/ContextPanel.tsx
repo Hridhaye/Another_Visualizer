@@ -7,10 +7,8 @@ type ContextPanelProps = {
   node: NarrativeNode
   allNodes: NarrativeNode[]
   slipTypes: SlipType[]
-  isLinkSource: boolean
   onUpdate: (nodeId: string, patch: Partial<CardData>) => void
   onClose: () => void
-  onToggleLink: () => void
 }
 
 type ActiveField = 'codeRefs' | 'title' | 'summary' | 'slipType' | 'slipGiven' | 'tags' | 'puzzleType' | null
@@ -26,7 +24,7 @@ const BUTTONS: { field: ActiveField | 'body'; label: string }[] = [
   { field: 'puzzleType', label: 'Puzzle' },
 ]
 
-export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate, onClose, onToggleLink }: ContextPanelProps) {
+export function ContextPanel({ node, allNodes, slipTypes, onUpdate, onClose }: ContextPanelProps) {
   const [activeField, setActiveField] = useState<ActiveField>(null)
   const [refSearch, setRefSearch] = useState('')
   const [tagSearch, setTagSearch] = useState('')
@@ -380,15 +378,6 @@ export function ContextPanel({ node, allNodes, slipTypes, isLinkSource, onUpdate
             </button>
           )
         })}
-
-        <div className="history-bar__divider" />
-
-        <button
-          onClick={(e) => { e.stopPropagation(); onToggleLink() }}
-          className={`history-bar__btn${isLinkSource ? ' context-panel__btn--link-active' : ''}`}
-        >
-          {isLinkSource ? 'Cancel' : 'Link'}
-        </button>
 
         <button onClick={onClose} className="context-panel__close">
           <svg width="10" height="10" viewBox="0 0 12 12" fill="none">

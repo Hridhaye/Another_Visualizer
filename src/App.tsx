@@ -59,7 +59,8 @@ function BoardCanvas() {
   const selectedNodeIds = useNarrativeBoardStore((state) => state.selectedNodeIds)
   const deleteSelectedCards = useNarrativeBoardStore((state) => state.deleteSelectedCards)
   const setSelectedNodes = useNarrativeBoardStore((state) => state.setSelectedNodes)
-  const setConnectionSourceNode = useNarrativeBoardStore((state) => state.setConnectionSourceNode)
+  const linkMode = useNarrativeBoardStore((state) => state.linkMode)
+  const setLinkMode = useNarrativeBoardStore((state) => state.setLinkMode)
   const multiSelectMode = useNarrativeBoardStore((state) => state.multiSelectMode)
   const setMultiSelectMode = useNarrativeBoardStore((state) => state.setMultiSelectMode)
   const matchingPickMode = useNarrativeBoardStore((state) => state.matchingPickMode)
@@ -247,7 +248,7 @@ function BoardCanvas() {
       additive: multiSelectMode || event.ctrlKey || event.metaKey
     }
 
-    setConnectionSourceNode(null)
+    setLinkMode(false)
     setSelectionBox({
       startX: event.clientX,
       startY: event.clientY,
@@ -256,7 +257,7 @@ function BoardCanvas() {
     })
 
     event.preventDefault()
-  }, [multiSelectMode, selectedNodeIds, setConnectionSourceNode])
+  }, [multiSelectMode, selectedNodeIds, setLinkMode])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -394,10 +395,8 @@ function BoardCanvas() {
             node={activeNode}
             allNodes={nodes}
             slipTypes={slipTypes}
-            isLinkSource={connectionSourceNodeId === activeNode.id}
             onUpdate={updateNode}
             onClose={closeContextPanel}
-            onToggleLink={() => setConnectionSourceNode(connectionSourceNodeId === activeNode.id ? null : activeNode.id)}
           />
         )}
         <div className="history-bar" role="toolbar" aria-label="History controls">
@@ -520,6 +519,15 @@ function BoardCanvas() {
             aria-label="Manage groups for selected cards"
           >
             Groups
+          </button>
+          <div className="history-bar__divider" />
+          <button
+            onClick={() => setLinkMode(!linkMode)}
+            className={`history-bar__btn${linkMode || connectionSourceNodeId ? ' history-bar__btn--active' : ''}`}
+            aria-label="Link two cards"
+            title="Enter link mode: click a source card, then a target card"
+          >
+            {linkMode || connectionSourceNodeId ? 'Cancel Link' : 'Link'}
           </button>
           <div className="history-bar__divider" />
           <button
