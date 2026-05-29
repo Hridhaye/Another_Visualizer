@@ -7,6 +7,8 @@ export type ProjectSnapshot = {
   tags: Tag[]
   groups: CardGroup[]
   viewport: SerializedViewport
+  /** Per-edge middle-segment offsets, keyed by edge id. */
+  edgeShapes?: Record<string, number>
   metadata?: Partial<SerializedMetadata>
 }
 
@@ -22,6 +24,7 @@ export function serializeProject(snapshot: ProjectSnapshot): SerializedProject {
       updatedAt
     },
     viewport: snapshot.viewport,
+    edgeShapes: { ...(snapshot.edgeShapes ?? {}) },
     slipTypes: snapshot.slipTypes.map((item) => ({ ...item })),
     tags: snapshot.tags.map((item) => ({ ...item })),
     groups: snapshot.groups.map((group) => ({

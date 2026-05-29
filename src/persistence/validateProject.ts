@@ -178,6 +178,15 @@ export function validateProject(value: unknown): { ok: true; project: Serialized
     ? value.nodes.map(normalizeNode).filter((item): item is NarrativeNode => item !== null)
     : []
 
+  const edgeShapes: Record<string, number> = {}
+  if (isRecord(value.edgeShapes)) {
+    for (const [edgeId, offset] of Object.entries(value.edgeShapes)) {
+      if (typeof offset === 'number' && Number.isFinite(offset)) {
+        edgeShapes[edgeId] = offset
+      }
+    }
+  }
+
   return {
     ok: true,
     project: {
@@ -188,7 +197,8 @@ export function validateProject(value: unknown): { ok: true; project: Serialized
       slipTypes,
       tags,
       groups,
-      nodes
+      nodes,
+      edgeShapes
     }
   }
 }

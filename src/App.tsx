@@ -5,8 +5,9 @@ import ReactFlow, {
 } from 'reactflow'
 
 import { NarrativeCardNode } from './components/NarrativeCardNode'
-import { NarrativeEdgeComponent } from './components/edges/NarrativeEdge'
+import { MovableEdge } from './components/edges/MovableEdge'
 import { BiDirectionalEdge, BiDirectionalEdgeMarkerDef } from './components/edges/BiDirectionalEdge'
+import { useTidyLines } from './components/edges/useTidyLines'
 import { NarrativeBodyPanel } from './components/NarrativeBodyPanel'
 import { PuzzleFillPanel } from './components/PuzzleFillPanel'
 import { PuzzleReorderPanel } from './components/PuzzleReorderPanel'
@@ -89,7 +90,7 @@ function BoardCanvas() {
 
   const edgeTypes = useMemo(
     () => ({
-      narrativeEdge: NarrativeEdgeComponent,
+      narrativeEdge: MovableEdge,
       bidirectional: BiDirectionalEdge,
     }),
     []
@@ -109,7 +110,7 @@ function BoardCanvas() {
       const group = sourceGroups[edge.source] ?? []
       const indexInGroup = group.indexOf(edge.id)
       const groupSize = group.length
-      // Center the fan: e.g. 3 edges → offsets -12, 0, +12
+      // Default fanning for clarity: e.g. 3 edges → offsets -12, 0, +12
       const lateralShift = (indexInGroup - (groupSize - 1) / 2) * LANE_SPACING
 
       const isBidir = edge.data?.bidirectional === true
@@ -127,6 +128,11 @@ function BoardCanvas() {
       }
     })
   }, [edges, selectedNodeId])
+
+  // Floating elbows are the always-on default. A* avoidance runs only when the
+  // user clicks "Tidy Lines" (it can pick worse entry sides than the elbow, so
+  // it is opt-in rather than automatic).
+  const tidyLines = useTidyLines()
 
   const performMarqueeSelection = useCallback((box: {
     startX: number
@@ -336,6 +342,7 @@ function BoardCanvas() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onNodeDragStop={tidyLines}
           onPaneClick={clearSelection}
           onMoveEnd={(_, viewport) => setViewport(viewport)}
           fitView
@@ -477,6 +484,15 @@ function BoardCanvas() {
             aria-label="Add Card"
           >
             Add Card
+          </button>
+          <div className="history-bar__divider" />
+          <button
+            onClick={tidyLines}
+            className="history-bar__btn"
+            aria-label="Tidy connector lines to avoid cards"
+            title="Route connector lines around cards"
+          >
+            Tidy Lines
           </button>
           <div className="history-bar__divider" />
           <button

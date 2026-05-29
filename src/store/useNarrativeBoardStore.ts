@@ -84,6 +84,10 @@ const initialSectionsOpen: SectionOpenState = {
 type NarrativeBoardState = {
   nodes: NarrativeNode[]
   edges: NarrativeEdge[]
+  /** Per-edge middle-segment offsets, keyed by edge id. Survives edge regeneration. (Dormant feature.) */
+  edgeShapes: Record<string, number>
+  /** Per-edge A*-routed polylines (flow coords), keyed by edge id. Empty until "Tidy lines" runs. */
+  routedPaths: Record<string, { x: number; y: number }[]>
   selectedNodeId: string | null
   selectedNodeIds: string[]
   groups: CardGroup[]
@@ -116,6 +120,7 @@ type NarrativeBoardState = {
 type HistorySnapshot = {
   nodes: NarrativeNode[]
   edges: NarrativeEdge[]
+  edgeShapes: Record<string, number>
   selectedNodeId: string | null
   selectedNodeIds: string[]
   groups: CardGroup[]
@@ -130,6 +135,9 @@ type NarrativeBoardActions = {
   onNodesChange: (changes: NodeChange[]) => void
   onEdgesChange: (changes: EdgeChange[]) => void
   onConnect: (connection: Connection) => void
+  setEdgeOffset: (edgeId: string, offset: number) => void
+  setRoutedPaths: (paths: Record<string, { x: number; y: number }[]>) => void
+  clearRoutedPaths: () => void
   addCard: () => void
   deleteCard: (nodeId: string) => void
   updateNode: (nodeId: string, patch: Partial<CardData>) => void
@@ -182,10 +190,27 @@ type NarrativeBoardActions = {
 
 export type NarrativeBoardStore = NarrativeBoardState & NarrativeBoardActions
 
+/**
+ * Edges are regenerated from referencesText on every change, so the persistent
+ * per-edge segment offsets (keyed by edge id) must be merged back in each time.
+ */
+type EdgeShapeMap = Record<string, number>
+
+function buildEdges(nodes: NarrativeNode[], edgeShapes: EdgeShapeMap): NarrativeEdge[] {
+  return buildEdgesFromReferences(nodes).map((edge) => {
+    const offset = edgeShapes[edge.id]
+    if (typeof offset !== 'number') {
+      return edge
+    }
+    return { ...edge, data: { ...edge.data, manualOffset: offset } }
+  })
+}
+
 function createSnapshot(state: NarrativeBoardState): HistorySnapshot {
   return {
     nodes: state.nodes.map((node) => ({ ...node, data: { ...node.data }, position: { ...node.position } })),
     edges: state.edges.map((edge) => ({ ...edge })),
+    edgeShapes: { ...state.edgeShapes },
     selectedNodeId: state.selectedNodeId,
     selectedNodeIds: [...state.selectedNodeIds],
     groups: state.groups.map((group) => ({ ...group, nodeIds: [...group.nodeIds] })),
@@ -275,7 +300,7 @@ function removeNodesByIds(state: NarrativeBoardState, nodeIds: string[]) {
 
   return {
     nodes: nextNodes,
-    edges: buildEdgesFromReferences(nextNodes),
+    edges: buildEdges(nextNodes, state.edgeShapes),
     groups: normalizeGroups(state.groups, nextNodes),
     ...nextSelection,
     connectionSourceNodeId:
@@ -305,6 +330,8 @@ export function getSlipColor(slipTypes: SlipType[], slipTypeId: string): string 
 export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => ({
   nodes: initialNodes,
   edges: buildEdgesFromReferences(initialNodes),
+  edgeShapes: {},
+  routedPaths: {},
   selectedNodeId: '1',
   selectedNodeIds: ['1'],
   groups: [],
@@ -338,15 +365,48 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   hasUnsavedChanges: false,
 
   onNodesChange: (changes) => {
-    set((state) => ({
-      historyPast: [...state.historyPast, createSnapshot(state)],
-      historyFuture: [],
-      canUndo: true,
-      canRedo: false,
-      nodes: applyNodeChanges(changes, state.nodes),
-      groups: normalizeGroups(state.groups, applyNodeChanges(changes, state.nodes)),
-      hasUnsavedChanges: true
-    }))
+    set((state) => {
+      const nextNodes = applyNodeChanges(changes, state.nodes)
+
+      // Invalidate A*-routed paths only for edges touching a node that actually
+      // *moved* (position changed), so those lines fall back to the live floating
+      // elbow and track the card. A bare select/click emits a position change
+      // with unchanged coordinates — we ignore those so selecting a card doesn't
+      // reset its lines. Edges not connected to a moved card keep their routed
+      // shape; A* re-applies on the next manual "Tidy Lines".
+      const movedNodeIds = new Set(
+        changes
+          .filter((change): change is NodeChange & { id: string; position?: { x: number; y: number } } => {
+            if (change.type !== 'position') return false
+            const pos = (change as { position?: { x: number; y: number } }).position
+            if (!pos) return false
+            const node = state.nodes.find((n) => n.id === (change as { id: string }).id)
+            if (!node) return true
+            return pos.x !== node.position.x || pos.y !== node.position.y
+          })
+          .map((change) => change.id)
+      )
+      let routedPaths = state.routedPaths
+      if (movedNodeIds.size > 0 && Object.keys(routedPaths).length > 0) {
+        const next: Record<string, { x: number; y: number }[]> = {}
+        for (const edge of state.edges) {
+          if (movedNodeIds.has(edge.source) || movedNodeIds.has(edge.target)) continue
+          if (routedPaths[edge.id]) next[edge.id] = routedPaths[edge.id]
+        }
+        routedPaths = next
+      }
+
+      return {
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
+        nodes: nextNodes,
+        groups: normalizeGroups(state.groups, nextNodes),
+        routedPaths,
+        hasUnsavedChanges: true
+      }
+    })
   },
 
   onEdgesChange: (changes) => {
@@ -405,7 +465,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         canUndo: true,
         canRedo: false,
         nodes: updatedNodes,
-        edges: buildEdgesFromReferences(updatedNodes),
+        edges: buildEdges(updatedNodes, state.edgeShapes),
         groups: normalizeGroups(state.groups, updatedNodes),
         hasUnsavedChanges: true
       }
@@ -418,6 +478,31 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     }
 
     get().createReferenceConnection(connection.source, connection.target)
+  },
+
+  setEdgeOffset: (edgeId, offset) => {
+    set((state) => {
+      const edgeShapes = { ...state.edgeShapes, [edgeId]: offset }
+      return {
+        edgeShapes,
+        edges: state.edges.map((edge) =>
+          edge.id === edgeId
+            ? { ...edge, data: { ...edge.data, manualOffset: offset } }
+            : edge
+        ),
+        hasUnsavedChanges: true
+      }
+    })
+  },
+
+  setRoutedPaths: (paths) => {
+    set({ routedPaths: paths })
+  },
+
+  clearRoutedPaths: () => {
+    set((state) =>
+      Object.keys(state.routedPaths).length === 0 ? state : { routedPaths: {} }
+    )
   },
 
   addCard: () => {
@@ -497,7 +582,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         canUndo: true,
         canRedo: false,
         nodes: updatedNodes,
-        edges: buildEdgesFromReferences(updatedNodes),
+        edges: buildEdges(updatedNodes, state.edgeShapes),
         groups: normalizeGroups(state.groups, updatedNodes),
         hasUnsavedChanges: true
       }
@@ -548,7 +633,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         canUndo: true,
         canRedo: false,
         nodes: updatedNodes,
-        edges: buildEdgesFromReferences(updatedNodes),
+        edges: buildEdges(updatedNodes, state.edgeShapes),
         connectionSourceNodeId: null,
         hasUnsavedChanges: true
       }
@@ -619,7 +704,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         canRedo: false,
         slipTypes: state.slipTypes.filter((slip) => slip.id !== id),
         nodes: updatedNodes,
-        edges: buildEdgesFromReferences(updatedNodes),
+        edges: buildEdges(updatedNodes, state.edgeShapes),
         hasUnsavedChanges: true
       }
     })
@@ -850,6 +935,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       tags: state.tags,
       groups: state.groups,
       viewport: state.viewport,
+      edgeShapes: state.edgeShapes,
       metadata: {
         projectName: state.metadata.projectName,
         createdAt: state.metadata.createdAt,
@@ -891,11 +977,14 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     try {
       const project = deserializeProject(text)
       const nextNodes = project.nodes.map((node) => ({ ...node }))
-      const nextEdges = buildEdgesFromReferences(nextNodes)
+      const nextEdgeShapes: Record<string, number> =
+        (project.edgeShapes as Record<string, number> | undefined) ?? {}
+      const nextEdges = buildEdges(nextNodes, nextEdgeShapes)
 
       set({
         nodes: nextNodes,
         edges: nextEdges,
+        edgeShapes: nextEdgeShapes,
         slipTypes: project.slipTypes.map((item) => ({ ...item })),
         tags: project.tags.map((item) => ({ ...item })),
         groups: normalizeGroups(project.groups.map((group) => ({ ...group, nodeIds: [...group.nodeIds] })), nextNodes),
@@ -1218,7 +1307,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
       canUndo: true,
       canRedo: false,
       nodes: updatedNodes,
-      edges: buildEdgesFromReferences(updatedNodes),
+      edges: buildEdges(updatedNodes, state.edgeShapes),
       groups: normalizeGroups(state.groups, updatedNodes),
       hasUnsavedChanges: true,
       matchingPickMode: false,
