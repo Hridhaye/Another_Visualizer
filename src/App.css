@@ -1805,28 +1805,48 @@
 
   /* The popover (e.g. the Puzzle field editor) is a flex child of the stretched
      panel, so align-self defaults to stretch and it grows edge-to-edge & very tall.
-     Constrain it to fit the space above the bar and tidy its inner controls. */
+     Constrain it to fit the space above the bar and shrink its inner controls so
+     the content itself is compact (not just scrollable). */
   .context-panel__popover {
     align-self: stretch;
     width: auto;
-    /* fit between the top safe-area and the panel's bottom anchor (bar + gap) */
     max-height: calc(100dvh - var(--history-bar-height, 90px)
       - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px) - 130px);
-    padding: 14px 16px;
-    gap: 10px;
+    padding: 12px 14px;
+    gap: 8px;
   }
 
-  /* puzzle-type / choice buttons: give them a visible box so the list reads as
-     selectable rows instead of loose floating labels */
+  /* tighter spacing between the label/control groups */
+  .context-panel__popover .context-panel__field {
+    gap: 6px;
+  }
+
+  /* puzzle-type / choice buttons: compact selectable rows */
   .context-panel__popover .context-panel__slip-item {
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.03);
-    padding: 10px 12px;
+    padding: 7px 12px;
     font-size: 14px;
+    min-height: 0;
   }
 
   .context-panel__popover .context-panel__slip-item--active {
     border-color: rgba(139, 92, 246, 0.5);
+  }
+
+  /* shrink inputs/textarea padding (font stays 16px to avoid iOS zoom) */
+  .context-panel__popover .context-panel__input {
+    padding: 7px 10px;
+  }
+
+  /* the puzzle summary textarea is the biggest space hog — keep it short */
+  .context-panel__popover .context-panel__input--textarea {
+    min-height: 3.5rem;
+  }
+
+  /* labels: drop the top margins added inline so groups sit tighter */
+  .context-panel__popover .context-panel__label {
+    margin-top: 4px !important;
   }
 }
 

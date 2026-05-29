@@ -22,6 +22,10 @@ import './styles/card.css'
 import './styles/sidebar.css'
 import 'reactflow/dist/style.css'
 
+// Pointer travel (px) before a press is treated as a marquee drag. Below this
+// a stationary press/jitter is ignored so it doesn't flip a card by accident.
+const DRAG_SELECT_THRESHOLD_PX = 6
+
 function BoardCanvas() {
   const boardCanvasRef = useRef<HTMLDivElement | null>(null)
   const historyBarRef = useRef<HTMLDivElement | null>(null)
@@ -90,6 +94,9 @@ function BoardCanvas() {
     pointerId: number
     baseIds: string[]
     additive: boolean
+    originX: number
+    originY: number
+    moved: boolean
   } | null>(null)
   const [groupsPanelOpen, setGroupsPanelOpen] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
@@ -192,11 +199,23 @@ function BoardCanvas() {
       .map((card) => card.dataset.cardId)
       .filter((cardId): cardId is string => !!cardId)
 
-    const nextIds = dragSelection.additive
-      ? [...dragSelection.baseIds, ...idsInBox]
-      : idsInBox
+    // In additive mode (Select Cards / ctrl-drag) the marquee toggles each
+    // covered card against the selection it started from: dragging across an
+    // unselected card selects it, dragging across a selected card deselects
+    // it. Toggling against the fixed base keeps this stable as the box moves.
+    let nextIds: string[]
+    if (dragSelection.additive) {
+      const covered = new Set(idsInBox)
+      const baseInBox = new Set(dragSelection.baseIds.filter((cardId) => covered.has(cardId)))
+      nextIds = [
+        ...dragSelection.baseIds.filter((cardId) => !covered.has(cardId)),
+        ...idsInBox.filter((cardId) => !baseInBox.has(cardId))
+      ]
+    } else {
+      nextIds = idsInBox
+    }
 
-    setSelectedNodes(nextIds, idsInBox[idsInBox.length - 1] ?? nextIds[nextIds.length - 1] ?? null)
+    setSelectedNodes(nextIds, nextIds[nextIds.length - 1] ?? null)
   }, [setSelectedNodes])
 
   const finishDragSelection = useCallback(() => {
@@ -213,6 +232,18 @@ function BoardCanvas() {
       const dragSelection = dragSelectionRef.current
       if (!dragSelection || dragSelection.pointerId !== event.pointerId) {
         return
+      }
+
+      // Only commit a marquee toggle once the pointer has actually dragged
+      // past a small threshold, so a stationary tap/jitter doesn't flip the
+      // card under the press point.
+      if (!dragSelection.moved) {
+        const dx = event.clientX - dragSelection.originX
+        const dy = event.clientY - dragSelection.originY
+        if (Math.sqrt(dx * dx + dy * dy) < DRAG_SELECT_THRESHOLD_PX) {
+          return
+        }
+        dragSelection.moved = true
       }
 
       const nextBox = {
@@ -277,7 +308,10 @@ function BoardCanvas() {
     dragSelectionRef.current = {
       pointerId: event.pointerId,
       baseIds: (multiSelectMode || event.ctrlKey || event.metaKey) ? selectedNodeIds : [],
-      additive: multiSelectMode || event.ctrlKey || event.metaKey
+      additive: multiSelectMode || event.ctrlKey || event.metaKey,
+      originX: event.clientX,
+      originY: event.clientY,
+      moved: false
     }
 
     setLinkMode(false)
@@ -435,7 +469,7 @@ function BoardCanvas() {
           <div className={`selection-surface ${multiSelectMode ? 'selection-surface--active' : ''}`}>
             {multiSelectMode && (
               <div className="selection-surface__hint">
-                Click or drag to select cards
+                Drag across cards to select - drag again to deselect
               </div>
             )}
             {!multiSelectMode && selectionBox && (
