@@ -318,6 +318,7 @@
   }
 }
 
+/* ── Tablet (≤1024px) ── wrap both bars, fix overlap */
 @media (max-width: 1024px) {
   .history-bar {
     bottom: 8px;
@@ -325,30 +326,23 @@
     right: 8px;
     transform: none;
     width: auto;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    justify-content: flex-start;
-    /* hide scrollbar visually but keep it functional */
-    scrollbar-width: none;
+    flex-wrap: wrap;
+    justify-content: center;
     border-radius: 16px;
     padding: 6px 8px;
-  }
-
-  .history-bar::-webkit-scrollbar {
-    display: none;
+    gap: 4px;
   }
 
   .history-bar__btn {
     flex: 0 0 auto;
-    padding: 8px 14px;
-    font-size: 13px;
   }
 
+  /* context panel sits above the history bar;
+     wrapped tablet history bar is ~2 rows ≈ 72px + 8px offset + 12px gap = 92px */
   .context-panel {
     left: 8px;
     right: 8px;
-    bottom: 68px;
+    bottom: 92px;
     width: auto;
     transform: none;
     align-items: stretch;
@@ -356,32 +350,27 @@
 
   .context-panel__bar {
     width: 100%;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    justify-content: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
     padding: 8px 10px;
     gap: 4px;
     border-radius: 16px;
-  }
-
-  .context-panel__bar::-webkit-scrollbar {
-    display: none;
+    white-space: normal;
   }
 
   .context-panel__identity {
-    flex: 0 0 auto;
-    max-width: 9rem;
-    border-right: 1px solid rgba(113, 113, 122, 0.35);
-    padding-right: 8px;
-    margin-right: 4px;
+    flex: 1 1 100%;
+    max-width: none;
+    border-right: none;
+    padding-right: 0;
+    margin-right: 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(113, 113, 122, 0.2);
+    margin-bottom: 2px;
   }
 
   .context-panel__bar .history-bar__btn {
     flex: 0 0 auto;
-    padding: 6px 12px;
-    font-size: 13px;
   }
 
   .context-panel__popover {
@@ -393,6 +382,34 @@
     width: min(100vw, 48rem);
     max-width: 100vw;
     max-height: 100dvh;
+  }
+}
+
+/* ── Mobile (≤600px) ── smaller buttons so bars take less vertical space */
+@media (max-width: 600px) {
+  .history-bar {
+    gap: 2px;
+    padding: 4px 6px;
+  }
+
+  .history-bar__btn {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  /* mobile history bar is ~2 rows of smaller buttons ≈ 58px + 8px offset = 66px */
+  .context-panel {
+    bottom: 74px;
+  }
+
+  .context-panel__bar {
+    padding: 6px 8px;
+    gap: 2px;
+  }
+
+  .context-panel__bar .history-bar__btn {
+    padding: 5px 10px;
+    font-size: 11px;
   }
 }
 
