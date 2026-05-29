@@ -108,6 +108,7 @@ export type CardData = {
   /** Ids of tags (from the project-wide tag registry) assigned to this card. */
   tagIds?: string[]
   puzzleType: PuzzleType
+  puzzleTitle?: string
   puzzleSummary?: string
   puzzleFillContent?: FillPuzzleContent
   puzzleReorderContent?: ReorderPuzzleContent

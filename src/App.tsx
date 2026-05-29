@@ -61,8 +61,8 @@ function BoardCanvas() {
   const setSelectedNodes = useNarrativeBoardStore((state) => state.setSelectedNodes)
   const linkMode = useNarrativeBoardStore((state) => state.linkMode)
   const setLinkMode = useNarrativeBoardStore((state) => state.setLinkMode)
-  const overviewMode = useNarrativeBoardStore((state) => state.overviewMode)
-  const setOverviewMode = useNarrativeBoardStore((state) => state.setOverviewMode)
+  const minimizedMode = useNarrativeBoardStore((state) => state.minimizedMode)
+  const setMinimizedMode = useNarrativeBoardStore((state) => state.setMinimizedMode)
   const multiSelectMode = useNarrativeBoardStore((state) => state.multiSelectMode)
   const setMultiSelectMode = useNarrativeBoardStore((state) => state.setMultiSelectMode)
   const matchingPickMode = useNarrativeBoardStore((state) => state.matchingPickMode)
@@ -355,7 +355,7 @@ function BoardCanvas() {
           onMoveEnd={(_, viewport) => setViewport(viewport)}
           fitView
           fitViewOptions={{ padding: 0.15 }}
-          minZoom={0.2}
+          minZoom={0.1}
           maxZoom={1.8}
           panOnDrag={multiSelectMode ? false : [0, 1, 2]}
           nodesDraggable={!multiSelectMode}
@@ -502,13 +502,13 @@ function BoardCanvas() {
           </button>
           <div className="history-bar__divider" />
           <button
-            onClick={() => setOverviewMode(!overviewMode)}
-            className={`history-bar__btn${overviewMode ? ' history-bar__btn--active' : ''}`}
-            aria-pressed={overviewMode}
-            aria-label="Toggle overview view"
-            title="Toggle a simplified, distance-readable card view"
+            onClick={() => setMinimizedMode(!minimizedMode)}
+            className={`history-bar__btn${minimizedMode ? ' history-bar__btn--active' : ''}`}
+            aria-pressed={minimizedMode}
+            aria-label="Toggle minimized card view"
+            title="Toggle a stripped-down, distance-readable card view"
           >
-            {overviewMode ? 'Detailed View' : 'Overview'}
+            {minimizedMode ? 'Detailed' : 'Minimized'}
           </button>
           <div className="history-bar__divider" />
           <button

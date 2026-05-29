@@ -1,388 +1,406 @@
-# Another Visualizer — Technical Implementation Reference
+# Another Visualizer – Technical Implementation Reference
 
 ## 1. Purpose of this codebase
 
-This project is a React + TypeScript application for authoring and visualizing a narrative board. The main interactive surface is a React Flow canvas where cards represent narrative fragments, references between cards create edges, and the sidebar/editor panels support metadata editing, grouping, puzzle configuration, and project import/export.
+This project is a React + TypeScript + React Flow application for creating and managing a narrative card board. The board is built around:
 
-The current implementation is intentionally structured as a stateful board editor with:
+- a graph of cards (nodes)
+- directed references between cards (edges)
+- slip-type coloring and tags
+- puzzle metadata attached to cards
+- project serialization / import / export
+- a Zustand store that acts as the single source of truth for app state
 
-- a central Zustand store for board state and mutations,
-- React Flow for canvas rendering and node/edge editing,
-- custom card and edge renderers for story-specific UI,
-- a small persistence layer for JSON export/import,
-- an AI text DSL pipeline for importing and exporting card definitions.
-
----
-
-## 2. Runtime stack
-
-### Core framework
-- Vite for development/build tooling
-- React 19 + TypeScript
-- React Flow for nodes, edges, drag, pan, and selection behavior
-- Zustand for global board state
-
-### Key dependencies
-- reactflow: board UI, node/edge primitives, drag interactions
-- zustand: single-store application state with action methods
-- vitest: unit tests for AI DSL and core logic helpers
-
-### Build / lint commands
-- `npm run dev` — local dev server
-- `npm run build` — production build
-- `npm run lint` — ESLint validation
+The current implementation is suitable for rapid visual authoring and lightweight board editing. It is also structured so it can be refactored into a more modular graph authoring system later.
 
 ---
 
-## 3. High-level architecture
+## 2. Core technology stack
 
-The app is split into four layers:
+Runtime:
+- React 19
+- TypeScript
+- Vite
+- Zustand
+- React Flow (graph canvas / node system / edge system)
 
-1. View layer
-   - `src/App.tsx` composes the board, sidebar, and overlay panels.
-   - `src/components/` contains card nodes, editor panels, grouping UI, and puzzle-specific panels.
+Supporting libraries:
+- ELKJS is present in package.json but is not currently used in the working runtime path
+- Vitest is available for unit tests
 
-2. State layer
-   - `src/store/useNarrativeBoardStore.ts` owns the full board model and mutation logic.
-   - Zustand actions update nodes, edges, groups, tags, slip types, selection, and history.
-
-3. Domain / graph layer
-   - `src/types/narrative.ts` defines the canonical card, edge, puzzle, and project types.
-   - `src/graph/` contains rules for generating edges from references and helper utilities such as next-code generation and tag logos.
-
-4. Persistence / AI layer
-   - `src/persistence/` validates and serializes JSON project files.
-   - `src/ai/` parses, validates, imports, and exports the custom AI narrative DSL.
+Key entry points:
+- src/main.tsx
+- src/App.tsx
+- src/store/useNarrativeBoardStore.ts
 
 ---
 
-## 4. Canonical data model
+## 3. Application architecture
 
-### 4.1 Narrative card shape
-The card model is defined in `src/types/narrative.ts` as `NarrativeNode = Node<CardData>`.
+### 3.1 High-level control flow
 
-Each card contains:
-- `id`: React Flow node id
-- `type`: currently `narrativeCard`
-- `position`: canvas coordinates
-- `data`: card content and metadata
+1. App bootstraps React Flow provider and renders the board canvas.
+2. Zustand store loads the initial narrative graph.
+3. React Flow renders cards as custom node components and edges as custom edge components.
+4. User interaction updates store state.
+5. Store recomputes derived graph structures (edges, groups, selection state, history snapshots).
+6. Persistence and AI-format import/export utilities operate on the store contents.
 
-`CardData` includes:
-- `code`: short card identifier such as `AA01`
-- `title`, `summary`, `body`: narrative content
-- `slipTypeId`: the slip category used for styling and display
-- `slipGivenTypeIds`: the “slip given” list used in the puzzle / narrative logic
-- `referencesText`: comma-separated card codes that this card references
-- `referenceSlipForms`: optional toggles that auto-expand slip-given minimums
-- `tagIds`: assigned project tags
-- `puzzleType`, `puzzleSummary`
-- `puzzleFillContent`, `puzzleReorderContent`, `puzzleMatchingContent`: optional puzzle-specific content
+### 3.2 Main runtime layering
 
-### 4.2 Puzzle type system
-Puzzle support is controlled through `PUZZLE_TYPES`:
-- `none`
-- `fill`
-- `reorder`
-- `matching`
-
-The current card renderer uses `getPuzzleDisplayText()` to show a compact label in the UI.
-
-### 4.3 Slip types and tags
-Slip types and tags are project-wide registries:
-- `SlipType = { id, name, color }`
-- `Tag = { id, name }`
-
-These are separate from node content but are referenced by card data.
-
-### 4.4 Groups
-`CardGroup` stores a collection of node ids and a display name. Groups are used for multi-card organization and selection workflows, not for edge generation.
+- UI shell and layout: src/App.tsx
+- State and business logic: src/store/useNarrativeBoardStore.ts
+- Card rendering: src/components/NarrativeCardNode.tsx
+- Edge rendering and routing: src/components/edges/*
+- Data models: src/types/narrative.ts
+- Persistence: src/persistence/*
+- AI import/export: src/ai/*
+- Styles: src/styles/* and src/App.css
 
 ---
 
-## 5. Store architecture
+## 4. State model and data flow
 
-The central store in `src/store/useNarrativeBoardStore.ts` is a single Zustand slice with two major parts:
+### 4.1 Central state store
 
-### 5.1 State
-The store holds:
-- `nodes`, `edges`
-- `selectedNodeId`, `selectedNodeIds`
-- `groups`, `slipTypes`, `tags`
-- `sidebarCollapsed`, `sectionsOpen`
-- `contextPanelOpen`, `narrativeBodyOpen`, `puzzleBodyOpen`, `activeEditorField`
-- `multiSelectMode`, `matchingPickMode`, `highlightedNodeIds`, `activeGroupId`
-- `historyPast`, `historyFuture`, `canUndo`, `canRedo`
-- `metadata`, `viewport`, `hasUnsavedChanges`
+The central store is implemented as a Zustand store in src/store/useNarrativeBoardStore.ts.
 
-### 5.2 History and undo/redo
-Every mutation that changes board state pushes a deep snapshot into `historyPast` and clears `historyFuture`.
-
-The snapshot logic is implemented by `createSnapshot(state)`, which clones:
-- nodes and node data
+It owns:
+- nodes
 - edges
+- edgeShapes
+- routedPaths
+- edgeColors
+- slipTypes
+- tags
 - groups
+- selection state
+- UI flags (sidebar, sections, overview mode, multi-select mode, link mode, matching mode)
+- metadata and viewport
+- undo / redo history
+- unsaved-change tracking
+
+This store is intentionally broad: almost every interaction is routed through it rather than being split across isolated feature modules.
+
+### 4.2 Important state responsibilities
+
+- Node updates and card creation are handled in the store.
+- Edge regeneration is driven from node references, not from an independent graph store.
+- The store computes history snapshots to support undo / redo.
+- The store also persists project metadata and viewport information.
+
+### 4.3 Why the store matters
+
+The store is the backbone of the codebase because:
+- node and edge state are always derived from a single authoritative source
+- UI panels and canvas components all consume the same store
+- AI import and project load / save are implemented as store actions, not separate services
+
+---
+
+## 5. Core data structures
+
+### 5.1 Narrative card model
+
+Cards are typed as `NarrativeNode` in src/types/narrative.ts, where the node data contains:
+
+- code
+- title
+- summary
+- body
+- slipTypeId
+- slipGivenTypeIds
+- referencesText
+- referenceSlipForms
+- tagIds
+- puzzleType
+- puzzleSummary
+- puzzleFillContent
+- puzzleReorderContent
+- puzzleMatchingContent
+
+This is a flexible authoring model rather than a rigid content schema.
+
+### 5.2 Edge model
+
+Edges are generated from card references. The source of truth for reference relationships is `referencesText` on each card.
+
+Reference semantics:
+- each card stores a comma-separated list of target card codes in `referencesText`
+- the graph builder converts those codes into directed edges
+- if a reverse edge exists, a single bidirectional edge is emitted instead of two separate arrows
+
+This means the graph is not manually maintained by the user; it is derived from card content.
+
+### 5.3 Slip types and tags
+
+- `slipTypes` determine card color and slip-token labels
+- `tags` are project-wide metadata labels that can be attached to nodes
+- `groups` allow the user to combine multiple selected cards into a logical collection
+
+---
+
+## 6. Reference-to-edge generation
+
+The main algorithm is in src/graph/buildEdgesFromReferences.ts.
+
+### 6.1 How edges are created
+
+1. Every node is scanned for `referencesText`.
+2. Each reference code is resolved to a matching card via `candidate.data.code`.
+3. Directed pairs are collected.
+4. A reverse pair is detected to collapse the pair into a single bidirectional edge.
+5. Standard directed edges are emitted with arrow markers.
+
+This makes the graph a projection of card references rather than a separate manual graph model.
+
+### 6.2 Why this is important
+
+This is one of the central design choices in the project:
+- changes to one card automatically affect the edge network
+- graph structure is easy to regenerate after import or load
+- the store can rebuild edges without needing a separate graph editor layer
+
+---
+
+## 7. Card rendering and interaction model
+
+### 7.1 Card node component
+
+The main card renderer is src/components/NarrativeCardNode.tsx.
+
+It handles:
+- card selection and click behavior
+- drag / long-press interaction
+- link mode for connecting cards
+- matching-pick mode for puzzle authoring
+- overview-mode rendering vs standard card rendering
+- tag logo badges and puzzle badges
+
+Interaction logic is intentionally embedded in the node itself, which keeps the visual component expressive but also makes refactoring more complex later.
+
+### 7.2 Click semantics
+
+Current interaction rules include:
+- normal click: select card and open context panel
+- Ctrl / Cmd click: multi-select card
+- Alt click: direct link mode interaction
+- Link mode: click source card, then target card to create a reference
+- Matching mode: click cards to stage them into a puzzle association
+
+This is a fairly rich interaction layer for a small graph board.
+
+### 7.3 Overview mode
+
+The board supports an `overviewMode` toggle. When enabled, cards render in a smaller, distance-readable format via the `OverviewContent` subcomponent.
+
+This is a runtime-only view preference and currently exists as a UI option rather than a full alternative board mode.
+
+---
+
+## 8. Edge rendering and line routing
+
+### 8.1 Default edge rendering
+
+The default edge renderer is src/components/edges/MovableEdge.tsx.
+
+It uses:
+- a floating elbow default path
+- a highlight mechanism for selected source relationships
+- edge colors from the current slip-type palette
+
+### 8.2 Tidy Lines and obstacle avoidance
+
+The main route logic lives in src/components/edges/useTidyLines.ts.
+
+Behavior:
+- the default edge path is a lightweight floating elbow
+- when the user activates “Tidy Lines”, the app computes obstacle-avoiding paths using the current node rectangles
+- these paths are stored as `routedPaths` in the store
+- edge colors are recalculated after routing
+
+This is an opt-in path planner rather than a continuous real-time algorithm.
+
+### 8.3 Legacy / dormant connector-offset feature
+
+The codebase still contains offset-related code:
+- `edgeShapes` in the store
+- `setEdgeOffset`
+- `resolveEdgeOffset()`
+- `useSegmentDrag.ts`
+- `edgeOffset.ts`
+
+These support a manual middle-segment offset feature for connectors. The code comments explicitly say this feature is kept but unused. It will be removed in a future refactor.
+
+This is important for future work because the project currently carries both:
+- live routing logic
+- dormant manual offset persistence
+
+That is legacy complexity and should be treated as technical debt.
+
+---
+
+## 9. Persistence and project serialization
+
+### 9.1 Save flow
+
+Project export is implemented in src/persistence/serializeProject.ts.
+
+It serializes:
+- nodes
 - slip types
 - tags
-- selection state
-- metadata
+- groups
 - viewport
+- metadata
+- edgeShapes (legacy offset data)
 
-This makes undo/redo reliable for card edits, link creation, grouping, import operations, and canvas movement.
+The save path writes a versioned JSON document to the browser download stream.
 
-### 5.3 Action model
-The store implements a large action surface:
-- `addCard`, `deleteCard`, `updateNode`
-- `createReferenceConnection`
-- `addSlipType`, `renameSlipType`, `deleteSlipType`
-- `addTag`, `renameTag`, `deleteTag`
-- `assignTagToNode`, `unassignTagFromNode`
-- `createGroupFromSelection`, `toggleSelectionInGroup`, `selectGroup`, `deleteGroup`
-- `saveProject`, `loadProject`, `applyAIFormatImport`
-- `setSelectedNode`, `setSelectedNodes`, `toggleNodeSelection`, `clearSelection`
-- `undo`, `redo`
+### 9.2 Load flow
 
-This is the primary integration point for UI controls and editor panels.
+Project import is implemented through:
+- src/persistence/deserializeProject.ts
+- src/persistence/validateProject.ts
 
----
+On load:
+- raw JSON is parsed
+- structure is validated
+- invalid or missing fields are normalized into safe defaults
+- nodes and edges are reconstructed
+- selected state is reset to the first loaded card
 
-## 6. How the board renders
+The validation layer is deliberately defensive, which helps prevent broken saved files from crashing the board.
 
-### 6.1 `src/App.tsx`
-`App.tsx` is the composition root.
+### 9.3 Why this matters
 
-It wires together:
-- `ReactFlow` canvas
-- custom `NarrativeCardNode`
-- custom edge components (`NarrativeEdge`, `BiDirectionalEdge`)
-- `Sidebar`
-- `ContextPanel`
-- `NarrativeBodyPanel`
-- `PuzzleFillPanel`, `PuzzleReorderPanel`, `PuzzleMatchingPanel`
-- `CardEditorFlyout`
-
-It also adds selection helpers:
-- marquee drag selection for multi-card selection
-- keyboard shortcuts for undo/redo (`Ctrl/Cmd+Z`, `Ctrl/Cmd+Shift+Z`)
-- viewport persistence on drag / move completion
-
-### 6.2 Custom node behavior
-`NarrativeCardNode.tsx` handles:
-- click selection
-- multi-select with Ctrl/Cmd
-- alt-click reference linking
-- touch long-press for linking
-- highlighting and group badges
-- puzzle badges and tag logo rendering
-
-This component also uses `Handle` from React Flow to provide left/right connection anchors for the visual graph.
+The persistence model is not just a file export. It is also part of the app’s runtime contract:
+- history snapshots depend on the same shapes
+- edge offset metadata survives load/save in the current code path
+- import/export behavior is intentionally kept independent from the live canvas renderer
 
 ---
 
-## 7. Reference graph and edge generation
+## 10. AI format import/export
 
-### 7.1 Source of truth for references
-Card references are stored in `node.data.referencesText`, which is a comma-separated list of card codes such as `AA02, BB03`.
+The AI-format pipeline lives in src/ai/.
 
-The reference parser in `src/graph/buildEdgesFromReferences.ts` is simple and deterministic:
-- split by comma
-- trim whitespace
-- filter out empty strings
+### 10.1 Export path
 
-### 7.2 Edge creation rules
-`buildEdgesFromReferences(nodes)` generates the edge list from the reference text.
+src/ai/exportAIFormat.ts converts node data into a human-readable block format.
 
-Key behavior:
-- every reference creates a directed edge from the source card to the referenced card
-- if both directions exist, the edge is rendered as a bidirectional `bidirectional` edge instead of two arrows
-- bidirectional edges are de-duplicated using a canonical sorted key
+It includes:
+- card code
+- title
+- slip type
+- slip-given data
+- tags
+- puzzle summary
+- references
 
-This means the board graph is derived from content, not manually maintained.
+### 10.2 Import path
 
-### 7.3 Slip-form minimum enforcement
-The helper `enforceGivenSlipMinimums()` uses `referenceSlipForms` to ensure the card’s `slipGivenTypeIds` includes enough slip types to satisfy the toggled-on reference form requirements.
+src/ai/importAIFormat.ts parses the AI block format and updates the current board.
 
-This gives the app a small amount of derived logic: the UI can mark that “this card should automatically include the referenced card’s slip type as a given slip”, and the store will top up the list as needed.
+Important behavior:
+- existing cards are updated by code
+- missing cards are created
+- tag IDs are resolved and created lazily
+- puzzle metadata is normalized
+- slip-given minima are enforced after import
 
----
-
-## 8. Persistence model
-
-### 8.1 Export format
-The serialized project format is defined in `src/types/narrative.ts` as a versioned JSON structure:
-- `version: 1`
-- `metadata`
-- `viewport`
-- `slipTypes`
-- `tags`
-- `groups`
-- `nodes`
-
-`serializeProject()` produces a safe copy of the board snapshot.
-
-### 8.2 Validation and normalization
-`validateProject()` is defensive:
-- checks the JSON object shape
-- validates the supported `version`
-- normalizes missing metadata, viewport values, groups, tags, and card bodies to safe defaults
-- rejects unsupported or malformed project files
-
-This makes the import path forgiving for older or partially broken exports.
-
-### 8.3 Import flow
-`deserializeProject()` wraps `JSON.parse()` + validation and turns malformed imports into user-facing errors.
-
-The store’s `loadProject()` operation:
-1. verifies the file extension,
-2. confirms replacement if unsaved changes exist,
-3. parses and validates the input,
-4. rebuilds edges from references,
-5. resets selection and history state.
+This is the strongest example of “authoring DSL → board state” conversion in the codebase.
 
 ---
 
-## 9. AI DSL pipeline
+## 11. Puzzle and authoring features
 
-The app includes a small text DSL for importing/exporting narrative cards from plain text. This is the most important extension point for future automation.
+The card model supports multiple puzzle types:
+- none
+- fill
+- reorder
+- matching
 
-### 9.1 Parsing
-`src/ai/parseAIBlocks.ts` parses blocks in the format:
+These are represented in src/types/narrative.ts and are consumed by the puzzle panels in src/components/.
 
-```text
-@CARD AA01
-TITLE: Forest Arrival
-CARD_SLIP: Blue Slip
-SLIP_GIVEN: Red Slip ×2
-TAGS: Mystery, Intro
-PUZZLE: Fill: clue text
-SUMMARY:
-The protagonist reaches the town.
-REFERENCES:
-- AA02
-CONTENT:
-The full body text goes here.
-END_CONTENT
-```
+The main authoring support is:
+- puzzle summary text
+- puzzle-specific content objects for fill / reorder / matching
+- matching-screen selection mode for staging puzzle cards
 
-The parser supports:
-- `SUMMARY:` blocks that collect multi-line text until the next directive
-- `REFERENCES:` blocks that accept bullet or comma-separated references
-- `CONTENT:` / `END_CONTENT` blocks for longer narrative bodies
-
-### 9.2 Validation
-`validateAIFormat()` enforces:
-- each card must have a code
-- duplicate codes are rejected
-- titles are required for new cards
-- puzzle types must be one of the known values
-- `CONTENT:` blocks must be closed with `END_CONTENT`
-
-This protects the import pipeline from malformed DSL input.
-
-### 9.3 Import behavior
-`importAIFormat()` performs the actual merge:
-1. parses the DSL text into `AIBlock[]`
-2. validates the structure
-3. matches existing cards by `code`
-4. updates existing cards or creates new ones
-5. resolves slip types and tags by name/id
-6. normalizes puzzle metadata
-7. rebuilds edges and returns stats for created vs updated cards
-
-Import logic is deliberately not purely additive:
-- existing cards are updated in place when codes match
-- new cards are added at generated positions
-- tags are created lazily when referenced in the DSL
-
-### 9.4 Export behavior
-`exportAIFormat()` serializes node data into deterministic DSL text. It sorts cards by code and emits:
-- `@CARD`
-- `TITLE:`
-- `CARD_SLIP:`
-- `SLIP_GIVEN:`
-- `TAGS:`
-- `PUZZLE:`
-- `SUMMARY:`
-- `REFERENCES:`
-
-This makes the DSL useful for round-tripping story content between the app and external editing tools.
+This means the tool is not only a graph board; it also stores narrative authoring metadata and puzzle structures tied to nodes.
 
 ---
 
-## 10. Interaction model and user flows
+## 12. UI shell and layout composition
 
-### 10.1 Card creation
-The `Add Card` button calls `addCard()` in the store.
+The app shell in src/App.tsx composes several visible areas:
+- sidebar controls
+- narrative body panel
+- puzzle panels
+- card editor flyout
+- context panel
+- history controls
+- interactive React Flow canvas
 
-This uses `generateNextCode()` to create the next sequential code (for example `AA01`, `AA02`, `AA03`).
+The board root is a composition of UI modules, not a single monolithic component. This is one of the app’s main strengths for future refactoring.
 
-### 10.2 Card linking
-The app supports a lightweight link workflow:
-- long-press on mobile, or alt-click on desktop, selects a link source
-- a second click on another card creates a reference and edge
-- the same action toggles the link on/off
-
-This is implemented directly in `NarrativeCardNode.tsx` and `createReferenceConnection()`.
-
-### 10.3 Selection and grouping
-The app supports both single-card and multi-card workflows:
-- normal click selects one card
-- Ctrl/Cmd click toggles cards into a selection set
-- Shift-drag / marquee selection supports bulk selection
-- groups can be created from selected cards
-
-Group membership is stored in `CardGroup.nodeIds`, and the UI highlights cards belonging to active groups.
-
-### 10.4 Puzzle authoring
-Puzzle content is stored in the card data, and the puzzle panels (`PuzzleFillPanel`, `PuzzleReorderPanel`, `PuzzleMatchingPanel`) are separate UI surfaces for editing puzzle-specific fields.
-
-The board itself is not responsible for puzzle solving; it is primarily an authoring and navigation surface.
+Key UI features:
+- collapsible sidebar sections
+- drag-to-select multi-card behavior
+- history buttons (undo / redo)
+- groups panel
+- link mode
+- matching mode
+- minimap support
 
 ---
 
-## 11. Current extension points for future work
+## 13. Notable implementation details worth remembering
 
-The codebase is well positioned for expansion in the following places:
-
-1. AI DSL enhancements
-   - extend `parseAIBlocks()` for additional directives
-   - support richer puzzle serialization
-   - add structured validation for references and slip form metadata
-
-2. More sophisticated graph rules
-   - replace simple code-based reference matching with explicit ids
-   - support edge labels, weights, or categories
-
-3. Persistence upgrades
-   - add schema migrations for future project versions
-   - support cloud sync / collaborative revision history
-
-4. Editor and authoring improvements
-   - centralize more card controls in shared editor components
-   - add typed puzzle editors for each puzzle type
-
-5. Testing
-   - add integration tests around `useNarrativeBoardStore`
-   - add end-to-end tests for import/export and grouping workflows
+1. Edge references are derived from `referencesText`, not stored independently.
+2. The store is the central source of truth for all interaction state.
+3. The graph is rebuilt from node references on many state transitions.
+4. Tidy-line routing is opt-in and uses obstacle-aware pathfinding only when requested.
+5. A manual connector-offset system exists in the current codebase but is dormant / unused.
+6. The “Detailed View” mode is part of the current UI, but the user has flagged it as soon to be removed.
+7. ELKJS is present in dependencies but not used in the current runtime path.
 
 ---
 
-## 12. Engineering notes
+## 14. Refactor guidance for future engineers
 
-- The app currently relies on content-derived edges rather than storing a separate edge model. This is efficient but means edge reconstruction is always tied to `referencesText`.
-- The persistence layer is intentionally permissive and defensive. That is useful for forward compatibility but should be revisited once the project format stabilizes.
-- The AI DSL parser is robust enough for authoring workflows but still uses string heuristics for some block parsing. It is a good candidate for a formal grammar or structured parser if the DSL grows.
-- The store is large and action-driven. It works well for the current scope but will benefit from decomposition into smaller modules if the board becomes more complex.
+If this tool is going to be expanded, the most important areas to isolate are:
+
+1. Replace the broad Zustand store with smaller domain modules
+   - board state
+   - selection / interaction state
+   - persistence
+   - routing
+
+2. Separate the graph model from the presentation model
+   - references should stay declarative
+   - rendering should not depend on ad-hoc store-driven UI logic
+
+3. Remove or archive legacy connector-offset code
+   - `edgeShapes`, `setEdgeOffset`, `manualOffset`, and related helpers are dead / dormant complexity
+
+4. Decide whether the detailed card renderer is still part of the product
+   - the overview rendering path is currently the simpler path
+   - the detailed renderer is likely to be phased out
+
+5. Keep the AI import/export format as a stable boundary
+   - this is already a useful authoring abstraction and should remain isolated from the canvas internals
 
 ---
 
-## 13. Summary
+## 15. Summary
 
-The app is a custom narrative board authoring tool built on React Flow + Zustand. Its core implementation revolves around:
+The current implementation is a React Flow + Zustand authoring surface for narrative cards whose graph topology is derived from reference text. It combines:
+- visual graph editing
+- board state management
+- puzzle metadata
+- project persistence
+- AI-format import/export
 
-- derived graph edges from narrative references,
-- a rich card data model with puzzle support,
-- one central store for state and history,
-- JSON project persistence,
-- and an AI DSL import/export pipeline.
-
-This makes the codebase a practical foundation for future refactors, richer puzzle types, collaborative workflows, or external story-authoring integrations.
+It is feature-rich but contains some legacy complexity around connector-offset handling and detailed card rendering. Those areas are the most likely candidates for cleanup during the next refactor cycle.

@@ -30,7 +30,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const matchingPickSourceNodeId = useNarrativeBoardStore((state) => state.matchingPickSourceNodeId)
   const matchingPickStagedIds = useNarrativeBoardStore((state) => state.matchingPickStagedIds)
   const confirmMatchingPick = useNarrativeBoardStore((state) => state.confirmMatchingPick)
-  const overviewMode = useNarrativeBoardStore((state) => state.overviewMode)
+  const minimizedMode = useNarrativeBoardStore((state) => state.minimizedMode)
   const activeGroup = activeGroupId ? groups.find((g) => g.id === activeGroupId) ?? null : null
   const isGroupSelected = !!activeGroup?.nodeIds.includes(id)
 
@@ -44,13 +44,12 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   const isSelected = selectedNodeIds.includes(id)
   const isHighlighted = highlightedNodeIds.includes(id)
   const isPendingTarget = !!connectionSourceNodeId && !isLinkSource
-  const nodeGroups = groups.filter((group) => group.nodeIds.includes(id))
   const hasPuzzle = data.puzzleType !== 'none'
 
   const isPickSource = matchingPickMode && matchingPickSourceNodeId === id
   const isPickPicked = matchingPickMode && !isPickSource && matchingPickStagedIds.includes(id)
   const isPickTarget = matchingPickMode && !isPickSource && !isPickPicked
-  const cardClassName = `card-shell relative ${overviewMode ? 'overview' : ''} ${isSelected ? 'card-selected' : ''} ${isHighlighted ? 'card-highlighted' : ''} ${hasPuzzle ? 'has-puzzle' : ''} ${isPickSource ? 'card-pick-source' : ''} ${isPickTarget ? 'card-pick-target' : ''} ${isPickPicked ? 'card-pick-picked' : ''}`
+  const cardClassName = `card-shell relative overview ${minimizedMode ? 'minimized' : ''} ${isSelected ? 'card-selected' : ''} ${isHighlighted ? 'card-highlighted' : ''} ${hasPuzzle ? 'has-puzzle' : ''} ${isPickSource ? 'card-pick-source' : ''} ${isPickTarget ? 'card-pick-target' : ''} ${isPickPicked ? 'card-pick-picked' : ''}`
 
   const divRef = useRef<HTMLDivElement | null>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -272,8 +271,8 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
     >
       <Handle type="target" position={Position.Left} />
 
-      {overviewMode ? (
-        <OverviewContent
+      {minimizedMode ? (
+        <MinimizedContent
           data={data}
           slipTypes={slipTypes}
           tags={tags}
@@ -282,125 +281,14 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
           hasPuzzle={hasPuzzle}
         />
       ) : (
-      <>
-      <div className="card-header">
-        <div className="card-code">{data.code}</div>
-        <div className="card-title">{data.title}</div>
-        {(data.tagIds ?? []).length > 0 && (() => {
-          const logos = computeTagLogos(tags)
-          const assigned = (data.tagIds ?? [])
-            .map((id) => tags.find((t) => t.id === id))
-            .filter((t): t is NonNullable<typeof t> => Boolean(t))
-          if (assigned.length === 0) return null
-          return (
-            <div className="card-tag-logos">
-              {assigned.map((tag) => (
-                <span key={tag.id} className="card-tag-logo" title={tag.name} style={{ color: `color-mix(in srgb, ${slipColor} 30%, #d4d4d8)` }}>
-                  {logos.get(tag.id) ?? tag.name.charAt(0).toUpperCase()}
-                </span>
-              ))}
-            </div>
-          )
-        })()}
-      </div>
-
-      <div className="card-summary">{data.summary}</div>
-
-      {(data.slipGivenTypeIds ?? []).length > 0 && (() => {
-        const given = data.slipGivenTypeIds ?? []
-        const entries = slipTypes
-          .map((slip) => ({ slip, count: given.filter((id) => id === slip.id).length }))
-          .filter(({ count }) => count > 0)
-        return (
-          <div className="card-slip-given">
-            <span className="card-slip-given__label">Slip Given</span>
-            <div className="card-slip-given__dots">
-              {entries.map(({ slip, count }) => (
-                <span key={slip.id} className="card-slip-given__entry" title={`${slip.name} ×${count}`}>
-                  <span className="card-slip-given__dot" style={{ background: slip.color }} />
-                  {count > 1 && <span className="card-slip-given__count">×{count}</span>}
-                </span>
-              ))}
-            </div>
-          </div>
-        )
-      })()}
-
-      {nodeGroups.length > 0 && (
-        <div className="card-groups">
-          {nodeGroups.map((group) => (
-            <span key={group.id} className="card-group-badge" style={{ color: `color-mix(in srgb, ${slipColor} 30%, #d4d4d8)` }}>
-              {group.name}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {(data.referencesText || hasPuzzle) && (
-        <div style={{ marginTop: '32px', borderTop: '1px solid rgba(63,63,70,1)', paddingTop: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {data.referencesText && (() => {
-            const refCodes = parseReferences(data.referencesText)
-            return refCodes.map((code) => {
-              const refNode = nodes.find((n) => n.data.code === code)
-              const title = refNode?.data.title
-              return (
-                <div
-                  key={code}
-                  style={{
-                    background: 'rgba(255,255,255,0.07)',
-                    borderLeft: `6px solid ${slipColor}`,
-                    borderRadius: '8px',
-                    padding: '17px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '17px',
-                    minWidth: 0,
-                  }}
-                >
-                  <span style={{ color: slipColor, fontWeight: 700, fontSize: '28px', flexShrink: 0, lineHeight: 1.4 }}>
-                    {code}
-                  </span>
-                  {title && (
-                    <span style={{ color: '#ffffff', fontSize: '28px', fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>
-                      {title}
-                    </span>
-                  )}
-                </div>
-              )
-            })
-          })()}
-          {hasPuzzle && data.referencesText && (
-            <div style={{ borderTop: '1px solid rgba(63,63,70,1)', marginTop: '4px', paddingTop: '4px' }} />
-          )}
-          {hasPuzzle && (() => {
-            const label = getPuzzleLabel(data.puzzleType)
-            const summary = (data.puzzleSummary ?? '').trim()
-            return (
-              <div
-                style={{
-                  background: `${slipColor}55`,
-                  borderRadius: '8px',
-                  padding: '17px 20px',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '24px',
-                  minWidth: 0,
-                }}
-              >
-                <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '28px', flexShrink: 0, lineHeight: 1.4, textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
-                  {label}:
-                </span>
-                {summary && (
-                  <span style={{ color: '#ffffff', fontSize: '28px', fontWeight: 400, lineHeight: 1.4, textShadow: '0 1px 3px rgba(0,0,0,0.5)', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                    {summary}
-                  </span>
-                )}
-              </div>
-            )
-          })()}
-        </div>
-      )}
-      </>
+        <OverviewContent
+          data={data}
+          slipTypes={slipTypes}
+          tags={tags}
+          nodes={nodes}
+          slipColor={slipColor}
+          hasPuzzle={hasPuzzle}
+        />
       )}
 
       {isLinkSource && (
@@ -430,8 +318,10 @@ function OverviewContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }:
     .filter(({ count }) => count > 0)
 
   const refCodes = data.referencesText ? parseReferences(data.referencesText) : []
-  const refTitles = refCodes
-    .map((code) => nodes.find((n) => n.data.code === code)?.data.title ?? code)
+  const refs = refCodes.map((code) => ({
+    code,
+    title: nodes.find((n) => n.data.code === code)?.data.title ?? null,
+  }))
 
   const assignedTags = (data.tagIds ?? [])
     .map((id) => tags.find((t) => t.id === id))
@@ -454,7 +344,10 @@ function OverviewContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }:
         </div>
       )}
 
-      <div className="card-overview__title">{data.title}</div>
+      <div className="card-overview__heading">
+        <span className="card-overview__code">{data.code}</span>
+        <div className="card-overview__title">{data.title}</div>
+      </div>
 
       {summarySnippet && (
         <div className="card-overview__summary">{summarySnippet}</div>
@@ -473,10 +366,11 @@ function OverviewContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }:
         </div>
       )}
 
-      {refTitles.length > 0 && (
+      {refs.length > 0 && (
         <div className="card-overview__refs">
-          {refTitles.map((title, i) => (
-            <div key={i} className="card-overview__ref-item" style={{ borderLeftColor: slipColor }}>
+          {refs.map(({ code, title }) => (
+            <div key={code} className="card-overview__ref-item" style={{ borderLeftColor: slipColor }}>
+              <span className="card-overview__ref-code">{code}</span>
               {title}
             </div>
           ))}
@@ -488,6 +382,78 @@ function OverviewContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }:
           <span className="card-overview__puzzle-label">{getPuzzleLabel(data.puzzleType)}</span>
           {puzzleSnippet && (
             <span className="card-overview__puzzle-summary">{puzzleSnippet}</span>
+          )}
+        </div>
+      )}
+
+    </div>
+  )
+}
+
+/**
+ * The minimized, distance-readable card body. Shows only the essentials:
+ * title, slips given, reference titles (no codes), puzzle type (no summary),
+ * and tag. No summary, no card code.
+ */
+function MinimizedContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }: OverviewContentProps) {
+  const given = data.slipGivenTypeIds ?? []
+  const slipEntries = slipTypes
+    .map((slip) => ({ slip, count: given.filter((id) => id === slip.id).length }))
+    .filter(({ count }) => count > 0)
+
+  const refTitles = (data.referencesText ? parseReferences(data.referencesText) : [])
+    .map((code) => nodes.find((n) => n.data.code === code)?.data.title ?? code)
+
+  const assignedTags = (data.tagIds ?? [])
+    .map((id) => tags.find((t) => t.id === id))
+    .filter((t): t is NonNullable<typeof t> => Boolean(t))
+  const tagLogos = assignedTags.length > 0 ? computeTagLogos(tags) : null
+  const tagGlyphColor = `color-mix(in srgb, ${slipColor} 30%, #d4d4d8)`
+
+  const hasBody = slipEntries.length > 0 || refTitles.length > 0 || hasPuzzle
+
+  return (
+    <div className="card-minimized">
+      {/* Slip-color header band: the card's identity reads by color first, then title. */}
+      <div className="card-minimized__band" style={{ background: slipColor }}>
+        {assignedTags.length > 0 && tagLogos && (
+          <div className="card-minimized__tags">
+            {assignedTags.map((tag) => (
+              <span key={tag.id} className="card-minimized__tag" title={tag.name} style={{ color: tagGlyphColor }}>
+                {tagLogos.get(tag.id) ?? tag.name.charAt(0).toUpperCase()}
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="card-minimized__title">{data.title}</div>
+      </div>
+
+      {hasBody && (
+        <div className="card-minimized__body">
+          {slipEntries.length > 0 && (
+            <div className="card-minimized__slips" title="Slips given">
+              {slipEntries.map(({ slip, count }) => (
+                <span key={slip.id} className="card-minimized__slip" title={`${slip.name} ×${count}`}>
+                  <span className="card-minimized__slip-dot" style={{ background: slip.color }} />
+                  {count > 1 && <span className="card-minimized__slip-count">×{count}</span>}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {refTitles.map((title, i) => (
+            <div key={i} className="card-minimized__ref" style={{ borderLeftColor: slipColor }}>
+              {title}
+            </div>
+          ))}
+
+          {hasPuzzle && (
+            <div className="card-minimized__puzzle" style={{ background: slipColor }}>
+              <span className="card-minimized__puzzle-type">{getPuzzleLabel(data.puzzleType)}:</span>
+              {data.puzzleTitle?.trim() && (
+                <span className="card-minimized__puzzle-title">{data.puzzleTitle.trim()}</span>
+              )}
+            </div>
           )}
         </div>
       )}

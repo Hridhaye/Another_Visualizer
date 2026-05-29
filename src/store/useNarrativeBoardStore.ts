@@ -105,8 +105,8 @@ type NarrativeBoardState = {
   sectionsOpen: SectionOpenState
   connectionSourceNodeId: string | null
   linkMode: boolean
-  /** When true, all cards render a simplified, distance-readable layout. Runtime-only view preference. */
-  overviewMode: boolean
+  /** When true, all cards render the stripped-down, distance-readable minimized layout. Runtime-only view preference. */
+  minimizedMode: boolean
   minimapVisible: boolean
   minimapCollapsed: boolean
   metadata: SerializedMetadata
@@ -178,7 +178,7 @@ type NarrativeBoardActions = {
   toggleSection: (key: SectionKey) => void
   setConnectionSourceNode: (nodeId: string | null) => void
   setLinkMode: (enabled: boolean) => void
-  setOverviewMode: (enabled: boolean) => void
+  setMinimizedMode: (enabled: boolean) => void
   openFullEditor: () => void
   openContextPanel: () => void
   closeContextPanel: () => void
@@ -358,7 +358,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   sectionsOpen: initialSectionsOpen,
   connectionSourceNodeId: null,
   linkMode: false,
-  overviewMode: false,
+  minimizedMode: false,
   minimapVisible: true,
   minimapCollapsed: false,
   contextPanelOpen: false,
@@ -1153,8 +1153,8 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     set({ linkMode: enabled, connectionSourceNodeId: null })
   },
 
-  setOverviewMode: (enabled) => {
-    set({ overviewMode: enabled })
+  setMinimizedMode: (enabled) => {
+    set({ minimizedMode: enabled })
   },
 
   setViewport: (viewport) => {

@@ -338,6 +338,15 @@ export function ContextPanel({ node, allNodes, slipTypes, onUpdate, onClose }: C
                   {pt.charAt(0).toUpperCase() + pt.slice(1)}
                 </button>
               ))}
+              <label className="context-panel__label" style={{ marginTop: 12 }}>Puzzle Title</label>
+              <input
+                type="text"
+                value={node.data.puzzleTitle ?? ''}
+                onChange={(e) => onUpdate(node.id, { puzzleTitle: e.target.value })}
+                placeholder="The locked door"
+                className="context-panel__input"
+                maxLength={40}
+              />
               <label className="context-panel__label" style={{ marginTop: 12 }}>Puzzle Summary</label>
               <textarea
                 value={node.data.puzzleSummary ?? ''}

@@ -30,139 +30,9 @@
   transform: translateY(-1px);
 }
 
-.card-header {
-  position: relative;
-  margin-bottom: 17px;
-  min-height: 31px;
-}
+/* ---- Card body: the default detailed-overview layout, shared by both modes ---- */
 
-.card-code {
-  position: absolute;
-  top: 0;
-  left: 0;
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #d4d4d8;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-}
-
-.card-tag-logos {
-  position: absolute;
-  top: 0;
-  right: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 10px;
-  max-width: 50%;
-}
-
-.card-tag-logo {
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-}
-
-.card-title {
-  text-align: center;
-  font-size: 38px;
-  line-height: 1.25;
-  font-weight: 700;
-  color: #ffffff;
-  padding: 0 77px;
-  overflow-wrap: anywhere;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-}
-
-.card-summary {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  margin-top: 15px;
-  color: #e4e4e7;
-  font-size: 29px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-}
-
-.card-slip-given {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  margin-top: 15px;
-  padding: 8px 13px;
-  border-radius: 11px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.card-slip-given__label {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: #a1a1aa;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.card-slip-given__dots {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 11px;
-  align-items: center;
-}
-
-.card-slip-given__entry {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.card-slip-given__dot {
-  display: inline-block;
-  width: 25px;
-  height: 25px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
-  flex-shrink: 0;
-}
-
-.card-slip-given__count {
-  font-size: 18px;
-  font-weight: 700;
-  color: #a1a1aa;
-  letter-spacing: 0.02em;
-}
-
-.card-groups {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-  margin-top: 15px;
-}
-
-.card-group-badge {
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-}
-
-.card-shell.has-puzzle {
-  min-height: 210px;
-}
-
-/* ---- Overview Mode: simplified, distance-readable card ---- */
-
-/* In overview, content collapses to title + chips, so a shorter/squarer card.
-   Override the has-puzzle height bump too (declared after it for specificity). */
+/* Content is a centered column of title + sections, so the card sizes to content. */
 .card-shell.overview,
 .card-shell.overview.has-puzzle {
   min-height: 0;
@@ -170,6 +40,16 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+/* Minimized cards are larger than detailed for at-a-glance reading, and the
+   slip-color band runs edge to edge, so the shell carries no padding itself. */
+.card-shell.overview.minimized,
+.card-shell.overview.minimized.has-puzzle {
+  width: 620px;
+  max-width: 620px;
+  padding: 0;
+  overflow: hidden;
 }
 
 .card-overview {
@@ -198,7 +78,22 @@
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
-/* The dominant element: large, centered, high-contrast title. */
+/* Code + title share one centered line; code is muted and smaller so the title dominates. */
+.card-overview__heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-overview__code {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #71717a;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
 .card-overview__title {
   text-align: center;
   font-size: 60px;
@@ -298,6 +193,15 @@
   overflow-wrap: anywhere;
 }
 
+.card-overview__ref-code {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #71717a;
+  display: block;
+  margin-bottom: 2px;
+}
+
 .card-overview__puzzle {
   width: 100%;
   display: flex;
@@ -325,26 +229,135 @@
   overflow-wrap: anywhere;
 }
 
+/* ---- Minimized mode: essentials only, scaled up + color-led for distance ----
+
+   Hierarchy: slip-color band + big title read first → slips/refs/puzzle are
+   clearly legible but quieter below. */
+
+.card-minimized {
+  display: flex;
+  flex-direction: column;
+}
+
+/* The dominant element: a solid slip-color header band carrying the title.
+   Color is the instant identity cue, readable before any text. */
+.card-minimized__band {
+  position: relative;
+  padding: 40px 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.card-minimized__title {
+  text-align: center;
+  font-size: 80px;
+  line-height: 1.05;
+  font-weight: 800;
+  color: #ffffff;
+  overflow-wrap: anywhere;
+  /* Solid shadow keeps the title legible on any slip color. */
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+.card-minimized__tags {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  max-width: 45%;
+}
+
+.card-minimized__tag {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  /* Tags sit on the colored band, so force a high-contrast light glyph. */
+  color: #ffffff !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+
+.card-minimized__body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 28px 32px;
+}
+
+.card-minimized__slips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.card-minimized__slip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-minimized__slip-dot {
+  display: inline-block;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.45);
+  flex-shrink: 0;
+}
+
+.card-minimized__slip-count {
+  font-size: 40px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+/* Brighter than detailed refs so they don't read as dark-on-dark bars. */
+.card-minimized__ref {
+  font-size: 46px;
+  font-weight: 700;
+  color: #ffffff;
+  padding: 16px 24px;
+  border-left: 8px solid;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow-wrap: anywhere;
+}
+
+/* Puzzle as a solid slip-color pill — a clear, legible secondary mark. */
+.card-minimized__puzzle {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 16px;
+  color: #ffffff;
+  padding: 14px 28px;
+  border-radius: 10px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.card-minimized__puzzle-type {
+  font-size: 44px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.card-minimized__puzzle-title {
+  font-size: 40px;
+  font-weight: 700;
+  color: #ffffff;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 980px) {
   .card-shell {
     width: min(92vw, 357px);
     max-width: 92vw;
     min-height: 126px;
     padding: 17px;
-  }
-
-  .card-code {
-    font-size: 17px;
-  }
-
-  .card-title {
-    font-size: 25px;
-    padding: 0 63px;
-  }
-
-  .card-summary {
-    margin-top: 11px;
-    font-size: 22px;
-    line-height: 1.5;
   }
 }

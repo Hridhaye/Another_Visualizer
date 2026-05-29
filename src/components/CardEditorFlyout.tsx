@@ -369,6 +369,15 @@ export function CardEditorFlyout() {
                 {node.data.puzzleType === pt && <span className="cef-list__check">✓</span>}
               </button>
             ))}
+            <p className="cef-slip-given__hint" style={{ marginTop: 12 }}>Puzzle Title</p>
+            <input
+              type="text"
+              value={node.data.puzzleTitle ?? ''}
+              onChange={(e) => updateNode(node.id, { puzzleTitle: e.target.value })}
+              placeholder="The locked door"
+              className="cef-input"
+              maxLength={40}
+            />
             <p className="cef-slip-given__hint" style={{ marginTop: 12 }}>Puzzle Summary</p>
             <textarea
               ref={inputRef as React.Ref<HTMLTextAreaElement>}
