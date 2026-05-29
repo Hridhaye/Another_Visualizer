@@ -3,6 +3,7 @@ import { useRef, useState, type ChangeEvent } from 'react'
 import { exportAIFormat } from '../../ai/exportAIFormat'
 import { useNarrativeBoardStore } from '../../store/useNarrativeBoardStore'
 import type { NarrativeNode, SlipType } from '../../types/narrative'
+import { PUZZLE_TYPES } from '../../types/narrative'
 
 
 type BoardControlsProps = {
@@ -33,9 +34,9 @@ export function BoardControls({
   const groups = useNarrativeBoardStore((state) => state.groups)
   const selectGroup = useNarrativeBoardStore((state) => state.selectGroup)
   const deleteGroup = useNarrativeBoardStore((state) => state.deleteGroup)
-  const highlightedNodeIds = useNarrativeBoardStore((state) => state.highlightedNodeIds)
-  const setHighlight = useNarrativeBoardStore((state) => state.setHighlight)
-  const clearHighlight = useNarrativeBoardStore((state) => state.clearHighlight)
+  const activeHighlightFilters = useNarrativeBoardStore((state) => state.activeHighlightFilters)
+  const toggleHighlightFilter = useNarrativeBoardStore((state) => state.toggleHighlightFilter)
+  const clearAllHighlightFilters = useNarrativeBoardStore((state) => state.clearAllHighlightFilters)
   const activeGroupId = useNarrativeBoardStore((state) => state.activeGroupId)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [showAIImportModal, setShowAIImportModal] = useState(false)
@@ -145,7 +146,7 @@ export function BoardControls({
           <div className="group-picker__list">
             {groups.map((group) => {
               const isActive = activeGroupId === group.id
-              const isHighlighted = group.nodeIds.length > 0 && group.nodeIds.every((id) => highlightedNodeIds.includes(id))
+              const isHighlighted = activeHighlightFilters.some((f) => f.type === 'group' && f.id === group.id)
               return (
                 <div key={group.id} className="group-picker__item">
                   <button
@@ -158,16 +159,10 @@ export function BoardControls({
                     </span>
                   </button>
                   <button
-                    onClick={() => {
-                      if (isHighlighted) {
-                        clearHighlight()
-                      } else {
-                        setHighlight(group.nodeIds)
-                      }
-                    }}
+                    onClick={() => toggleHighlightFilter({ type: 'group', id: group.id })}
                     className={`group-picker__highlight${isHighlighted ? ' group-picker__highlight--on' : ''}`}
-                    aria-label={isHighlighted ? `Clear highlight` : `Highlight ${group.name}`}
-                    title={isHighlighted ? 'Clear highlight' : 'Highlight cards'}
+                    aria-label={isHighlighted ? `Remove highlight` : `Highlight ${group.name}`}
+                    title={isHighlighted ? 'Remove highlight filter' : 'Highlight cards'}
                   >
                     ◉
                   </button>
@@ -184,6 +179,77 @@ export function BoardControls({
           </div>
         )}
       </div>
+
+      <div className="group-picker">
+        <div className="group-picker__header">
+          <span className="sidebar-label">Tags</span>
+          <span className="group-picker__count">{tags.length}</span>
+        </div>
+        {tags.length === 0 ? (
+          <p className="group-picker__empty">No tags defined yet.</p>
+        ) : (
+          <div className="group-picker__list">
+            {tags.map((tag) => {
+              const isHighlighted = activeHighlightFilters.some((f) => f.type === 'tag' && f.id === tag.id)
+              const count = nodes.filter((n) => (n.data.tagIds ?? []).includes(tag.id)).length
+              return (
+                <div key={tag.id} className="group-picker__item highlight-filter__item">
+                  <button className="group-picker__select">
+                    <span className="group-picker__name">{tag.name}</span>
+                    <span className="group-picker__meta">{count} card{count !== 1 ? 's' : ''}</span>
+                  </button>
+                  <button
+                    onClick={() => toggleHighlightFilter({ type: 'tag', id: tag.id })}
+                    className={`group-picker__highlight${isHighlighted ? ' group-picker__highlight--on' : ''}`}
+                    aria-label={isHighlighted ? `Remove highlight` : `Highlight tag ${tag.name}`}
+                    title={isHighlighted ? 'Remove highlight filter' : 'Highlight cards with this tag'}
+                  >
+                    ◉
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="group-picker">
+        <div className="group-picker__header">
+          <span className="sidebar-label">Puzzle Types</span>
+        </div>
+        <div className="group-picker__list">
+          {PUZZLE_TYPES.filter((pt) => pt !== 'none').map((pt) => {
+            const isHighlighted = activeHighlightFilters.some((f) => f.type === 'puzzleType' && f.id === pt)
+            const count = nodes.filter((n) => n.data.puzzleType === pt).length
+            const label = pt.charAt(0).toUpperCase() + pt.slice(1)
+            return (
+              <div key={pt} className="group-picker__item highlight-filter__item">
+                <button className="group-picker__select">
+                  <span className="group-picker__name">{label}</span>
+                  <span className="group-picker__meta">{count} card{count !== 1 ? 's' : ''}</span>
+                </button>
+                <button
+                  onClick={() => toggleHighlightFilter({ type: 'puzzleType', id: pt })}
+                  className={`group-picker__highlight${isHighlighted ? ' group-picker__highlight--on' : ''}`}
+                  aria-label={isHighlighted ? `Remove highlight` : `Highlight ${label} puzzles`}
+                  title={isHighlighted ? 'Remove highlight filter' : `Highlight ${label} puzzle cards`}
+                >
+                  ◉
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {activeHighlightFilters.length > 0 && (
+        <button
+          onClick={clearAllHighlightFilters}
+          className="sidebar-btn highlight-filter__clear"
+        >
+          Clear all highlights ({activeHighlightFilters.length})
+        </button>
+      )}
 
       {showAIImportModal && (
         <div className="fixed inset-0 z-[1300] flex items-center justify-center bg-black/60 p-4">

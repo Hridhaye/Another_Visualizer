@@ -1,6 +1,11 @@
 import { create } from 'zustand'
 
 export type EditorField = 'codeRefs' | 'title' | 'summary' | 'slipType' | 'slipGiven' | 'tags' | 'puzzleType' | null
+
+export type HighlightFilter =
+  | { type: 'group'; id: string }
+  | { type: 'tag'; id: string }
+  | { type: 'puzzleType'; id: string }
 import {
   applyEdgeChanges,
   applyNodeChanges,
@@ -128,6 +133,7 @@ type NarrativeBoardState = {
   historyFuture: HistorySnapshot[]
   multiSelectMode: boolean
   highlightedNodeIds: string[]
+  activeHighlightFilters: HighlightFilter[]
   activeGroupId: string | null
   matchingPickMode: boolean
   matchingPickSourceNodeId: string | null
@@ -203,6 +209,8 @@ type NarrativeBoardActions = {
   setMultiSelectMode: (enabled: boolean) => void
   setHighlight: (nodeIds: string[]) => void
   clearHighlight: () => void
+  toggleHighlightFilter: (filter: HighlightFilter) => void
+  clearAllHighlightFilters: () => void
   enterMatchingPickMode: (sourceNodeId: string) => void
   confirmMatchingPick: (pickedNodeId: string) => void
   cancelMatchingPickMode: () => void
@@ -377,6 +385,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   historyFuture: [],
   multiSelectMode: false,
   highlightedNodeIds: [],
+  activeHighlightFilters: [],
   activeGroupId: null,
   matchingPickMode: false,
   matchingPickSourceNodeId: null,
@@ -1286,7 +1295,37 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   },
 
   clearHighlight: () => {
-    set({ highlightedNodeIds: [] })
+    set({ highlightedNodeIds: [], activeHighlightFilters: [] })
+  },
+
+  toggleHighlightFilter: (filter) => {
+    const state = get()
+    const existing = state.activeHighlightFilters
+    const isActive = existing.some((f) => f.type === filter.type && f.id === filter.id)
+    const next = isActive
+      ? existing.filter((f) => !(f.type === filter.type && f.id === filter.id))
+      : [...existing, filter]
+
+    const nodeIdSet = new Set<string>()
+    for (const f of next) {
+      if (f.type === 'group') {
+        const group = state.groups.find((g) => g.id === f.id)
+        group?.nodeIds.forEach((id) => nodeIdSet.add(id))
+      } else if (f.type === 'tag') {
+        state.nodes.forEach((node) => {
+          if ((node.data.tagIds ?? []).includes(f.id)) nodeIdSet.add(node.id)
+        })
+      } else if (f.type === 'puzzleType') {
+        state.nodes.forEach((node) => {
+          if (node.data.puzzleType === f.id) nodeIdSet.add(node.id)
+        })
+      }
+    }
+    set({ activeHighlightFilters: next, highlightedNodeIds: Array.from(nodeIdSet) })
+  },
+
+  clearAllHighlightFilters: () => {
+    set({ activeHighlightFilters: [], highlightedNodeIds: [] })
   },
 
   enterMatchingPickMode: (sourceNodeId) => {
