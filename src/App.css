@@ -168,8 +168,27 @@
 }
 
 @media (max-width: 1024px) {
+  .mobile-sidebar-toggle {
+    display: flex;
+  }
+
   .mobile-sidebar-toggle--visible {
     display: flex !important;
+  }
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
   }
 }
 

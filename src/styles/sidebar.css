@@ -10,7 +10,7 @@
   overflow-x: hidden;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
   background: #0c0e15;
-  transition: width 200ms ease;
+  transition: width 200ms ease, transform 220ms ease;
   /* Custom scrollbar styling for sidebar */
   scrollbar-width: thin;
   scrollbar-color: rgba(59,130,246,0.22) rgba(12,14,21,0.95);

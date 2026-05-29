@@ -334,16 +334,25 @@ function BoardCanvas() {
       <PuzzleReorderPanel />
       <PuzzleMatchingPanel />
       <CardEditorFlyout />
-      {/* Hamburger toggle: only visible on mobile/tablet when sidebar is collapsed */}
+      {/* Hamburger toggle: visible on mobile/tablet */}
       <button
         type="button"
-        className={`mobile-sidebar-toggle${sidebarCollapsed ? ' mobile-sidebar-toggle--visible' : ''}`}
+        className="mobile-sidebar-toggle mobile-sidebar-toggle--visible"
         onClick={toggleSidebar}
-        aria-label="Open sidebar"
+        aria-label={sidebarCollapsed ? 'Open sidebar' : 'Close sidebar'}
         aria-expanded={!sidebarCollapsed}
       >
-        ☰
+        {sidebarCollapsed ? '☰' : '✕'}
       </button>
+
+      {/* Backdrop: closes sidebar when tapping outside on mobile/tablet */}
+      {!sidebarCollapsed && (
+        <div
+          className="sidebar-backdrop"
+          onClick={toggleSidebar}
+          aria-hidden="true"
+        />
+      )}
 
       <Sidebar
         collapsed={sidebarCollapsed}
