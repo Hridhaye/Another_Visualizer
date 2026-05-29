@@ -1718,7 +1718,8 @@
   }
 }
 
-/* ── Mobile (≤600px) ── edge-to-edge, single scrollable row, title hidden */
+/* ── Mobile (≤600px) ── wrap buttons across rows (like the history bar) so all
+   are visible at once; edge-to-edge, title hidden to fit more per row. */
 @media (max-width: 600px) {
   /* clears the measured history bar height (see App.tsx ResizeObserver) */
   .context-panel {
@@ -1730,33 +1731,26 @@
 
   .context-panel__bar {
     width: 100%;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    padding: 7px 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 8px 12px;
     gap: 4px;
-    white-space: nowrap;
+    white-space: normal;
     border-radius: 14px 14px 0 0;
     border-left: none;
     border-right: none;
     border-bottom: none;
   }
 
-  .context-panel__bar::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* show only the short code, hide the title — frees most of the width for buttons */
+  /* identity sits on its own full-width row above the buttons */
   .context-panel__identity {
-    flex: 0 0 auto;
+    flex: 1 1 100%;
     max-width: none;
     width: auto;
-    border-bottom: none;
-    border-right: 1px solid rgba(113, 113, 122, 0.35);
-    padding: 0 8px 0 2px;
-    margin: 0 4px 0 0;
+    border-right: none;
+    border-bottom: 1px solid rgba(113, 113, 122, 0.2);
+    padding: 0 0 4px;
+    margin: 0 0 2px;
   }
 
   .context-panel__identity-title {
