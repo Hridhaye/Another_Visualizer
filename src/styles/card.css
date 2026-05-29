@@ -1,11 +1,16 @@
+.react-flow__handle {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 .card-shell {
-  width: 460px;
+  width: 690px;
   touch-action: manipulation;
-  max-width: 460px;
-  min-height: 150px;
-  padding: 24px;
+  max-width: 690px;
+  min-height: 225px;
+  padding: 36px;
   box-sizing: border-box;
-  border-radius: 18px;
+  border-radius: 27px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   transition: box-shadow 0.2s ease, transform 0.2s ease, z-index 0s;
   overflow: visible;
@@ -27,15 +32,15 @@
 
 .card-header {
   position: relative;
-  margin-bottom: 16px;
-  min-height: 34px;
+  margin-bottom: 24px;
+  min-height: 44px;
 }
 
 .card-code {
   position: absolute;
   top: 0;
   left: 0;
-  font-size: 17px;
+  font-size: 34px;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: #d4d4d8;
@@ -49,35 +54,24 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 5px;
+  gap: 10px;
   max-width: 50%;
 }
 
 .card-tag-logo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 26px;
-  height: 26px;
-  padding: 0 6px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  color: #f8fafc;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.95), rgba(99, 102, 241, 0.9));
-  border: 1px solid rgba(196, 181, 253, 0.55);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .card-title {
   text-align: center;
-  font-size: 28px;
-  line-height: 1.3;
+  font-size: 54px;
+  line-height: 1.25;
   font-weight: 700;
   color: #ffffff;
-  padding: 0 60px;
+  padding: 0 110px;
   overflow-wrap: anywhere;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
@@ -86,10 +80,10 @@
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  margin-top: 14px;
+  margin-top: 21px;
   color: #e4e4e7;
-  font-size: 19px;
-  line-height: 1.6;
+  font-size: 38px;
+  line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: anywhere;
@@ -99,16 +93,16 @@
 .card-slip-given {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 14px;
-  padding: 8px 12px;
-  border-radius: 10px;
+  gap: 15px;
+  margin-top: 21px;
+  padding: 12px 18px;
+  border-radius: 15px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .card-slip-given__label {
-  font-size: 11px;
+  font-size: 31px;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -120,20 +114,20 @@
 .card-slip-given__dots {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 11px;
   align-items: center;
 }
 
 .card-slip-given__entry {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .card-slip-given__dot {
   display: inline-block;
-  width: 18px;
-  height: 18px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.25);
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
@@ -141,7 +135,7 @@
 }
 
 .card-slip-given__count {
-  font-size: 11px;
+  font-size: 26px;
   font-weight: 700;
   color: #a1a1aa;
   letter-spacing: 0.02em;
@@ -150,47 +144,41 @@
 .card-groups {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 14px;
+  gap: 9px;
+  margin-top: 21px;
 }
 
 .card-group-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 9px;
-  border-radius: 999px;
-  border: 1px solid rgba(125, 211, 252, 0.2);
-  background: rgba(8, 47, 73, 0.34);
-  color: #bae6fd;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .card-shell.has-puzzle {
-  min-height: 200px;
+  min-height: 300px;
 }
 
 @media (max-width: 980px) {
   .card-shell {
-    width: min(92vw, 340px);
+    width: min(92vw, 510px);
     max-width: 92vw;
-    min-height: 120px;
-    padding: 16px;
+    min-height: 180px;
+    padding: 24px;
   }
 
   .card-code {
-    font-size: 13px;
+    font-size: 24px;
   }
 
   .card-title {
-    font-size: 18px;
-    padding: 0 56px;
+    font-size: 36px;
+    padding: 0 90px;
   }
 
   .card-summary {
-    margin-top: 10px;
-    font-size: 15px;
+    margin-top: 15px;
+    font-size: 28px;
     line-height: 1.5;
   }
 }

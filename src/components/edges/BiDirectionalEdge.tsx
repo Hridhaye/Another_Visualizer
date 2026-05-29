@@ -1,4 +1,5 @@
 import type { EdgeProps } from 'reactflow'
+import { useViewport } from 'reactflow'
 
 import { useEdgePath } from './useObstacleRoute'
 
@@ -16,6 +17,21 @@ export const EDGE_DOT_DIM = 'edge-dot-dim'
 export const EDGE_DOT_BRIGHT = 'edge-dot-bright'
 
 export function BiDirectionalEdgeMarkerDef() {
+  const { zoom } = useViewport()
+  // Scale markers up as zoom decreases so they stay readable at any zoom level.
+  // Clamped: never smaller than base (zoom > 1) and never more than 2.2× (very zoomed out).
+  const s = Math.min(Math.max(1 / zoom, 1), 2.2)
+
+  // Arrow: base tip at 16px, half-height 8px.
+  const aw = Math.round(16 * s)
+  const ah = Math.round(16 * s)
+  const aHalf = ah / 2
+
+  // Dot: base radius 5px, box 14px.
+  const dr = Math.round(5 * s)
+  const dc = Math.round(7 * s)
+  const dBox = Math.round(14 * s)
+
   return (
     <defs>
       <marker id={MARKER_DIM} markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
@@ -31,20 +47,20 @@ export function BiDirectionalEdgeMarkerDef() {
         <path d="M8,0 L8,8 L0,4 z" fill="rgba(255,255,255,0.85)" />
       </marker>
 
-      {/* Larger, more visible arrowhead for directed edges. */}
-      <marker id={EDGE_ARROW_DIM} markerWidth="12" markerHeight="12" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
-        <path d="M0,0 L0,10 L10,5 z" fill="rgba(148,163,184,0.85)" />
+      {/* Arrowhead — scales with zoom so it stays visible when zoomed out. */}
+      <marker id={EDGE_ARROW_DIM} markerWidth={aw + 4} markerHeight={ah} refX={aw - 1} refY={aHalf} orient="auto" markerUnits="userSpaceOnUse">
+        <path d={`M0,0 L0,${ah} L${aw},${aHalf} z`} fill="rgba(148,163,184,0.95)" stroke="rgba(0,0,0,0.5)" strokeWidth={1.5 * s} strokeLinejoin="round" />
       </marker>
-      <marker id={EDGE_ARROW_BRIGHT} markerWidth="12" markerHeight="12" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse">
-        <path d="M0,0 L0,10 L10,5 z" fill="rgba(255,255,255,0.95)" />
+      <marker id={EDGE_ARROW_BRIGHT} markerWidth={aw + 4} markerHeight={ah} refX={aw - 1} refY={aHalf} orient="auto" markerUnits="userSpaceOnUse">
+        <path d={`M0,0 L0,${ah} L${aw},${aHalf} z`} fill="rgba(255,255,255,0.98)" stroke="rgba(0,0,0,0.4)" strokeWidth={1.5 * s} strokeLinejoin="round" />
       </marker>
 
-      {/* Small dot anchoring the source end of a directed edge. */}
-      <marker id={EDGE_DOT_DIM} markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto" markerUnits="userSpaceOnUse">
-        <circle cx="4" cy="4" r="3" fill="rgba(148,163,184,0.85)" />
+      {/* Source dot — scales with zoom. */}
+      <marker id={EDGE_DOT_DIM} markerWidth={dBox} markerHeight={dBox} refX={dc} refY={dc} orient="auto" markerUnits="userSpaceOnUse">
+        <circle cx={dc} cy={dc} r={dr} fill="rgba(148,163,184,0.95)" stroke="rgba(0,0,0,0.5)" strokeWidth={2 * s} />
       </marker>
-      <marker id={EDGE_DOT_BRIGHT} markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto" markerUnits="userSpaceOnUse">
-        <circle cx="4" cy="4" r="3" fill="rgba(255,255,255,0.95)" />
+      <marker id={EDGE_DOT_BRIGHT} markerWidth={dBox} markerHeight={dBox} refX={dc} refY={dc} orient="auto" markerUnits="userSpaceOnUse">
+        <circle cx={dc} cy={dc} r={dr} fill="rgba(255,255,255,0.98)" stroke="rgba(0,0,0,0.4)" strokeWidth={2 * s} />
       </marker>
     </defs>
   )

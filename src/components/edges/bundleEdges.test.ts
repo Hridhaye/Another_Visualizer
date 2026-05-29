@@ -31,6 +31,32 @@ describe('bundleEdgesBySource', () => {
     expect(result.e1.length).toBeGreaterThanOrEqual(2)
   })
 
+  it('avoids a card on a single (un-bundled) line via the tail router', () => {
+    const { routeTail, calls } = makeRouteTail()
+    // One line from 'a' to 'b'; a card sits directly between them.
+    const rects = new Map<string, Rect>([
+      ['a', card(0, 200)],
+      ['b', card(600, 200)],
+      ['blocker', { x: 250, y: 180, width: 200, height: 120 }],
+    ])
+    const edges: EdgeEndpoints[] = [{ edgeId: 'e1', source: 'a', target: 'b' }]
+    const result = bundleEdgesBySource(edges, rects, routeTail)
+    // The blocked single line was handed to routeTail for avoidance.
+    expect(calls.length).toBe(1)
+    expect(result.e1).toBeDefined()
+  })
+
+  it('leaves a clear single line untouched (no needless re-route)', () => {
+    const { routeTail, calls } = makeRouteTail()
+    const rects = new Map<string, Rect>([
+      ['a', card(0, 0)],
+      ['b', card(400, 0)],
+    ])
+    const edges: EdgeEndpoints[] = [{ edgeId: 'e1', source: 'a', target: 'b' }]
+    bundleEdgesBySource(edges, rects, routeTail)
+    expect(calls.length).toBe(0)
+  })
+
   it('makes same-source edges share a trunk x before branching', () => {
     // Three targets all to the right of A but at different heights.
     const rects = new Map<string, Rect>([

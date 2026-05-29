@@ -7,7 +7,7 @@ import ReactFlow, {
 import { NarrativeCardNode } from './components/NarrativeCardNode'
 import { MovableEdge } from './components/edges/MovableEdge'
 import { BiDirectionalEdge, BiDirectionalEdgeMarkerDef } from './components/edges/BiDirectionalEdge'
-import { useTidyLines } from './components/edges/useTidyLines'
+import { useTidyLines, useSyncEdgeColors } from './components/edges/useTidyLines'
 import { NarrativeBodyPanel } from './components/NarrativeBodyPanel'
 import { PuzzleFillPanel } from './components/PuzzleFillPanel'
 import { PuzzleReorderPanel } from './components/PuzzleReorderPanel'
@@ -134,6 +134,11 @@ function BoardCanvas() {
   // user clicks "Tidy Lines" (it can pick worse entry sides than the elbow, so
   // it is opt-in rather than automatic).
   const tidyLines = useTidyLines()
+  useSyncEdgeColors(
+    edges.map((e) => e.id).join(',') + '|' +
+    nodes.map((n) => `${n.id}:${n.data.slipTypeId}`).join(',') + '|' +
+    slipTypes.map((s) => `${s.id}:${s.color}`).join(',')
+  )
 
   const performMarqueeSelection = useCallback((box: {
     startX: number

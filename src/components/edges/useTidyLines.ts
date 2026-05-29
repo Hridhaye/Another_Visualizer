@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useReactFlow } from 'reactflow'
 
-import { useNarrativeBoardStore } from '../../store/useNarrativeBoardStore'
+import { getSlipColor, useNarrativeBoardStore } from '../../store/useNarrativeBoardStore'
 import { bundleEdgesBySource, type EdgeEndpoints, type RouteTail } from './bundleEdges'
+import { computeEdgeColors, type EdgeRef } from './edgeColors'
 import { buildFloatingElbow, computeFloatingAnchors, polylineHitsObstacle } from './floatingEdge'
 import {
   orthogonalize,
@@ -14,6 +15,21 @@ import {
 
 const DEBOUNCE_MS = 900
 
+function buildEdgeRefs(): EdgeRef[] {
+  const { edges, nodes, slipTypes } = useNarrativeBoardStore.getState()
+  const nodeById = new Map(nodes.map((n) => [n.id, n]))
+  return edges.map((e) => {
+    const sourceNode = nodeById.get(e.source)
+    const slipTypeId = sourceNode?.data.slipTypeId ?? ''
+    return {
+      edgeId: e.id,
+      source: e.source,
+      slipTypeId,
+      slipColor: getSlipColor(slipTypes, slipTypeId),
+    }
+  })
+}
+
 /**
  * Provides obstacle-avoidance routing that runs *on demand*, not every frame.
  *
@@ -23,12 +39,14 @@ const DEBOUNCE_MS = 900
  * cheap and A* never runs continuously.
  */
 export function useTidyLines() {
-  const { getNodes } = useReactFlow()
+  const { getNodes, getViewport } = useReactFlow()
   const setRoutedPaths = useNarrativeBoardStore((state) => state.setRoutedPaths)
+  const setEdgeColors = useNarrativeBoardStore((state) => state.setEdgeColors)
 
   const tidyLines = useCallback(() => {
     const nodes = getNodes()
     const edges = useNarrativeBoardStore.getState().edges
+    const { zoom } = getViewport()
 
     const rects = new Map<string, Rect>()
     nodes.forEach((node) => {
@@ -62,7 +80,7 @@ export function useTidyLines() {
       source: e.source,
       target: e.target,
     }))
-    const bundled = bundleEdges ? bundleEdgesBySource(endpoints, rects, routeTail) : {}
+    const bundled = bundleEdges ? bundleEdgesBySource(endpoints, rects, routeTail, zoom) : {}
 
     const result: Record<string, Point[]> = {}
     edges.forEach((edge) => {
@@ -102,9 +120,22 @@ export function useTidyLines() {
     })
 
     setRoutedPaths(result)
-  }, [getNodes, setRoutedPaths])
+    setEdgeColors(computeEdgeColors(buildEdgeRefs()))
+  }, [getNodes, getViewport, setRoutedPaths, setEdgeColors])
 
   return tidyLines
+}
+
+/**
+ * Keeps edgeColors in sync with the current edge list. Runs immediately on
+ * every edge change so colors are available even before tidyLines fires.
+ */
+export function useSyncEdgeColors(edgeSignature: string) {
+  const setEdgeColors = useNarrativeBoardStore((state) => state.setEdgeColors)
+
+  useEffect(() => {
+    setEdgeColors(computeEdgeColors(buildEdgeRefs()))
+  }, [edgeSignature, setEdgeColors])
 }
 
 /**

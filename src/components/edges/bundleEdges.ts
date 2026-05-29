@@ -50,6 +50,8 @@ const TRUNK_GAP = 48
 const LANE_STEP = 24
 /** Safety cap on how far the trunk lane may be pushed outward. */
 const MAX_LANE_PUSH = 2000
+/** Base gap between fanned endpoints on a card's face, in flow units at zoom=1. */
+const ARRIVAL_FAN_STEP = 18
 
 function isHorizontalSide(side: Position): boolean {
   return side === Position.Left || side === Position.Right
@@ -168,11 +170,41 @@ function bundleForSource(
       ? { x: trunkFixed, y: sideMid }
       : { x: sideMid, y: trunkFixed }
 
+    // The branch leaves the trunk heading outward along the fixed axis.
+    const branchPosition: Position = horizontal
+      ? sign > 0
+        ? Position.Right
+        : Position.Left
+      : sign > 0
+        ? Position.Bottom
+        : Position.Top
+
     group.forEach((edge) => {
+      // Cards that are neither this edge's source nor its target are obstacles its
+      // tail must avoid.
+      const tailObstacles: Rect[] = []
+      rects.forEach((rect, nodeId) => {
+        if (nodeId === sourceId || nodeId === edge.target) return
+        tailObstacles.push(rect)
+      })
 
       if (group.length === 1) {
-        // No bundling needed; emit a plain elbow to the target anchor.
-        out[edge.edgeId] = elbow(exit, edge.anchorTarget, horizontal)
+        // No trunk for a lone line, but it still must avoid cards: route straight
+        // from the exit to the target, falling back to A* when blocked. (This is
+        // the single-line obstacle avoidance that the old per-edge path provided.)
+        const direct = elbow(exit, edge.anchorTarget, horizontal)
+        out[edge.edgeId] = polylineHitsObstacle(direct, tailObstacles)
+          ? dedupe([
+              exit,
+              ...routeTail({
+                from: exit,
+                fromPosition: side,
+                target: edge.anchorTarget,
+                targetPosition: edge.targetPosition,
+                obstacles: tailObstacles,
+              }),
+            ])
+          : direct
         return
       }
 
@@ -185,20 +217,6 @@ function bundleForSource(
       // Tail: branch -> target anchor. Try the plain straight-in first; if it
       // crosses any card, re-route just this tail (the shared exit/trunk/branch
       // stay bundled, so the line never leaves the spine).
-      const tailObstacles: Rect[] = []
-      rects.forEach((rect, nodeId) => {
-        if (nodeId === sourceId || nodeId === edge.target) return
-        tailObstacles.push(rect)
-      })
-      // The branch leaves the trunk heading outward along the fixed axis.
-      const branchPosition: Position = horizontal
-        ? sign > 0
-          ? Position.Right
-          : Position.Left
-        : sign > 0
-          ? Position.Bottom
-          : Position.Top
-
       let tail: Point[] = [branch, edge.anchorTarget]
       if (polylineHitsObstacle([branch, edge.anchorTarget], tailObstacles)) {
         tail = routeTail({
@@ -217,6 +235,137 @@ function bundleForSource(
   }
 
   return out
+}
+
+/**
+ * Fans all polyline endpoints (arrivals AND departures) that touch each face of
+ * each card, so lines from different bundles never perfectly overlap at a card
+ * edge — whether they are both arriving, both departing, or one of each.
+ *
+ * "Same bundle" edges (same source card) are treated as one unit and receive
+ * the same fanned slot. Only faces with 2+ distinct bundle groups get fanned.
+ * The fan is centred on the face midpoint and spread by ARRIVAL_FAN_STEP.
+ *
+ * When an endpoint moves, the adjacent interior point is nudged along the free
+ * axis to match, keeping the stub perpendicular to the card face.
+ */
+function fanEndpointsAtCards(
+  result: Record<string, Point[]>,
+  edges: EdgeEndpoints[],
+  rects: Map<string, Rect>,
+  zoom: number,
+): void {
+  // Scale fan spacing up as zoom decreases, capped at 1.8× so it stays tidy.
+  const fanStep = ARRIVAL_FAN_STEP * Math.min(Math.max(1 / zoom, 1), 1.8)
+  const SNAP = 4  // px tolerance for "on this face"
+
+  // For every card, collect every endpoint that sits on one of its faces.
+  // An endpoint is either the first point of a polyline (departure from source)
+  // or the last point (arrival at target). We record which end it is so we can
+  // update the correct adjacent interior point.
+  interface EndpointRef {
+    edgeId: string
+    /** Which "bundle group" this belongs to — edges from the same source card
+     *  share a trunk and should land in the same fan slot. */
+    groupKey: string
+    /** 'first' = departure (source side); 'last' = arrival (target side). */
+    end: 'first' | 'last'
+  }
+
+  // cardId -> side -> EndpointRef[]
+  const bySide = new Map<string, Map<Position, EndpointRef[]>>()
+
+  function sideOf(cardRect: Rect, pt: Point): Position | null {
+    if (Math.abs(pt.x - cardRect.x) <= SNAP) return Position.Left
+    if (Math.abs(pt.x - (cardRect.x + cardRect.width)) <= SNAP) return Position.Right
+    if (Math.abs(pt.y - cardRect.y) <= SNAP) return Position.Top
+    if (Math.abs(pt.y - (cardRect.y + cardRect.height)) <= SNAP) return Position.Bottom
+    return null
+  }
+
+  for (const edge of edges) {
+    const poly = result[edge.edgeId]
+    if (!poly || poly.length < 2) continue
+
+    // Departure: first point should be on the source card's face.
+    const sourceRect = rects.get(edge.source)
+    if (sourceRect) {
+      const side = sideOf(sourceRect, poly[0])
+      if (side !== null) {
+        const cardSides = bySide.get(edge.source) ?? new Map()
+        const list = cardSides.get(side) ?? []
+        list.push({ edgeId: edge.edgeId, groupKey: edge.source, end: 'first' })
+        cardSides.set(side, list)
+        bySide.set(edge.source, cardSides)
+      }
+    }
+
+    // Arrival: last point should be on the target card's face.
+    const targetRect = rects.get(edge.target)
+    if (targetRect) {
+      const side = sideOf(targetRect, poly[poly.length - 1])
+      if (side !== null) {
+        const cardSides = bySide.get(edge.target) ?? new Map()
+        const list = cardSides.get(side) ?? []
+        list.push({ edgeId: edge.edgeId, groupKey: edge.source, end: 'last' })
+        cardSides.set(side, list)
+        bySide.set(edge.target, cardSides)
+      }
+    }
+  }
+
+  for (const [cardId, sides] of bySide) {
+    const cardRect = rects.get(cardId)
+    if (!cardRect) continue
+
+    for (const [side, endpoints] of sides) {
+      // Collect distinct bundle groups in stable order.
+      const groupOrder = [...new Set(endpoints.map((e) => e.groupKey))].sort()
+      if (groupOrder.length < 2) continue  // nothing overlaps → skip
+
+      const horizontal = side === Position.Left || side === Position.Right
+      const n = groupOrder.length
+      const totalSpan = (n - 1) * fanStep
+      const midFree = horizontal
+        ? cardRect.y + cardRect.height / 2
+        : cardRect.x + cardRect.width / 2
+      const fanStart = midFree - totalSpan / 2
+
+      const freeForGroup = new Map<string, number>(
+        groupOrder.map((gk, i) => [gk, fanStart + i * fanStep])
+      )
+
+      for (const { edgeId, groupKey, end } of endpoints) {
+        const poly = result[edgeId]
+        if (!poly || poly.length < 2) continue
+        const newFree = freeForGroup.get(groupKey)!
+
+        if (end === 'last') {
+          const last = poly[poly.length - 1]
+          const prev = poly[poly.length - 2]
+          const newLast: Point = horizontal
+            ? { x: last.x, y: newFree }
+            : { x: newFree, y: last.y }
+          // Nudge the adjacent interior point along the free axis to match,
+          // keeping the final stub axis-aligned.
+          const newPrev: Point = horizontal
+            ? { x: prev.x, y: newFree }
+            : { x: newFree, y: prev.y }
+          result[edgeId] = dedupe([...poly.slice(0, -2), newPrev, newLast])
+        } else {
+          const first = poly[0]
+          const second = poly[1]
+          const newFirst: Point = horizontal
+            ? { x: first.x, y: newFree }
+            : { x: newFree, y: first.y }
+          const newSecond: Point = horizontal
+            ? { x: second.x, y: newFree }
+            : { x: newFree, y: second.y }
+          result[edgeId] = dedupe([newFirst, newSecond, ...poly.slice(2)])
+        }
+      }
+    }
+  }
 }
 
 /** A two-corner elbow between two points, bending first along the source axis. */
@@ -249,6 +398,7 @@ export function bundleEdgesBySource(
   edges: EdgeEndpoints[],
   rects: Map<string, Rect>,
   routeTail: RouteTail,
+  zoom = 1,
 ): Record<string, Point[]> {
   const bySource = new Map<string, EdgeEndpoints[]>()
   for (const edge of edges) {
@@ -263,5 +413,8 @@ export function bundleEdgesBySource(
     const sourceRect = rects.get(sourceId)!
     Object.assign(result, bundleForSource(sourceRect, sourceId, group, rects, routeTail))
   }
+
+  fanEndpointsAtCards(result, edges, rects, zoom)
+
   return result
 }

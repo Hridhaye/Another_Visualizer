@@ -88,6 +88,8 @@ type NarrativeBoardState = {
   edgeShapes: Record<string, number>
   /** Per-edge A*-routed polylines (flow coords), keyed by edge id. Empty until "Tidy lines" runs. */
   routedPaths: Record<string, { x: number; y: number }[]>
+  /** Per-edge stroke color derived from source node identity, keyed by edge id. */
+  edgeColors: Record<string, string>
   /**
    * When true, connectors leaving a common card share a fanned exit + trunk
    * before branching (flow-chart bundling). Default on; no visible toggle, but
@@ -145,6 +147,7 @@ type NarrativeBoardActions = {
   setEdgeOffset: (edgeId: string, offset: number) => void
   setRoutedPaths: (paths: Record<string, { x: number; y: number }[]>) => void
   clearRoutedPaths: () => void
+  setEdgeColors: (colors: Record<string, string>) => void
   setBundleEdges: (enabled: boolean) => void
   addCard: () => void
   deleteCard: (nodeId: string) => void
@@ -341,6 +344,7 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   edges: buildEdgesFromReferences(initialNodes),
   edgeShapes: {},
   routedPaths: {},
+  edgeColors: {},
   bundleEdges: true,
   selectedNodeId: '1',
   selectedNodeIds: ['1'],
@@ -514,6 +518,10 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
     set((state) =>
       Object.keys(state.routedPaths).length === 0 ? state : { routedPaths: {} }
     )
+  },
+
+  setEdgeColors: (colors) => {
+    set({ edgeColors: colors })
   },
 
   setBundleEdges: (enabled) => {

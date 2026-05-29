@@ -1,5 +1,6 @@
 import { type EdgeProps } from 'reactflow'
 
+import { useNarrativeBoardStore } from '../../store/useNarrativeBoardStore'
 import { useEdgePath } from './useObstacleRoute'
 import {
   EDGE_ARROW_BRIGHT,
@@ -16,6 +17,7 @@ export function MovableEdge({
   data,
 }: EdgeProps) {
   const isHighlighted: boolean = data?.isOutgoingFromSelected ?? false
+  const sourceColor = useNarrativeBoardStore((state) => state.edgeColors[id])
 
   // Floating elbow by default (anchors face the partner card); replaced by an
   // A*-routed path once "Tidy lines" runs. Manual middle-segment offsetting
@@ -26,6 +28,8 @@ export function MovableEdge({
   const markerEnd = `url(#${isHighlighted ? EDGE_ARROW_BRIGHT : EDGE_ARROW_DIM})`
   const markerStart = `url(#${isHighlighted ? EDGE_DOT_BRIGHT : EDGE_DOT_DIM})`
 
+  const dimColor = sourceColor ?? 'rgba(148,163,184,0.75)'
+
   const highlightStyle = isHighlighted
     ? {
         stroke: 'rgba(255,255,255,0.85)',
@@ -33,7 +37,7 @@ export function MovableEdge({
         filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.6))',
       }
     : {
-        stroke: 'rgba(148,163,184,0.7)',
+        stroke: dimColor,
         strokeWidth: 2.25,
       }
 
