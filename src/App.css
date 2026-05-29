@@ -318,7 +318,7 @@
   }
 }
 
-/* ── Tablet (≤1024px) ── wrap both bars, fix overlap */
+/* ── Tablet (≤1024px) ── wrap history bar, fix overlap */
 @media (max-width: 1024px) {
   .history-bar {
     bottom: 8px;
@@ -329,20 +329,22 @@
     flex-wrap: wrap;
     justify-content: center;
     border-radius: 16px;
-    padding: 6px 8px;
+    padding: 7px 10px;
     gap: 4px;
   }
 
   .history-bar__btn {
     flex: 0 0 auto;
+    padding: 9px 14px;
+    font-size: 13px;
   }
 
-  /* context panel sits above the history bar;
-     wrapped tablet history bar is ~2 rows ≈ 72px + 8px offset + 12px gap = 92px */
+  /* context panel: wrap on tablet (wide enough), sit above history bar.
+     2 rows of tablet buttons ≈ 82px + 8px bottom = 90px; add 10px gap → 100px */
   .context-panel {
     left: 8px;
     right: 8px;
-    bottom: 92px;
+    bottom: 100px;
     width: auto;
     transform: none;
     align-items: stretch;
@@ -352,7 +354,7 @@
     width: 100%;
     flex-wrap: wrap;
     justify-content: center;
-    padding: 8px 10px;
+    padding: 9px 12px;
     gap: 4px;
     border-radius: 16px;
     white-space: normal;
@@ -371,6 +373,8 @@
 
   .context-panel__bar .history-bar__btn {
     flex: 0 0 auto;
+    padding: 9px 14px;
+    font-size: 13px;
   }
 
   .context-panel__popover {
@@ -385,31 +389,55 @@
   }
 }
 
-/* ── Mobile (≤600px) ── smaller buttons so bars take less vertical space */
+/* ── Mobile (≤600px) ── compact history bar; context panel scrolls horizontally */
 @media (max-width: 600px) {
   .history-bar {
-    gap: 2px;
-    padding: 4px 6px;
+    gap: 3px;
+    padding: 6px 8px;
   }
 
   .history-bar__btn {
-    padding: 5px 10px;
-    font-size: 11px;
+    padding: 8px 12px;
+    font-size: 12px;
   }
 
-  /* mobile history bar is ~2 rows of smaller buttons ≈ 58px + 8px offset = 66px */
+  /* history bar 2 rows of mobile buttons ≈ 71px + 8px bottom + 12px gap → 91px */
   .context-panel {
-    bottom: 74px;
+    bottom: 91px;
   }
 
+  /* single scrollable row — keeps the panel to one line height on mobile */
   .context-panel__bar {
-    padding: 6px 8px;
-    gap: 2px;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    padding: 6px 10px;
+    gap: 4px;
+    white-space: nowrap;
+  }
+
+  .context-panel__bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* identity sits inline, not full-width, with a right-side divider */
+  .context-panel__identity {
+    flex: 0 0 auto;
+    max-width: 8rem;
+    border-bottom: none;
+    border-right: 1px solid rgba(113, 113, 122, 0.3);
+    padding-bottom: 0;
+    padding-right: 8px;
+    margin-bottom: 0;
+    margin-right: 4px;
   }
 
   .context-panel__bar .history-bar__btn {
-    padding: 5px 10px;
-    font-size: 11px;
+    flex: 0 0 auto;
+    padding: 6px 12px;
+    font-size: 12px;
   }
 }
 
