@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useState } from 'react'
 import type { User } from 'firebase/auth'
 
 import { exportAIFormat } from '../../ai/exportAIFormat'
@@ -14,8 +14,6 @@ type BoardControlsProps = {
   projectName: string
   updatedAt: string
   hasUnsavedChanges: boolean
-  onSaveProject: () => Promise<void>
-  onLoadProject: (file: File) => Promise<void>
   onImportAIFormat: (text: string) => Promise<{ createdCount: number; updatedCount: number }>
   onProjectNameChange: (value: string) => void
   currentUser: User | null
@@ -33,8 +31,6 @@ export function BoardControls({
   projectName,
   updatedAt,
   hasUnsavedChanges,
-  onSaveProject,
-  onLoadProject,
   onImportAIFormat,
   onProjectNameChange,
   currentUser,
@@ -54,22 +50,9 @@ export function BoardControls({
   const toggleHighlightFilter = useNarrativeBoardStore((state) => state.toggleHighlightFilter)
   const clearAllHighlightFilters = useNarrativeBoardStore((state) => state.clearAllHighlightFilters)
   const activeGroupId = useNarrativeBoardStore((state) => state.activeGroupId)
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [showAIImportModal, setShowAIImportModal] = useState(false)
   const [importText, setImportText] = useState('')
   const [feedback, setFeedback] = useState('')
-
-  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    try {
-      await onLoadProject(file)
-    } catch (error) {
-      window.alert(error instanceof Error ? error.message : 'Unable to load project file.')
-    } finally {
-      event.target.value = ''
-    }
-  }
 
   const handleCopyDSL = async () => {
     try {
@@ -192,22 +175,6 @@ export function BoardControls({
           </span>
           <span className="sidebar-meta">{formattedDate}</span>
         </div>
-      </div>
-
-      <div className="sidebar-grid-two">
-        <button
-          onClick={async () => {
-            try {
-              await onSaveProject()
-            } catch (error) {
-              window.alert(error instanceof Error ? error.message : 'Export failed.')
-            }
-          }}
-          className="sidebar-btn"
-        >
-          Export JSON
-        </button>
-        <button onClick={() => fileInputRef.current?.click()} className="sidebar-btn">Import JSON</button>
       </div>
 
       <div className="sidebar-grid-two">
@@ -358,7 +325,6 @@ export function BoardControls({
         </div>
       )}
 
-      <input ref={fileInputRef} type="file" accept=".json,application/json" className="hidden" onChange={handleFileChange} />
     </div>
   )
 }

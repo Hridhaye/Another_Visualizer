@@ -40,8 +40,6 @@ function BoardCanvas() {
   const onEdgesChange = useNarrativeBoardStore((state) => state.onEdgesChange)
   const onConnect = useNarrativeBoardStore((state) => state.onConnect)
   const addCard = useNarrativeBoardStore((state) => state.addCard)
-  const saveProject = useNarrativeBoardStore((state) => state.saveProject)
-  const loadProject = useNarrativeBoardStore((state) => state.loadProject)
   const applyAIFormatImport = useNarrativeBoardStore((state) => state.applyAIFormatImport)
   const setCurrentUser = useNarrativeBoardStore((state) => state.setCurrentUser)
   const currentUser = useNarrativeBoardStore((state) => state.currentUser)
@@ -353,8 +351,6 @@ function BoardCanvas() {
         slipTypes={slipTypes}
         onToggleSidebar={toggleSidebar}
         onToggleSection={toggleSection}
-        onSaveProject={saveProject}
-        onLoadProject={loadProject}
         onImportAIFormat={applyAIFormatImport}
         onAddSlipType={addSlipType}
         onRenameSlipType={renameSlipType}
