@@ -209,7 +209,7 @@ export const DSL_ELEMENTS: DSLElement[] = [
     key: 'notes',
     label: 'Rough Notes',
     helper: [
-      'NOTES:                               — free-text scratch pad for unfinished / undecided ideas.',
+      'NOTES:                               — free-text scratch pad for unfinished / undecided ideas. use this for literally any idea that you are not fully certain of.',
       'END_NOTES                            — closes the NOTES block (required when NOTES is present).',
       '                                       Plain text only, no formatting. Use this for draft puzzle',
       '                                       content, open questions, and TODOs that aren\'t final yet.',
@@ -218,7 +218,7 @@ export const DSL_ELEMENTS: DSLElement[] = [
       '',
       'NOTES:',
       'Puzzle idea: fill-in-the-blank on the victim\'s last words.',
-      'TODO: confirm the timeline before locking the body.',
+      'Janine speaks to the Butler. Butler is evasive.',
       'END_NOTES',
     ],
     render: (node) =>
