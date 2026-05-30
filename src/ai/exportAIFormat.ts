@@ -53,9 +53,15 @@ function buildHeader(selected: DSLElementKey[]): string {
   return lines.join('\n')
 }
 
+export type ExportOptions = {
+  /** When true, emit only the helper lines + example, with no card blocks. */
+  helperOnly?: boolean
+}
+
 /**
  * @param selectedElements explicit element selection. When omitted, falls back
  * to the preset implied by `mode` (backwards compatible with old callers).
+ * @param options extra export switches (e.g. `helperOnly`).
  */
 export function exportAIFormat(
   nodes: NarrativeNode[],
@@ -63,9 +69,14 @@ export function exportAIFormat(
   tags: Tag[] = [],
   mode: ExportMode = 'standard',
   selectedElements?: DSLElementKey[],
+  options: ExportOptions = {},
 ): string {
   const selected = selectedElements ?? presetElements(mode)
   const orderedKeys = DSL_ELEMENTS.map((el) => el.key).filter((key) => selected.includes(key))
+
+  const header = buildHeader(orderedKeys)
+  if (options.helperOnly) return header
+
   const ctx: DSLRenderContext = { nodes, slipTypes, tags }
 
   const sorted = [...nodes].sort((left, right) => left.data.code.localeCompare(right.data.code))
@@ -81,6 +92,5 @@ export function exportAIFormat(
     .filter(Boolean)
     .join('\n\n')
 
-  const header = buildHeader(orderedKeys)
   return cardBlocks.length > 0 ? `${header}\n\n${cardBlocks}` : header
 }

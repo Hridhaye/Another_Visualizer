@@ -192,6 +192,19 @@ REFERENCES:
     expect(text).not.toContain('SUMMARY')
   })
 
+  it('helperOnly export emits the header but no card blocks', () => {
+    const nodes = [
+      { id: 'a', type: 'narrativeCard', position: { x: 0, y: 0 }, data: { code: 'AA01', title: 'First', summary: '', body: '', slipTypeId: 'blue', slipGivenTypeIds: [], referencesText: '', tagIds: [], puzzleType: 'none' } },
+    ] as never
+
+    const text = exportAIFormat(nodes, [{ id: 'blue', name: 'Blue Slip', color: '#3b82f6' }], [], 'standard', ['title'], { helperOnly: true })
+
+    expect(text).toContain('# NARRATIVE BOARD DSL')
+    expect(text).toContain('# EXAMPLE:')
+    // No real card block for AA01 (only the example reference inside the header).
+    expect(text).not.toContain('\n@CARD AA01')
+  })
+
   it('imports leniently: missing TITLE and unknown puzzle type do not throw', () => {
     const slipTypes = [{ id: 'blue', name: 'Blue Slip', color: '#3b82f6' }]
     // ZZ99 has no title and a bogus puzzle type — both must be tolerated.

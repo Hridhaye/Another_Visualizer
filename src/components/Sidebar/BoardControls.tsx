@@ -65,6 +65,7 @@ export function BoardControls({
   const [selectedElements, setSelectedElements] = useState<Set<DSLElementKey>>(
     () => new Set(DSL_PRESETS[0].elements)
   )
+  const [helperOnly, setHelperOnly] = useState(false)
 
   const activePreset: DSLPresetKey | null = matchPreset(selectedElements)
 
@@ -82,38 +83,34 @@ export function BoardControls({
     })
   }
 
-  const exportPreview = (() => {
+  const buildExport = () => {
     const nodesToExport =
       selectedNodeIds.length > 1
         ? nodes.filter((node) => selectedNodeIds.includes(node.id))
         : nodes
-    return exportAIFormat(
+    const text = exportAIFormat(
       nodesToExport,
       slipTypes,
       tags,
       'standard',
-      DSL_ELEMENTS.map((el) => el.key).filter((key) => selectedElements.has(key))
+      DSL_ELEMENTS.map((el) => el.key).filter((key) => selectedElements.has(key)),
+      { helperOnly }
     )
-  })()
+    return { text, nodesToExport }
+  }
+
+  const exportPreview = buildExport().text
 
   const handleCopyDSL = async () => {
     try {
-      const nodesToExport =
-        selectedNodeIds.length > 1
-          ? nodes.filter((node) => selectedNodeIds.includes(node.id))
-          : nodes
-      const text = exportAIFormat(
-        nodesToExport,
-        slipTypes,
-        tags,
-        'standard',
-        DSL_ELEMENTS.map((el) => el.key).filter((key) => selectedElements.has(key))
-      )
+      const { text, nodesToExport } = buildExport()
       await navigator.clipboard.writeText(text)
       setFeedback(
-        selectedNodeIds.length > 1
-          ? `Copied ${nodesToExport.length} selected cards.`
-          : 'Copied to clipboard.'
+        helperOnly
+          ? 'Copied helper lines only.'
+          : selectedNodeIds.length > 1
+            ? `Copied ${nodesToExport.length} selected cards.`
+            : 'Copied to clipboard.'
       )
       setTimeout(() => setFeedback(''), 2500)
     } catch (error) {
@@ -396,6 +393,18 @@ export function BoardControls({
                 )
               })}
             </div>
+
+            <label className="dsl-export__toggle">
+              <input
+                type="checkbox"
+                checked={helperOnly}
+                onChange={(e) => setHelperOnly(e.target.checked)}
+              />
+              <span>
+                Helper lines only
+                <span className="dsl-export__toggle-hint"> — export the field guide + example, no cards</span>
+              </span>
+            </label>
 
             <p className="dsl-modal__subtitle">Preview</p>
             <textarea
