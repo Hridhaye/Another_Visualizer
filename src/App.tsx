@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactFlow, {
   Background,
   ReactFlowProvider,
@@ -8,14 +8,15 @@ import { NarrativeCardNode } from './components/NarrativeCardNode'
 import { MovableEdge } from './components/edges/MovableEdge'
 import { BiDirectionalEdge, BiDirectionalEdgeMarkerDef } from './components/edges/BiDirectionalEdge'
 import { useTidyLines, useSyncEdgeColors } from './components/edges/useTidyLines'
-import { NarrativeBodyPanel } from './components/NarrativeBodyPanel'
-import { PuzzleFillPanel } from './components/PuzzleFillPanel'
-import { PuzzleReorderPanel } from './components/PuzzleReorderPanel'
-import { PuzzleMatchingPanel } from './components/PuzzleMatchingPanel'
+import { NarrativeBodyPanel as NarrativeBodyPanelBase } from './components/NarrativeBodyPanel'
+import { PuzzleFillPanel as PuzzleFillPanelBase } from './components/PuzzleFillPanel'
+import { PuzzleReorderPanel as PuzzleReorderPanelBase } from './components/PuzzleReorderPanel'
+import { PuzzleMatchingPanel as PuzzleMatchingPanelBase } from './components/PuzzleMatchingPanel'
 import { ContextPanel } from './components/ContextPanel'
-import { CardEditorFlyout } from './components/CardEditorFlyout'
+import { CardEditorFlyout as CardEditorFlyoutBase } from './components/CardEditorFlyout'
 import { Sidebar } from './components/Sidebar/Sidebar'
-import { useNarrativeBoardStore } from './store/useNarrativeBoardStore'
+import { CardCodeIndexContext } from './components/cardRefsContext'
+import { getSlipColor, useNarrativeBoardStore } from './store/useNarrativeBoardStore'
 import { subscribeAuthState } from './firebase/auth'
 import './App.css'
 import './styles/card.css'
@@ -25,6 +26,25 @@ import 'reactflow/dist/style.css'
 // Pointer travel (px) before a press is treated as a marquee drag. Below this
 // a stationary press/jitter is ignored so it doesn't flip a card by accident.
 const DRAG_SELECT_THRESHOLD_PX = 6
+
+const nodeTypes = {
+  narrativeCard: NarrativeCardNode
+}
+
+const edgeTypes = {
+  narrativeEdge: MovableEdge,
+  bidirectional: BiDirectionalEdge,
+}
+
+// These overlay panels take no props and subscribe to the store themselves, so
+// they must not re-render just because BoardCanvas re-renders on every drag
+// frame. Memoizing them severs that cascade — they update only when their own
+// store slices change.
+const NarrativeBodyPanel = memo(NarrativeBodyPanelBase)
+const PuzzleFillPanel = memo(PuzzleFillPanelBase)
+const PuzzleReorderPanel = memo(PuzzleReorderPanelBase)
+const PuzzleMatchingPanel = memo(PuzzleMatchingPanelBase)
+const CardEditorFlyout = memo(CardEditorFlyoutBase)
 
 function BoardCanvas() {
   const boardCanvasRef = useRef<HTMLDivElement | null>(null)
@@ -101,20 +121,6 @@ function BoardCanvas() {
   const [groupsPanelOpen, setGroupsPanelOpen] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
 
-  const nodeTypes = useMemo(
-    () => ({
-      narrativeCard: NarrativeCardNode
-    }),
-    []
-  )
-
-  const edgeTypes = useMemo(
-    () => ({
-      narrativeEdge: MovableEdge,
-      bidirectional: BiDirectionalEdge,
-    }),
-    []
-  )
 
   const decoratedEdges = useMemo(() => {
     const LANE_SPACING = 12
@@ -149,30 +155,60 @@ function BoardCanvas() {
     })
   }, [edges, selectedNodeId])
 
+  // Shared code -> {title, slipColor} index for resolving card reference chips.
+  // Rebuilt only when card content (codes/titles/slip types) or the palette
+  // changes — its identity is stable across drags/pans/selects, so cards reading
+  // it via context don't re-render their refs on those interactions.
+  const codeIndex = useMemo(() => {
+    const index = new Map<string, { title: string; slipColor: string }>()
+    for (const node of nodes) {
+      index.set(node.data.code, {
+        title: node.data.title,
+        slipColor: getSlipColor(slipTypes, node.data.slipTypeId),
+      })
+    }
+    return index
+  }, [nodes, slipTypes])
+
+  // Mirror store selection onto ReactFlow nodes' `selected` field so the card's
+  // selection ring is driven by the (memoized) prop rather than a per-card store
+  // subscription. Node object identity is preserved when its selected state is
+  // unchanged, so only cards whose selection actually flipped re-render.
+  const selectedIdSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds])
+  const rfNodes = useMemo(
+    () =>
+      nodes.map((node) => {
+        const shouldSelect = selectedIdSet.has(node.id)
+        return node.selected === shouldSelect ? node : { ...node, selected: shouldSelect }
+      }),
+    [nodes, selectedIdSet]
+  )
+
   // Floating elbows are the always-on default. A* avoidance runs only when the
   // user clicks "Tidy Lines" (it can pick worse entry sides than the elbow, so
   // it is opt-in rather than automatic).
   const tidyLines = useTidyLines()
-  useSyncEdgeColors(
-    edges.map((e) => e.id).join(',') + '|' +
-    nodes.map((n) => `${n.id}:${n.data.slipTypeId}`).join(',') + '|' +
-    slipTypes.map((s) => `${s.id}:${s.color}`).join(',')
-  )
+  // Edge colors recompute only when the edge list or palette identity changes
+  // (see useSyncEdgeColors) — never on a drag/pan, where neither changes.
+  useSyncEdgeColors(edges, slipTypes)
 
   // A highlighted card grows via CSS transform, which the measured node box (and
-  // thus any already-routed A* path) doesn't reflect. Re-tidy when the highlight
-  // set changes so routed endpoints re-anchor to the grown card's visible edge.
+  // thus any already-routed A* path) doesn't reflect. Rather than re-running the
+  // expensive A* router on every highlight change, drop any routed paths so those
+  // edges fall back to the live floating elbow, which always tracks the card's
+  // current (grown) box. A* stays strictly opt-in via the "Tidy Lines" button.
   const highlightSignature = useNarrativeBoardStore(
     (state) => state.highlightedNodeIds.join(',')
   )
+  const clearRoutedPaths = useNarrativeBoardStore((state) => state.clearRoutedPaths)
   const didMountHighlight = useRef(false)
   useEffect(() => {
     if (!didMountHighlight.current) {
       didMountHighlight.current = true
       return
     }
-    tidyLines()
-  }, [highlightSignature, tidyLines])
+    clearRoutedPaths()
+  }, [highlightSignature, clearRoutedPaths])
 
   const performMarqueeSelection = useCallback((box: {
     startX: number
@@ -375,11 +411,15 @@ function BoardCanvas() {
     return () => observer.disconnect()
   }, [])
 
-  const activeNode = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) ?? null : null
+  const activeNode = useMemo(
+    () => (selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) ?? null : null),
+    [selectedNodeId, nodes]
+  )
   const showContextPanel = !!activeNode && contextPanelOpen
   const fullScreenPanelOpen = narrativeBodyOpen || puzzleBodyOpen
 
   return (
+    <CardCodeIndexContext.Provider value={codeIndex}>
     <div className="board-root">
       <svg style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
         <BiDirectionalEdgeMarkerDef />
@@ -442,16 +482,16 @@ function BoardCanvas() {
         onPointerDownCapture={beginDragSelection}
       >
         <ReactFlow
-          nodes={nodes}
+          nodes={rfNodes}
           edges={decoratedEdges}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
-          onNodeDragStop={tidyLines}
           onPaneClick={clearSelection}
           onMoveEnd={(_, viewport) => setViewport(viewport)}
+          onlyRenderVisibleElements
           fitView
           fitViewOptions={{ padding: 0.15 }}
           minZoom={0.1}
@@ -461,6 +501,13 @@ function BoardCanvas() {
           zoomOnPinch={true}
           zoomOnScroll={true}
           preventScrolling={true}
+          // Selection is owned by the store and mirrored to node.selected; RF must
+          // not also manage it. Disabling RF selection + elevate-on-select avoids
+          // duplicate selection state and per-select node reordering churn.
+          elementsSelectable={false}
+          elevateNodesOnSelect={false}
+          elevateEdgesOnSelect={false}
+          nodeDragThreshold={1}
           className="reactflow-dark"
         >
           <Background color="#3f3f46" gap={26} />
@@ -657,6 +704,7 @@ function BoardCanvas() {
         </div>
       </div>
     </div>
+    </CardCodeIndexContext.Provider>
   )
 }
 

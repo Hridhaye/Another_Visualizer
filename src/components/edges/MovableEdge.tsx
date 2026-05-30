@@ -1,4 +1,5 @@
-import { type EdgeProps, useViewport } from 'reactflow'
+import { memo } from 'react'
+import { type EdgeProps, useStore } from 'reactflow'
 
 import { useNarrativeBoardStore } from '../../store/useNarrativeBoardStore'
 import { useEdgePath } from './useObstacleRoute'
@@ -9,7 +10,7 @@ import {
   EDGE_DOT_DIM,
 } from './BiDirectionalEdge'
 
-export function MovableEdge({
+function MovableEdgeImpl({
   id,
   source,
   target,
@@ -18,7 +19,10 @@ export function MovableEdge({
 }: EdgeProps) {
   const isHighlighted: boolean = data?.isOutgoingFromSelected ?? false
   const sourceColor = useNarrativeBoardStore((state) => state.edgeColors[id])
-  const { zoom } = useViewport()
+  // Select just the zoom scalar (transform[2]) so the edge re-renders only when
+  // zoom changes — not on every pan frame (useViewport returns a fresh object
+  // each transform tick, which would re-render every edge while panning).
+  const zoom = useStore((state) => state.transform[2])
   // Scale stroke inversely with zoom so lines stay visually consistent when zoomed out.
   const scale = Math.min(2, 1 / zoom)
 
@@ -59,3 +63,8 @@ export function MovableEdge({
     />
   )
 }
+
+/** Memoized so unrelated re-renders of the edge layer don't re-render every
+ *  edge; it re-renders only when its own props or subscribed store slices
+ *  (edge color, routed path, zoom) change. */
+export const MovableEdge = memo(MovableEdgeImpl)

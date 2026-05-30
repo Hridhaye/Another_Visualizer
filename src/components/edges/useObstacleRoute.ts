@@ -37,15 +37,22 @@ export function useEdgePath(params: UseEdgePathParams): string {
   const sourceHighlighted = useNarrativeBoardStore((state) => state.highlightedNodeIds.includes(sourceNodeId))
   const targetHighlighted = useNarrativeBoardStore((state) => state.highlightedNodeIds.includes(targetNodeId))
 
-  // Pull just the two endpoint rects from the ReactFlow store.
-  const sourceSig = useStore((state: ReactFlowState) => rectSignature(rectOf(state, sourceNodeId)))
-  const targetSig = useStore((state: ReactFlowState) => rectSignature(rectOf(state, targetNodeId)))
+  // Pull both endpoint rects in a SINGLE ReactFlow store selector returning one
+  // combined signature string. ReactFlow runs each subscribed selector on every
+  // store tick (every drag/pan frame, for every edge), so collapsing two
+  // selectors into one halves the per-edge per-frame work and subscription
+  // count. The equality bail-out still means the useMemo below only recomputes
+  // when THIS edge's endpoints actually move.
+  const endpointSig = useStore((state: ReactFlowState) =>
+    rectSignature(rectOf(state, sourceNodeId)) + '|' + rectSignature(rectOf(state, targetNodeId))
+  )
 
   return useMemo(() => {
     if (routed && routed.length >= 2) {
       return pointsToPath(routed)
     }
 
+    const [sourceSig, targetSig] = endpointSig.split('|')
     const sourceRect = inflateRect(parseRect(sourceSig), sourceHighlighted ? HIGHLIGHT_SCALE : 1)
     const targetRect = inflateRect(parseRect(targetSig), targetHighlighted ? HIGHLIGHT_SCALE : 1)
     if (!sourceRect || !targetRect) {
@@ -54,7 +61,7 @@ export function useEdgePath(params: UseEdgePathParams): string {
 
     const anchors = computeFloatingAnchors(sourceRect, targetRect)
     return pointsToPath(buildFloatingElbow(anchors))
-  }, [routed, sourceSig, targetSig, sourceHighlighted, targetHighlighted])
+  }, [routed, endpointSig, sourceHighlighted, targetHighlighted])
 }
 
 function rectOf(state: ReactFlowState, nodeId: string): Rect | null {

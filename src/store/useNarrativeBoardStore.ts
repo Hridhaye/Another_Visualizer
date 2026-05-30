@@ -45,6 +45,7 @@ import type {
  *  under the enlarged card). */
 export const HIGHLIGHT_SCALE = 1.15
 
+
 const defaultSlipTypes: SlipType[] = [
   { id: 'blue', name: 'Blue Slip', color: '#3b82f6' },
   { id: 'red', name: 'Red Slip', color: '#ef4444' },
@@ -148,6 +149,9 @@ type NarrativeBoardState = {
   cloudSaveLoading: boolean
   cloudLoadLoading: boolean
   lastCloudSyncAt: Date | null
+  /** True while a node drag is in progress, so history is snapshotted once at
+   *  drag start rather than on every pointer-move frame. */
+  isDraggingNodes: boolean
 }
 
 type HistorySnapshot = {
@@ -261,6 +265,28 @@ function createSnapshot(state: NarrativeBoardState): HistorySnapshot {
     metadata: { ...state.metadata },
     viewport: { ...state.viewport },
     hasUnsavedChanges: state.hasUnsavedChanges
+  }
+}
+
+/**
+ * Returns the history-bookkeeping fields for a state mutation that should be
+ * undoable: pushes a fresh snapshot onto the past stack and clears the redo
+ * future. Centralizes the boilerplate that every mutating action repeats.
+ */
+/** Max retained undo snapshots. Each snapshot deep-clones the board, so an
+ *  unbounded stack would leak memory on a long editing session. */
+const HISTORY_LIMIT = 50
+
+function pushHistory(state: NarrativeBoardState) {
+  const past = [...state.historyPast, createSnapshot(state)]
+  if (past.length > HISTORY_LIMIT) {
+    past.splice(0, past.length - HISTORY_LIMIT)
+  }
+  return {
+    historyPast: past,
+    historyFuture: [] as HistorySnapshot[],
+    canUndo: true,
+    canRedo: false,
   }
 }
 
@@ -415,46 +441,71 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   cloudSaveLoading: false,
   cloudLoadLoading: false,
   lastCloudSyncAt: null,
+  isDraggingNodes: false,
 
   onNodesChange: (changes) => {
+    // Selection is owned by the store (selectedNodeIds) and mirrored onto each
+    // node's `selected` field in App. Drop ReactFlow's own `select` changes so it
+    // doesn't also write `.selected` into state.nodes — that would fight the
+    // mirror and cause redundant re-renders. Custom click handlers drive
+    // selection instead.
+    const effectiveChanges = changes.filter((change) => change.type !== 'select')
+    if (effectiveChanges.length === 0) {
+      return
+    }
+
     set((state) => {
-      const nextNodes = applyNodeChanges(changes, state.nodes)
+      const nextNodes = applyNodeChanges(effectiveChanges, state.nodes)
+
+      // A drag emits a stream of position changes (dragging: true) per frame,
+      // ending with one dragging: false. Snapshot history only once, at the
+      // first frame of the drag — never on every frame — so undo reverts a whole
+      // drag in one step and we don't deep-clone the board each pointer-move.
+      const anyDragging = changes.some(
+        (change) => change.type === 'position' && (change as { dragging?: boolean }).dragging === true
+      )
+      const isDragStart = anyDragging && !state.isDraggingNodes
+      const history = isDragStart
+        ? pushHistory(state)
+        : undefined
 
       // Invalidate A*-routed paths only for edges touching a node that actually
-      // *moved* (position changed), so those lines fall back to the live floating
-      // elbow and track the card. A bare select/click emits a position change
-      // with unchanged coordinates — we ignore those so selecting a card doesn't
-      // reset its lines. Edges not connected to a moved card keep their routed
-      // shape; A* re-applies on the next manual "Tidy Lines".
-      const movedNodeIds = new Set(
-        changes
-          .filter((change): change is NodeChange & { id: string; position?: { x: number; y: number } } => {
-            if (change.type !== 'position') return false
-            const pos = (change as { position?: { x: number; y: number } }).position
-            if (!pos) return false
-            const node = state.nodes.find((n) => n.id === (change as { id: string }).id)
-            if (!node) return true
-            return pos.x !== node.position.x || pos.y !== node.position.y
-          })
-          .map((change) => change.id)
-      )
+      // *moved*, so those lines fall back to the live floating elbow and track
+      // the card. routedPaths is empty unless "Tidy Lines" was used, so the
+      // common drag path skips all of this work entirely.
       let routedPaths = state.routedPaths
-      if (movedNodeIds.size > 0 && Object.keys(routedPaths).length > 0) {
-        const next: Record<string, { x: number; y: number }[]> = {}
-        for (const edge of state.edges) {
-          if (movedNodeIds.has(edge.source) || movedNodeIds.has(edge.target)) continue
-          if (routedPaths[edge.id]) next[edge.id] = routedPaths[edge.id]
+      if (Object.keys(routedPaths).length > 0) {
+        const positionById = new Map(state.nodes.map((n) => [n.id, n.position]))
+        const movedNodeIds = new Set<string>()
+        for (const change of changes) {
+          if (change.type !== 'position') continue
+          const pos = (change as { position?: { x: number; y: number } }).position
+          if (!pos) continue
+          const id = (change as { id: string }).id
+          const prev = positionById.get(id)
+          if (!prev || pos.x !== prev.x || pos.y !== prev.y) movedNodeIds.add(id)
         }
-        routedPaths = next
+        if (movedNodeIds.size > 0) {
+          const next: Record<string, { x: number; y: number }[]> = {}
+          for (const edge of state.edges) {
+            if (movedNodeIds.has(edge.source) || movedNodeIds.has(edge.target)) continue
+            if (routedPaths[edge.id]) next[edge.id] = routedPaths[edge.id]
+          }
+          routedPaths = next
+        }
       }
 
+      // Group membership only needs re-validating when nodes are added/removed.
+      // Position/select/dimension changes leave node ids intact, so skip the
+      // per-frame normalizeGroups during drags (it maps + dedupes every group).
+      const nodeCountChanged = nextNodes.length !== state.nodes.length
+      const groups = nodeCountChanged ? normalizeGroups(state.groups, nextNodes) : state.groups
+
       return {
-        historyPast: [...state.historyPast, createSnapshot(state)],
-        historyFuture: [],
-        canUndo: true,
-        canRedo: false,
+        ...history,
+        isDraggingNodes: anyDragging,
         nodes: nextNodes,
-        groups: normalizeGroups(state.groups, nextNodes),
+        groups,
         routedPaths,
         hasUnsavedChanges: true
       }
@@ -1282,14 +1333,9 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
   },
 
   setViewport: (viewport) => {
-    set((state) => ({
-      historyPast: [...state.historyPast, createSnapshot(state)],
-      historyFuture: [],
-      canUndo: true,
-      canRedo: false,
-      viewport,
-      hasUnsavedChanges: true
-    }))
+    // Pan/zoom is not an undoable edit — recording it would clone the whole
+    // board on every move-end and flood the undo stack with camera moves.
+    set({ viewport, hasUnsavedChanges: true })
   },
 
   setMetadata: (metadata) => {

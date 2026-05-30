@@ -1,10 +1,33 @@
-import { useCallback, useEffect, useRef } from 'react'
-import { Handle, Position, type NodeProps, useViewport } from 'reactflow'
+import { memo, useCallback, useContext, useEffect, useMemo, useRef } from 'react'
+import { Handle, Position, useStore, type NodeProps } from 'reactflow'
 
 import { getSlipColor, HIGHLIGHT_SCALE, useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
-import { getPuzzleLabel, type CardData, type NarrativeNode, type SlipType, type Tag } from '../types/narrative'
+import { getPuzzleLabel, type CardData, type SlipType, type Tag } from '../types/narrative'
 import { computeTagLogos } from '../graph/tagLogos'
 import { parseReferences } from '../graph/buildEdgesFromReferences'
+import { CardCodeIndexContext } from './cardRefsContext'
+
+type ResolvedRef = { code: string; title: string | null; slipColor: string }
+
+// Below this zoom, card detail is unreadable anyway, so we render a cheap flat
+// "far" card (color block + title) — no box-shadow, gradients, or text-shadows.
+// This keeps panning fast when many cards are on screen (you only get many
+// on screen by zooming out). Cards subscribe to the boolean `zoom < threshold`,
+// not zoom itself, so they only re-render when crossing the threshold — never
+// per pan frame.
+const FAR_ZOOM_THRESHOLD = 0.2
+
+// Tag logos depend only on the (rarely-changing) tags array. Memoize by array
+// identity so every card render doesn't recompute the O(tags²) prefix logic.
+let cachedTags: Tag[] | null = null
+let cachedTagLogos: Map<string, string> = new Map()
+function getTagLogos(tags: Tag[]): Map<string, string> {
+  if (tags !== cachedTags) {
+    cachedTags = tags
+    cachedTagLogos = computeTagLogos(tags)
+  }
+  return cachedTagLogos
+}
 
 const LONG_PRESS_MS = 400
 const DRIFT_PX = 8
@@ -23,47 +46,72 @@ function getContrastText(hex: string): string {
   return L > 0.35 ? '#3a3a3a' : '#f5f5f5'
 }
 
-export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
-  void selected
-  const slipTypes = useNarrativeBoardStore((state) => state.slipTypes)
-  const tags = useNarrativeBoardStore((state) => state.tags)
-  const selectedNodeIds = useNarrativeBoardStore((state) => state.selectedNodeIds)
-  const groups = useNarrativeBoardStore((state) => state.groups)
-  const connectionSourceNodeId = useNarrativeBoardStore((state) => state.connectionSourceNodeId)
+function NarrativeCardNodeImpl({ id, data, selected }: NodeProps<CardData>) {
+  // Action handles are stable references in zustand, so subscribing to them
+  // never triggers a re-render.
   const openContextPanel = useNarrativeBoardStore((state) => state.openContextPanel)
   const setConnectionSourceNode = useNarrativeBoardStore((state) => state.setConnectionSourceNode)
   const createReferenceConnection = useNarrativeBoardStore((state) => state.createReferenceConnection)
   const setSelectedNode = useNarrativeBoardStore((state) => state.setSelectedNode)
   const toggleNodeSelection = useNarrativeBoardStore((state) => state.toggleNodeSelection)
-  const highlightedNodeIds = useNarrativeBoardStore((state) => state.highlightedNodeIds)
-  const activeGroupId = useNarrativeBoardStore((state) => state.activeGroupId)
-  const nodes = useNarrativeBoardStore((state) => state.nodes)
-  const linkMode = useNarrativeBoardStore((state) => state.linkMode)
   const setLinkMode = useNarrativeBoardStore((state) => state.setLinkMode)
+  const confirmMatchingPick = useNarrativeBoardStore((state) => state.confirmMatchingPick)
+
+  // Shared, rarely-changing slices. Each is a primitive/stable reference, so a
+  // change to one re-renders cards once, not per board interaction.
+  const tags = useNarrativeBoardStore((state) => state.tags)
+  const slipTypes = useNarrativeBoardStore((state) => state.slipTypes)
+  const minimizedMode = useNarrativeBoardStore((state) => state.minimizedMode)
+  // True when zoomed far enough out that detail isn't readable. Subscribing to
+  // the boolean (not the zoom scalar) means a re-render only on threshold
+  // crossing, not every pan frame.
+  const isFar = useStore((state) => state.transform[2] < FAR_ZOOM_THRESHOLD)
+  const connectionSourceNodeId = useNarrativeBoardStore((state) => state.connectionSourceNodeId)
+  const linkMode = useNarrativeBoardStore((state) => state.linkMode)
   const matchingPickMode = useNarrativeBoardStore((state) => state.matchingPickMode)
   const matchingPickSourceNodeId = useNarrativeBoardStore((state) => state.matchingPickSourceNodeId)
-  const matchingPickStagedIds = useNarrativeBoardStore((state) => state.matchingPickStagedIds)
-  const confirmMatchingPick = useNarrativeBoardStore((state) => state.confirmMatchingPick)
-  const minimizedMode = useNarrativeBoardStore((state) => state.minimizedMode)
-  const activeGroup = activeGroupId ? groups.find((g) => g.id === activeGroupId) ?? null : null
-  const isGroupSelected = !!activeGroup?.nodeIds.includes(id)
 
-  const { zoom } = useViewport()
-  // Ring spreads are in flow-space px; divide by zoom to keep a consistent
-  // screen-pixel width regardless of zoom level.
-  const r = (px: number) => `${px / zoom}px`
+  // Selection ring comes from ReactFlow's per-node `selected` prop (mirrored
+  // from the store in App). The card no longer subscribes to selectedNodeIds,
+  // so selecting one card does not notify every other card.
+  const isSelected = selected ?? false
+
+  // Per-card boolean flags as primitive selectors: each re-renders only THIS
+  // card when its own value flips, never scanning the nodes array.
+  const isHighlighted = useNarrativeBoardStore((state) => state.highlightedNodeIds.includes(id))
+  const anyHighlighted = useNarrativeBoardStore((state) => state.highlightedNodeIds.length > 0)
+  const isGroupSelected = useNarrativeBoardStore((state) => {
+    if (!state.activeGroupId) return false
+    const group = state.groups.find((g) => g.id === state.activeGroupId)
+    return group ? group.nodeIds.includes(id) : false
+  })
+  const isPickPicked = useNarrativeBoardStore(
+    (state) => state.matchingPickMode && state.matchingPickSourceNodeId !== id && state.matchingPickStagedIds.includes(id)
+  )
+
+  // Resolve this card's references via the shared code index (O(1) per code).
+  // The index identity only changes when card content/palette changes, so this
+  // memo doesn't recompute on drag/pan/select.
+  const codeIndex = useContext(CardCodeIndexContext)
+  const refs = useMemo<ResolvedRef[]>(() => {
+    if (!data.referencesText) return []
+    return parseReferences(data.referencesText).map((code) => {
+      const entry = codeIndex.get(code)
+      return { code, title: entry?.title ?? null, slipColor: entry?.slipColor ?? getSlipColor(slipTypes, '') }
+    })
+  }, [data.referencesText, codeIndex, slipTypes])
+
+  // Ring spreads are fixed flow-space px — like the card's 7px border, they
+  // scale with zoom.
+  const r = (px: number) => `${px}px`
 
   const slipColor = getSlipColor(slipTypes, data.slipTypeId)
   const isLinkSource = connectionSourceNodeId === id
-  const isSelected = selectedNodeIds.includes(id)
-  const isHighlighted = highlightedNodeIds.includes(id)
-  const anyHighlighted = highlightedNodeIds.length > 0
   const isDimmed = anyHighlighted && !isHighlighted
   const isPendingTarget = !!connectionSourceNodeId && !isLinkSource
   const hasPuzzle = data.puzzleType !== 'none'
 
   const isPickSource = matchingPickMode && matchingPickSourceNodeId === id
-  const isPickPicked = matchingPickMode && !isPickSource && matchingPickStagedIds.includes(id)
   const isPickTarget = matchingPickMode && !isPickSource && !isPickPicked
   const cardClassName = `card-shell relative overview ${minimizedMode ? 'minimized' : ''} ${isSelected ? 'card-selected' : ''} ${isHighlighted ? 'card-highlighted' : ''} ${isDimmed ? 'card-dimmed' : ''} ${hasPuzzle ? 'has-puzzle' : ''} ${isPickSource ? 'card-pick-source' : ''} ${isPickTarget ? 'card-pick-target' : ''} ${isPickPicked ? 'card-pick-picked' : ''}`
 
@@ -260,9 +308,45 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
         ? `0 0 0 ${r(2)} rgba(255,255,255,0.6)`
         : `0 0 0 ${r(2)} rgba(255,255,255,0.04)`
 
+  // A single small glow marks a highlighted card. (Was a layered 20px+6px blur;
+  // a 30px-blur box-shadow is one of the costlier things to composite per card.)
   const highlightGlow = isHighlighted
-    ? `, 0 0 ${r(20)} ${r(4)} rgba(255,255,255,0.09), 0 0 ${r(6)} ${r(1)} rgba(255,255,255,0.11)`
+    ? `, 0 0 ${r(8)} ${r(2)} rgba(255,255,255,0.18)`
     : ''
+
+  // Far (zoomed-out) view: a flat slip-colored block with just the title. No
+  // box-shadow, gradients, or nested detail — cheap to paint when dozens are on
+  // screen. A thin solid ring still marks selection/highlight so the big-picture
+  // view stays legible.
+  if (isFar) {
+    const farRing = isSelected || isGroupSelected
+      ? 'inset 0 0 0 6px rgba(255,255,255,0.85)'
+      : isHighlighted
+        ? 'inset 0 0 0 6px rgba(255,255,255,0.6)'
+        : undefined
+    return (
+      <div
+        ref={divRef}
+        data-card-id={id}
+        className="card-shell card-far"
+        style={{
+          background: slipColor,
+          boxShadow: farRing,
+          opacity: isDimmed ? 0.4 : undefined,
+          cursor: isPendingTarget ? 'crosshair' : undefined,
+        }}
+        onClick={handleClick}
+        onTouchStart={onTouchStart}
+        onTouchEnd={handleTouchTap}
+      >
+        <Handle type="target" position={Position.Left} />
+        <div className="card-far__title" style={{ color: getContrastText(slipColor) }}>
+          {data.title}
+        </div>
+        <Handle type="source" position={Position.Right} />
+      </div>
+    )
+  }
 
   return (
     <div
@@ -270,9 +354,10 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
       data-card-id={id}
       className={cardClassName}
       style={{
+        // Flat solid background — the former dual ~5%-alpha gradients were nearly
+        // invisible but repainted every frame. Flat fills composite far cheaper.
         border: `7px solid ${slipColor}`,
-        backgroundColor: '#0f1015',
-        backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0)), linear-gradient(to bottom, ${slipColor}0d, ${slipColor}08)`,
+        backgroundColor: '#14151c',
         boxShadow: `${baseShadow}${extraShadow}${highlightGlow}`,
         transform: isHighlighted ? `scale(${HIGHLIGHT_SCALE})` : undefined,
         cursor: isPendingTarget ? 'crosshair' : undefined,
@@ -288,7 +373,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
           data={data}
           slipTypes={slipTypes}
           tags={tags}
-          nodes={nodes}
+          refs={refs}
           slipColor={slipColor}
           hasPuzzle={hasPuzzle}
         />
@@ -297,7 +382,7 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
           data={data}
           slipTypes={slipTypes}
           tags={tags}
-          nodes={nodes}
+          refs={refs}
           slipColor={slipColor}
           hasPuzzle={hasPuzzle}
         />
@@ -314,35 +399,30 @@ export function NarrativeCardNode({ id, data, selected }: NodeProps<CardData>) {
   )
 }
 
+/** Memoized so a card re-renders only when its own props (data, selection,
+ *  resolved refs, etc.) change — not when an unrelated card moves or the shared
+ *  node/edge arrays get a new identity. */
+export const NarrativeCardNode = memo(NarrativeCardNodeImpl)
+
 type OverviewContentProps = {
   data: CardData
   slipTypes: SlipType[]
   tags: Tag[]
-  nodes: NarrativeNode[]
+  refs: ResolvedRef[]
   slipColor: string
   hasPuzzle: boolean
 }
 
-function OverviewContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }: OverviewContentProps) {
+function OverviewContent({ data, slipTypes, tags, refs, slipColor, hasPuzzle }: OverviewContentProps) {
   const given = data.slipGivenTypeIds ?? []
   const slipEntries = slipTypes
     .map((slip) => ({ slip, count: given.filter((id) => id === slip.id).length }))
     .filter(({ count }) => count > 0)
 
-  const refCodes = data.referencesText ? parseReferences(data.referencesText) : []
-  const refs = refCodes.map((code) => {
-    const refNode = nodes.find((n) => n.data.code === code)
-    return {
-      code,
-      title: refNode?.data.title ?? null,
-      slipColor: getSlipColor(slipTypes, refNode?.data.slipTypeId ?? ''),
-    }
-  })
-
   const assignedTags = (data.tagIds ?? [])
     .map((id) => tags.find((t) => t.id === id))
     .filter((t): t is NonNullable<typeof t> => Boolean(t))
-  const tagLogos = assignedTags.length > 0 ? computeTagLogos(tags) : null
+  const tagLogos = assignedTags.length > 0 ? getTagLogos(tags) : null
   const tagGlyphColor = `color-mix(in srgb, ${slipColor} 30%, #d4d4d8)`
 
   const summarySnippet = data.summary?.trim() || null
@@ -361,7 +441,6 @@ function OverviewContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }:
       )}
 
       <div className="card-overview__heading">
-        <span className="card-overview__code">{data.code}</span>
         <div className="card-overview__title">{data.title}</div>
       </div>
 
@@ -370,15 +449,13 @@ function OverviewContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }:
       )}
 
       {slipEntries.length > 0 && (
-        <div className="card-overview__chips">
-          <span className="card-overview__chip" title="Slips given">
-            {slipEntries.map(({ slip, count }) => (
-              <span key={slip.id} className="card-overview__slip" title={`${slip.name} ×${count}`}>
-                <span className="card-overview__slip-dot" style={{ background: slip.color }} />
-                {count > 1 && <span className="card-overview__chip-count">×{count}</span>}
-              </span>
-            ))}
-          </span>
+        <div className="card-overview__chips" title="Slips given">
+          {slipEntries.map(({ slip, count }) => (
+            <span key={slip.id} className="card-overview__slip" title={`${slip.name} ×${count}`}>
+              <span className="card-overview__slip-dot" style={{ background: slip.color }} />
+              {count > 1 && <span className="card-overview__chip-count">×{count}</span>}
+            </span>
+          ))}
         </div>
       )}
 
@@ -394,8 +471,10 @@ function OverviewContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }:
       )}
 
       {hasPuzzle && (
-        <div className="card-overview__puzzle" style={{ background: `${slipColor}44` }}>
-          <span className="card-overview__puzzle-label">{getPuzzleLabel(data.puzzleType)}</span>
+        <div className="card-overview__puzzle">
+          <span className="card-overview__puzzle-label" style={{ color: slipColor }}>
+            {getPuzzleLabel(data.puzzleType)}
+          </span>
           {puzzleSnippet && (
             <span className="card-overview__puzzle-summary">{puzzleSnippet}</span>
           )}
@@ -411,22 +490,21 @@ function OverviewContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }:
  * title, slips given, reference titles (no codes), puzzle type (no summary),
  * and tag. No summary, no card code.
  */
-function MinimizedContent({ data, slipTypes, tags, nodes, slipColor, hasPuzzle }: OverviewContentProps) {
+function MinimizedContent({ data, slipTypes, tags, refs, slipColor, hasPuzzle }: OverviewContentProps) {
   const given = data.slipGivenTypeIds ?? []
   const slipEntries = slipTypes
     .map((slip) => ({ slip, count: given.filter((id) => id === slip.id).length }))
     .filter(({ count }) => count > 0)
 
-  const refItems = (data.referencesText ? parseReferences(data.referencesText) : [])
-    .map((code) => {
-      const refNode = nodes.find((n) => n.data.code === code)
-      return { title: refNode?.data.title ?? code, slipColor: getSlipColor(slipTypes, refNode?.data.slipTypeId ?? '') }
-    })
+  const refItems = refs.map(({ code, title, slipColor: refSlipColor }) => ({
+    title: title ?? code,
+    slipColor: refSlipColor,
+  }))
 
   const assignedTags = (data.tagIds ?? [])
     .map((id) => tags.find((t) => t.id === id))
     .filter((t): t is NonNullable<typeof t> => Boolean(t))
-  const tagLogos = assignedTags.length > 0 ? computeTagLogos(tags) : null
+  const tagLogos = assignedTags.length > 0 ? getTagLogos(tags) : null
   const contrastText = getContrastText(slipColor)
   const hasBody = slipEntries.length > 0 || refItems.length > 0 || hasPuzzle
 

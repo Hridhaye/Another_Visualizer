@@ -59,10 +59,6 @@ function inflate(rect: Rect, by: number): Rect {
   }
 }
 
-function pointInRect(x: number, y: number, rect: Rect): boolean {
-  return x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height
-}
-
 /**
  * Builds the straight-elbow fallback used when no obstacle-free route is found
  * (e.g. fully boxed in). Mirrors buildElbowGeometry's centered shape.
@@ -105,18 +101,28 @@ export function routeOrthogonal(params: RouteParams): Point[] {
     y: params.target.y + tDir.y * stubLen,
   }
 
-  // Bounding region: span of source, target and all obstacles, with margin.
-  const xs = [params.source.x, params.target.x, sStub.x, tStub.x]
-  const ys = [params.source.y, params.target.y, sStub.y, tStub.y]
-  obstacles.forEach((r) => {
-    xs.push(r.x, r.x + r.width)
-    ys.push(r.y, r.y + r.height)
-  })
-  const margin = grid * 4
-  const minX = Math.min(...xs) - margin
-  const minY = Math.min(...ys) - margin
-  const maxX = Math.max(...xs) + margin
-  const maxY = Math.max(...ys) + margin
+  // Bounding region: the corridor spanned by the source/target stubs, expanded
+  // with a margin so A* has room to detour around blockers. Only obstacles that
+  // intersect this region matter — so an edge between two nearby cards routes on
+  // a small local grid instead of one spanning the whole board (the callers pass
+  // *all* cards as obstacles). This is the key scaling win.
+  const margin = grid * 8
+  let minX = Math.min(params.source.x, params.target.x, sStub.x, tStub.x) - margin
+  let minY = Math.min(params.source.y, params.target.y, sStub.y, tStub.y) - margin
+  let maxX = Math.max(params.source.x, params.target.x, sStub.x, tStub.x) + margin
+  let maxY = Math.max(params.source.y, params.target.y, sStub.y, tStub.y) + margin
+
+  // Keep only obstacles overlapping the corridor, and grow the region to fully
+  // contain each so the router can always go around it (not just up to its edge).
+  const localObstacles: Rect[] = []
+  for (const r of obstacles) {
+    if (r.x > maxX || r.x + r.width < minX || r.y > maxY || r.y + r.height < minY) continue
+    localObstacles.push(r)
+    minX = Math.min(minX, r.x - margin)
+    minY = Math.min(minY, r.y - margin)
+    maxX = Math.max(maxX, r.x + r.width + margin)
+    maxY = Math.max(maxY, r.y + r.height + margin)
+  }
 
   const cols = Math.max(1, Math.ceil((maxX - minX) / grid))
   const rows = Math.max(1, Math.ceil((maxY - minY) / grid))
@@ -127,10 +133,19 @@ export function routeOrthogonal(params: RouteParams): Point[] {
   })
   const toPoint = (c: Cell): Point => ({ x: minX + c.col * grid, y: minY + c.row * grid })
 
-  const blocked = (col: number, row: number): boolean => {
-    const x = minX + col * grid
-    const y = minY + row * grid
-    return obstacles.some((r) => pointInRect(x, y, r))
+  // Rasterize obstacles into a blocked grid once (mark every cell each inflated
+  // rect covers), so the A* neighbour test is an O(1) array read instead of
+  // scanning every obstacle per cell.
+  const blockedGrid = new Uint8Array(cols * rows)
+  for (const r of localObstacles) {
+    const c0 = Math.max(0, Math.floor((r.x - minX) / grid))
+    const c1 = Math.min(cols - 1, Math.ceil((r.x + r.width - minX) / grid))
+    const r0 = Math.max(0, Math.floor((r.y - minY) / grid))
+    const r1 = Math.min(rows - 1, Math.ceil((r.y + r.height - minY) / grid))
+    for (let row = r0; row <= r1; row += 1) {
+      const base = row * cols
+      for (let col = c0; col <= c1; col += 1) blockedGrid[base + col] = 1
+    }
   }
 
   // Route between the stub points, not the on-card anchors.
@@ -140,8 +155,10 @@ export function routeOrthogonal(params: RouteParams): Point[] {
   const startDir = directionOffset(params.sourcePosition)
   const goalDir = directionOffset(params.targetPosition)
 
-  const key = (col: number, row: number, dir: number) => `${col},${row},${dir}`
-  // dir: 0 = none (start), 1 = horizontal, 2 = vertical
+  // Visited key encodes arrival direction so a cell can be re-expanded when
+  // reached along a different axis (the turn penalty depends on it).
+  // dir: 0 = none (start), 1 = horizontal, 2 = vertical.
+  const visitKey = (col: number, row: number, dir: number) => (row * cols + col) * 3 + dir
   const dirOf = (dx: number) => (dx !== 0 ? 1 : 2)
 
   interface NodeState {
@@ -153,18 +170,42 @@ export function routeOrthogonal(params: RouteParams): Point[] {
     parent: NodeState | null
   }
 
-  const startState: NodeState = {
-    col: start.col,
-    row: start.row,
-    dir: 0,
-    g: 0,
-    f: 0,
-    parent: null,
+  // Binary min-heap on f, so popping the best node is O(log n) instead of an
+  // O(n) linear scan of the open set.
+  const heap: NodeState[] = []
+  const heapPush = (n: NodeState) => {
+    heap.push(n)
+    let i = heap.length - 1
+    while (i > 0) {
+      const p = (i - 1) >> 1
+      if (heap[p].f <= heap[i].f) break
+      const t = heap[p]; heap[p] = heap[i]; heap[i] = t
+      i = p
+    }
+  }
+  const heapPop = (): NodeState => {
+    const top = heap[0]
+    const last = heap.pop() as NodeState
+    if (heap.length > 0) {
+      heap[0] = last
+      let i = 0
+      for (;;) {
+        const l = 2 * i + 1
+        const r = 2 * i + 2
+        let s = i
+        if (l < heap.length && heap[l].f < heap[s].f) s = l
+        if (r < heap.length && heap[r].f < heap[s].f) s = r
+        if (s === i) break
+        const t = heap[s]; heap[s] = heap[i]; heap[i] = t
+        i = s
+      }
+    }
+    return top
   }
 
-  const open: NodeState[] = [startState]
-  const seen = new Map<string, number>()
-  seen.set(key(start.col, start.row, 0), 0)
+  heapPush({ col: start.col, row: start.row, dir: 0, g: 0, f: 0, parent: null })
+  const seen = new Map<number, number>()
+  seen.set(visitKey(start.col, start.row, 0), 0)
 
   const heuristic = (col: number, row: number) =>
     Math.abs(col - goal.col) + Math.abs(row - goal.row)
@@ -180,14 +221,9 @@ export function routeOrthogonal(params: RouteParams): Point[] {
   let iterations = 0
   const maxIterations = cols * rows * 4
 
-  while (open.length > 0 && iterations < maxIterations) {
+  while (heap.length > 0 && iterations < maxIterations) {
     iterations += 1
-    // Pop lowest f (linear scan is fine for our grid sizes).
-    let bestIdx = 0
-    for (let i = 1; i < open.length; i += 1) {
-      if (open[i].f < open[bestIdx].f) bestIdx = i
-    }
-    const current = open.splice(bestIdx, 1)[0]
+    const current = heapPop()
 
     if (current.col === goal.col && current.row === goal.row) {
       found = current
@@ -216,17 +252,17 @@ export function routeOrthogonal(params: RouteParams): Point[] {
       // Allow start/goal cells even if they fall inside an inflated rect.
       const isEndpoint =
         (nc === goal.col && nr === goal.row) || (nc === start.col && nr === start.row)
-      if (!isEndpoint && blocked(nc, nr)) continue
+      if (!isEndpoint && blockedGrid[nr * cols + nc]) continue
 
       const moveDir = dirOf(move.dx)
       const turned = current.dir !== 0 && current.dir !== moveDir
       const stepCost = 1 + (turned ? TURN_PENALTY : 0)
       const g = current.g + stepCost
-      const k = key(nc, nr, moveDir)
+      const k = visitKey(nc, nr, moveDir)
       const prev = seen.get(k)
       if (prev !== undefined && prev <= g) continue
       seen.set(k, g)
-      open.push({
+      heapPush({
         col: nc,
         row: nr,
         dir: moveDir,

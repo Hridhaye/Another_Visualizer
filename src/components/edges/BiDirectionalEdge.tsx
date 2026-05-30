@@ -1,5 +1,6 @@
+import { memo } from 'react'
 import type { EdgeProps } from 'reactflow'
-import { useViewport } from 'reactflow'
+import { useStore } from 'reactflow'
 
 import { useEdgePath } from './useObstacleRoute'
 
@@ -15,7 +16,9 @@ export const EDGE_DOT_DIM = 'edge-dot-dim'
 export const EDGE_DOT_BRIGHT = 'edge-dot-bright'
 
 export function BiDirectionalEdgeMarkerDef() {
-  const { zoom } = useViewport()
+  // Markers depend only on zoom, not pan — select the zoom scalar so panning
+  // doesn't rebuild every marker def each frame.
+  const zoom = useStore((state) => state.transform[2])
   // Scale markers up as zoom decreases so they stay readable at any zoom level.
   // Clamped: never smaller than base (zoom > 1) and never more than 2.2× (very zoomed out).
   const s = Math.min(Math.max(1 / zoom, 1), 2.2)
@@ -59,7 +62,7 @@ export function BiDirectionalEdgeMarkerDef() {
   )
 }
 
-export function BiDirectionalEdge({
+function BiDirectionalEdgeImpl({
   id,
   source, target,
   data,
@@ -67,7 +70,7 @@ export function BiDirectionalEdge({
   const isHighlighted: boolean = data?.isOutgoingFromSelected ?? false
 
   const path = useEdgePath({ edgeId: id, sourceNodeId: source, targetNodeId: target })
-  const { zoom } = useViewport()
+  const zoom = useStore((state) => state.transform[2])
   const scale = Math.min(2, 1 / zoom)
 
   const color = isHighlighted ? 'rgba(255,255,255,0.85)' : 'rgba(148,163,184,0.55)'
@@ -90,3 +93,5 @@ export function BiDirectionalEdge({
     />
   )
 }
+
+export const BiDirectionalEdge = memo(BiDirectionalEdgeImpl)

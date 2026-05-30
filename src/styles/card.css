@@ -22,6 +22,38 @@
     0 12px 34px rgba(0, 0, 0, 0.5);
 }
 
+/* Zoomed-out "far" tile: a flat slip-colored block with a single-line title.
+   Sharp corners (vs. the rounded minimized card) so it reads as a distinct
+   big-picture tile, not a shrunken card. No ambient shadow, gradient, border,
+   transition, or rounded clipping — minimal paint cost so panning stays smooth
+   when many tiles are on screen. Fixed footprint keeps connector endpoints from
+   jumping when crossing the zoom threshold. */
+.card-shell.card-far {
+  width: 483px;
+  max-width: 483px;
+  height: 200px;
+  min-height: 0;
+  padding: 24px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0;
+  transition: none;
+  overflow: hidden;
+}
+
+.card-far__title {
+  width: 100%;
+  text-align: center;
+  font-size: 40px;
+  line-height: 1.1;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .card-shell.card-highlighted {
   z-index: 10;
 }
@@ -89,23 +121,13 @@
   font-size: 34px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
-/* Code + title share one centered line; code is muted and smaller so the title dominates. */
+/* Title sits centered as the card's primary identifier. */
 .card-overview__heading {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-}
-
-.card-overview__code {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: #71717a;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .card-overview__title {
@@ -115,7 +137,6 @@
   font-weight: 800;
   color: #ffffff;
   overflow-wrap: anywhere;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
   padding: 0 8px;
 }
 
@@ -127,41 +148,11 @@
   gap: 18px;
 }
 
-.card-overview__chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 22px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.card-overview__chip-glyph {
-  font-size: 40px;
-  font-weight: 800;
-  line-height: 1;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-}
-
 .card-overview__chip-count {
   font-size: 38px;
   font-weight: 800;
   color: #ffffff;
   line-height: 1;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-}
-
-.card-overview__chip-label {
-  font-size: 34px;
-  font-weight: 700;
-  color: #ffffff;
-  line-height: 1;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-}
-
-.card-overview__chip--puzzle {
-  border-color: transparent;
 }
 
 .card-overview__slip {
@@ -176,7 +167,6 @@
   height: 40px;
   border-radius: 50%;
   border: 3px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
   flex-shrink: 0;
 }
 
@@ -200,10 +190,8 @@
   font-size: 36px;
   font-weight: 600;
   color: #e4e4e7;
-  padding: 10px 16px;
+  padding: 4px 0 4px 16px;
   border-left: 5px solid;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
   overflow-wrap: anywhere;
 }
 
@@ -220,26 +208,21 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 14px 20px;
-  border-radius: 10px;
+  gap: 4px;
   box-sizing: border-box;
 }
 
 .card-overview__puzzle-label {
   font-size: 36px;
   font-weight: 800;
-  color: #ffffff;
   white-space: nowrap;
   flex-shrink: 0;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .card-overview__puzzle-summary {
   font-size: 36px;
   font-weight: 400;
   color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   overflow-wrap: anywhere;
 }
 
@@ -382,13 +365,10 @@
     gap: 20px;
   }
 
-  .card-overview__code { font-size: 16px; }
   .card-overview__title { font-size: 40px; }
   .card-overview__summary { font-size: 26px; }
   .card-overview__tag { font-size: 24px; }
-  .card-overview__chip-glyph { font-size: 30px; }
-  .card-overview__chip-count,
-  .card-overview__chip-label { font-size: 26px; }
+  .card-overview__chip-count { font-size: 26px; }
   .card-overview__slip-dot { width: 30px; height: 30px; }
   .card-overview__ref-item { font-size: 26px; }
   .card-overview__ref-code { font-size: 16px; }
@@ -429,14 +409,10 @@
   }
 
   .card-overview { gap: 16px; }
-  .card-overview__code { font-size: 14px; }
   .card-overview__title { font-size: 30px; }
   .card-overview__summary { font-size: 22px; }
   .card-overview__tag { font-size: 20px; }
-  .card-overview__chip { padding: 8px 14px; gap: 8px; }
-  .card-overview__chip-glyph { font-size: 24px; }
-  .card-overview__chip-count,
-  .card-overview__chip-label { font-size: 20px; }
+  .card-overview__chip-count { font-size: 20px; }
   .card-overview__slip-dot { width: 24px; height: 24px; }
   .card-overview__ref-item { font-size: 20px; }
   .card-overview__ref-code { font-size: 14px; }

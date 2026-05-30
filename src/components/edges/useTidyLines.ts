@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useReactFlow } from 'reactflow'
 
 import { getSlipColor, HIGHLIGHT_SCALE, useNarrativeBoardStore } from '../../store/useNarrativeBoardStore'
@@ -12,8 +12,6 @@ import {
   type Point,
   type Rect,
 } from './routeOrthogonal'
-
-const DEBOUNCE_MS = 900
 
 function buildEdgeRefs(): EdgeRef[] {
   const { edges, nodes, slipTypes } = useNarrativeBoardStore.getState()
@@ -133,42 +131,19 @@ export function useTidyLines() {
 }
 
 /**
- * Keeps edgeColors in sync with the current edge list. Runs immediately on
- * every edge change so colors are available even before tidyLines fires.
+ * Keeps edgeColors in sync with the current edge list + palette.
+ *
+ * Edge color depends only on: which edges exist, each source card's slip type,
+ * and the slip palette. None of those change while dragging, panning, or
+ * zooming — and the `edges` array only gets a new identity when topology or a
+ * source's slip type actually changes (edges are regenerated from references on
+ * those edits). So a plain `useEffect([edges, slipTypes])` recomputes exactly
+ * when needed and never on the drag/pan hot path. (Reads fresh node data via
+ * getState() inside buildEdgeRefs, so it doesn't need to subscribe to nodes.)
  */
-export function useSyncEdgeColors(edgeSignature: string) {
+export function useSyncEdgeColors(edges: unknown, slipTypes: unknown) {
   const setEdgeColors = useNarrativeBoardStore((state) => state.setEdgeColors)
-
   useEffect(() => {
     setEdgeColors(computeEdgeColors(buildEdgeRefs()))
-  }, [edgeSignature, setEdgeColors])
-}
-
-/**
- * Re-runs tidyLines on a long debounce whenever the given signature changes
- * (node positions or edges). Slow on purpose: avoidance settles a beat after the
- * user stops moving things, never during interaction.
- *
- * On each change it first clears any existing routed paths so edges fall back to
- * the live floating elbow immediately (a stale A* polyline would otherwise stay
- * detached from a moved card until the debounce fires), then schedules the
- * re-route. The very first run is skipped so we don't auto-route on load.
- */
-export function useAutoTidy(tidyLines: () => void, signature: string) {
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const clearRoutedPaths = useNarrativeBoardStore((state) => state.clearRoutedPaths)
-  const firstRun = useRef(true)
-
-  useEffect(() => {
-    if (firstRun.current) {
-      firstRun.current = false
-      return
-    }
-    clearRoutedPaths()
-    if (timer.current) clearTimeout(timer.current)
-    timer.current = setTimeout(tidyLines, DEBOUNCE_MS)
-    return () => {
-      if (timer.current) clearTimeout(timer.current)
-    }
-  }, [tidyLines, signature, clearRoutedPaths])
+  }, [edges, slipTypes, setEdgeColors])
 }
