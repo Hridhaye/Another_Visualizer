@@ -192,6 +192,22 @@ REFERENCES:
     expect(text).not.toContain('SUMMARY')
   })
 
+  it('exports and re-imports NOTES as a plain block', () => {
+    const nodes = [
+      { id: 'a', type: 'narrativeCard', position: { x: 0, y: 0 }, data: { code: 'AA01', title: 'First', summary: '', body: '', notes: 'Rough idea line one.\nTODO: decide later.', slipTypeId: 'blue', slipGivenTypeIds: [], referencesText: '', tagIds: [], puzzleType: 'none' } },
+    ] as never
+
+    const text = exportAIFormat(nodes, [{ id: 'blue', name: 'Blue Slip', color: '#3b82f6' }], [], 'standard', ['title', 'notes'])
+    expect(text).toContain('NOTES:')
+    expect(text).toContain('TODO: decide later.')
+    expect(text).toContain('END_NOTES')
+
+    const result = importAIFormat(text, nodes, [{ id: 'blue', name: 'Blue Slip', color: '#3b82f6' }])
+    const reimported = result.updatedNodes.find((n) => n.data.code === 'AA01')
+    expect(reimported?.data.notes).toContain('Rough idea line one.')
+    expect(reimported?.data.notes).toContain('TODO: decide later.')
+  })
+
   it('helperOnly export emits the header but no card blocks', () => {
     const nodes = [
       { id: 'a', type: 'narrativeCard', position: { x: 0, y: 0 }, data: { code: 'AA01', title: 'First', summary: '', body: '', slipTypeId: 'blue', slipGivenTypeIds: [], referencesText: '', tagIds: [], puzzleType: 'none' } },

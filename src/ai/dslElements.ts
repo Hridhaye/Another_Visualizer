@@ -26,6 +26,7 @@ export type DSLElementKey =
   | 'summary'
   | 'references'
   | 'body'
+  | 'notes'
 
 export type DSLRenderContext = {
   nodes: NarrativeNode[]
@@ -153,8 +154,8 @@ export const DSL_ELEMENTS: DSLElement[] = [
       '                                         reorder  → put scrambled lines/boxes into the correct order',
       '                                         matching → pick which cards answer a question',
       '                                       Only the type and summary live here. Do NOT spell out blanks, box',
-      '                                       order, or answers — leave any rough/undecided puzzle ideas as notes',
-      '                                       at the bottom of BODY; the real puzzle is built later in the puzzle panel.',
+      '                                       order, or answers — use the NOTES field for rough puzzle ideas.',
+      '                                       The real puzzle is built later in the puzzle panel.',
     ],
     example: ['PUZZLE: fill: Name the object left at the scene'],
     render: (node) => {
@@ -192,24 +193,36 @@ export const DSL_ELEMENTS: DSLElement[] = [
     key: 'body',
     label: 'Narrative Body',
     helper: [
-      'BODY:                                — full narrative body text.',
+      'BODY:                                — full narrative body text (rich text, formatting markers allowed).',
       'END_BODY                             — closes the BODY block (required when BODY is present).',
-      '                                       ROUGH / UNFINISHED NOTES: put anything not yet decided or',
-      '                                       implemented (draft puzzle ideas, open questions, "TODO"s) at the',
-      '                                       BOTTOM of the body, clearly marked. The detailed puzzle build-out',
-      '                                       happens later in the puzzle panel, not here.',
     ],
     example: [
       '',
       'BODY:',
       'Rain hammers the window as the detective opens the file.',
-      '',
-      '-- rough notes (not final) --',
-      'Puzzle idea: fill-in-the-blank on the victim\'s last words. Decide exact blanks in the puzzle panel.',
       'END_BODY',
     ],
     render: (node) =>
       node.data.body.trim() ? ['', 'BODY:', node.data.body.trim(), 'END_BODY'] : [],
+  },
+  {
+    key: 'notes',
+    label: 'Rough Notes',
+    helper: [
+      'NOTES:                               — free-text scratch pad for unfinished / undecided ideas.',
+      'END_NOTES                            — closes the NOTES block (required when NOTES is present).',
+      '                                       Plain text only, no formatting. Use this for draft puzzle',
+      '                                       content, open questions, and TODOs that aren\'t final yet.',
+    ],
+    example: [
+      '',
+      'NOTES:',
+      'Puzzle idea: fill-in-the-blank on the victim\'s last words.',
+      'TODO: confirm the timeline before locking the body.',
+      'END_NOTES',
+    ],
+    render: (node) =>
+      (node.data.notes ?? '').trim() ? ['', 'NOTES:', node.data.notes!.trim(), 'END_NOTES'] : [],
   },
 ]
 

@@ -10,10 +10,11 @@ export type AIBlock = {
   summary: string
   references: string[]
   content: string
+  notes: string
   rawLines: string[]
 }
 
-const SECTION_PREFIXES = ['TITLE:', 'CARD_SLIP:', 'SLIP:', 'SLIP_GIVEN:', 'TAGS:', 'PUZZLE:', 'SUMMARY:', 'REFERENCES:', 'CONTENT:', 'BODY:']
+const SECTION_PREFIXES = ['TITLE:', 'CARD_SLIP:', 'SLIP:', 'SLIP_GIVEN:', 'TAGS:', 'PUZZLE:', 'SUMMARY:', 'REFERENCES:', 'CONTENT:', 'BODY:', 'NOTES:']
 
 function normalizeLineEndings(value: string): string {
   return value.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
@@ -31,7 +32,7 @@ function collectSummary(lines: string[], startIndex: number): { text: string; ne
     const raw = lines[index]
     const trimmed = raw.trim()
 
-    if (/^@CARD\b/i.test(trimmed) || /^(TITLE|CARD_SLIP|SLIP_GIVEN|SLIP|TAGS|PUZZLE|SUMMARY|REFERENCES|CONTENT|BODY)\s*:/i.test(trimmed)) {
+    if (/^@CARD\b/i.test(trimmed) || /^(TITLE|CARD_SLIP|SLIP_GIVEN|SLIP|TAGS|PUZZLE|SUMMARY|REFERENCES|CONTENT|BODY|NOTES)\s*:/i.test(trimmed)) {
       break
     }
 
@@ -50,7 +51,7 @@ function collectReferences(lines: string[], startIndex: number): { references: s
     const raw = lines[index]
     const trimmed = raw.trim()
 
-    if (/^@CARD\b/i.test(trimmed) || /^(TITLE|CARD_SLIP|SLIP_GIVEN|SLIP|TAGS|PUZZLE|SUMMARY|REFERENCES|CONTENT|BODY)\s*:/i.test(trimmed)) {
+    if (/^@CARD\b/i.test(trimmed) || /^(TITLE|CARD_SLIP|SLIP_GIVEN|SLIP|TAGS|PUZZLE|SUMMARY|REFERENCES|CONTENT|BODY|NOTES)\s*:/i.test(trimmed)) {
       break
     }
 
@@ -114,6 +115,7 @@ export function parseAIBlocks(rawText: string): AIBlock[] {
     let summary = ''
     const references: string[] = []
     let content = ''
+    let notes = ''
 
     while (index < lines.length) {
       const current = lines[index]
@@ -175,6 +177,25 @@ export function parseAIBlocks(rawText: string): AIBlock[] {
         content = trimBlockText(contentLines.join('\n'))
         index = contentIndex
         continue
+      } else if (/^NOTES\s*:/i.test(currentTrimmed)) {
+        const notesLines: string[] = []
+        let notesIndex = index + 1
+
+        while (notesIndex < lines.length) {
+          const candidate = lines[notesIndex]
+          if (/^END_NOTES\s*$/i.test(candidate.trim())) {
+            blockLines.push(candidate)
+            notesIndex += 1
+            break
+          }
+          blockLines.push(candidate)
+          notesLines.push(candidate)
+          notesIndex += 1
+        }
+
+        notes = trimBlockText(notesLines.join('\n'))
+        index = notesIndex
+        continue
       }
 
       index += 1
@@ -190,6 +211,7 @@ export function parseAIBlocks(rawText: string): AIBlock[] {
       summary,
       references,
       content,
+      notes,
       rawLines: blockLines
     })
   }

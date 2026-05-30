@@ -570,6 +570,143 @@
   outline: none;
 }
 
+/* ── Rough Notes (scratch pad) ───────────────────────────────────────── */
+.rough-notes {
+  flex-shrink: 0;
+  margin: 0 16px 16px;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  background: #111113;
+  overflow: hidden;
+}
+
+.rough-notes__bar {
+  display: flex;
+  align-items: center;
+  background: #18181b;
+}
+
+.rough-notes__dsl {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 0 10px 0 6px;
+}
+
+.rough-notes__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #a1a1aa;
+  text-align: left;
+}
+
+.rough-notes__header:hover {
+  background: #1f1f23;
+  color: #d4d4d8;
+}
+
+.rough-notes__chevron {
+  display: inline-flex;
+  color: #71717a;
+  transform: rotate(-90deg);
+  transition: transform 0.15s ease;
+}
+
+.rough-notes__chevron--open {
+  transform: rotate(0deg);
+}
+
+.rough-notes__title {
+  flex: 1;
+}
+
+/* Drag bar — grab to pull the pane taller (up) or shorter (down) */
+.rough-notes__resize {
+  height: 14px;
+  flex-shrink: 0;
+  cursor: ns-resize;
+  touch-action: none;
+  border-top: 1px solid #27272a;
+  background:
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent 5px,
+      #3f3f46 5px,
+      #3f3f46 7px
+    )
+    center / 32px 2px no-repeat;
+}
+
+.rough-notes__resize:hover {
+  background:
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent 5px,
+      #52525b 5px,
+      #52525b 7px
+    )
+    center / 32px 2px no-repeat;
+}
+
+.rough-notes__pad {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  border-top: 1px solid #27272a;
+  padding: 12px 14px;
+  font-family: monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #e4e4e7;
+  background: #0c0c0e;
+  outline: none;
+  resize: none;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  /* Never let the pad grow past the panel and push the body editor off-screen.
+     Caps the inline drag height on short viewports. */
+  max-height: 60dvh;
+  scrollbar-color: rgba(113, 113, 122, 0.4) transparent;
+  scrollbar-width: thin;
+}
+
+.rough-notes__pad::placeholder {
+  color: #52525b;
+}
+
+.rough-notes__pad::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.rough-notes__pad::-webkit-scrollbar-track {
+  background: rgba(24, 24, 27, 0.4);
+}
+
+.rough-notes__pad::-webkit-scrollbar-thumb {
+  background: rgba(113, 113, 122, 0.5);
+  border-radius: 5px;
+}
+
+.rough-notes__pad::-webkit-scrollbar-thumb:hover {
+  background: rgba(113, 113, 122, 0.8);
+}
+
 /* ── Puzzle Fill Panel ───────────────────────────────────────────────── */
 .puzzle-fill-panel {
   display: flex;
@@ -1916,5 +2053,20 @@
   .puzzle-reorder-panel__body,
   .puzzle-matching-panel__body {
     padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .rough-notes {
+    /* reclaim horizontal space; clear the home indicator at the bottom */
+    margin: 0 8px max(8px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .rough-notes__pad {
+    /* ≥16px prevents iOS auto-zoom on focus */
+    font-size: 16px;
+  }
+
+  .rough-notes__resize {
+    /* larger touch target for dragging on phones */
+    height: 22px;
   }
 }

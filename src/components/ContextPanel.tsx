@@ -17,7 +17,7 @@ const BUTTONS: { field: ActiveField | 'body'; label: string }[] = [
   { field: 'codeRefs',   label: 'Code & Refs' },
   { field: 'title',      label: 'Title' },
   { field: 'summary',    label: 'Summary' },
-  { field: 'body',       label: 'Body' },
+  { field: 'body',       label: 'Body and Notes' },
   { field: 'slipType',   label: 'Card Slip' },
   { field: 'slipGiven',  label: 'Given Slip' },
   { field: 'tags',       label: 'Tags' },

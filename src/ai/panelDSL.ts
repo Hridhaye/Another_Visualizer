@@ -115,6 +115,28 @@ export function importBodyDSL(raw: string): string {
   return markdownToHtml(text)
 }
 
+// ── Rough notes ────────────────────────────────────────────────────────────
+
+export const NOTES_HEADER = `\
+# ROUGH NOTES
+# Plain text below — a scratch pad for unfinished or undecided ideas
+# (draft puzzle content, open questions, TODOs). No formatting markers.
+# Everything after this comment block becomes the card's rough notes.`
+
+export function exportNotesDSL(notes: string): string {
+  return `${NOTES_HEADER}\n\n${notes ?? ''}`.trimEnd()
+}
+
+export function importNotesDSL(raw: string): string {
+  // Strip leading comment lines; keep the remaining text verbatim.
+  const lines = raw.split('\n')
+  let start = 0
+  while (start < lines.length && (/^\s*#/.test(lines[start]) || lines[start].trim() === '')) {
+    start += 1
+  }
+  return lines.slice(start).join('\n').replace(/\s+$/, '')
+}
+
 // ── Fill puzzle ──────────────────────────────────────────────────────────
 
 export const FILL_HEADER = `\

@@ -100,6 +100,12 @@ export type CardData = {
   title: string
   summary: string
   body: string
+  /** Free-form scratch-pad notes, shown in the Rough Notes pane of the Body and Notes panel. */
+  notes?: string
+  /** Height in px of the Rough Notes pad when expanded. */
+  notesHeight?: number
+  /** Whether the Rough Notes pane is expanded. */
+  notesOpen?: boolean
   slipTypeId: string
   slipGivenTypeIds: string[]
   referencesText: string

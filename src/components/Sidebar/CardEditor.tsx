@@ -14,7 +14,7 @@ const EDITOR_BUTTONS: EditorButtonDef[] = [
   { field: 'slipGiven', label: 'Slip Given', hint: () => '' },
   { field: 'tags', label: 'Tags', hint: () => '' },
   { field: 'puzzleType', label: 'Puzzle', hint: (value) => value || 'none' },
-  { field: 'body', label: 'Narrative Body', hint: () => '' },
+  { field: 'body', label: 'Body and Notes', hint: () => '' },
 ]
 
 export function CardEditor() {

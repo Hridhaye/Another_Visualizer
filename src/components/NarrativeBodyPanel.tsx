@@ -1,7 +1,11 @@
 import { useEffect, useRef } from 'react'
 import { useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
-import { exportBodyDSL, importBodyDSL } from '../ai/panelDSL'
+import { exportBodyDSL, importBodyDSL, exportNotesDSL, importNotesDSL } from '../ai/panelDSL'
 import { PanelDSLControls } from './PanelDSLControls'
+
+const DEFAULT_NOTES_HEIGHT = 160
+const MIN_NOTES_HEIGHT = 80
+const MAX_NOTES_HEIGHT = 600
 
 export function NarrativeBodyPanel() {
   const narrativeBodyOpen = useNarrativeBoardStore((s) => s.narrativeBodyOpen)
@@ -14,6 +18,9 @@ export function NarrativeBodyPanel() {
   const node = nodes.find((n) => n.id === selectedNodeId) ?? null
   const hasSingleSelection = selectedNodeIds.length === 1
   const bodyEditorRef = useRef<HTMLDivElement | null>(null)
+
+  const notesOpen = node?.data.notesOpen ?? false
+  const notesHeight = node?.data.notesHeight ?? DEFAULT_NOTES_HEIGHT
 
   function syncBody() {
     const editor = bodyEditorRef.current
@@ -35,6 +42,42 @@ export function NarrativeBodyPanel() {
     updateNode(node.id, { body: html })
     if (bodyEditorRef.current) bodyEditorRef.current.innerHTML = html
     return 'Body imported'
+  }
+
+  function handleImportNotes(raw: string): string {
+    if (!node) return ''
+    const notes = importNotesDSL(raw)
+    // Reveal the pane so the imported notes are immediately visible.
+    updateNode(node.id, { notes, notesOpen: true })
+    return 'Notes imported'
+  }
+
+  function toggleNotes() {
+    if (!node) return
+    updateNode(node.id, { notesOpen: !notesOpen })
+  }
+
+  function startResizeNotes(e: React.PointerEvent) {
+    if (!node) return
+    e.preventDefault()
+    const startY = e.clientY
+    const startHeight = notesHeight
+    // Grip sits above the pad, so dragging up (negative delta) grows it.
+    function onMove(ev: PointerEvent) {
+      const next = Math.min(
+        MAX_NOTES_HEIGHT,
+        Math.max(MIN_NOTES_HEIGHT, startHeight - (ev.clientY - startY)),
+      )
+      if (node) updateNode(node.id, { notesHeight: next })
+    }
+    function onUp() {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
   }
 
   useEffect(() => {
@@ -118,6 +161,50 @@ export function NarrativeBodyPanel() {
         }}
         className="narrative-body-panel__editor"
       />
+
+      <div className={`rough-notes${notesOpen ? ' rough-notes--open' : ''}`}>
+        <div className="rough-notes__bar">
+          <button
+            type="button"
+            className="rough-notes__header"
+            onClick={toggleNotes}
+            aria-expanded={notesOpen}
+          >
+            <span className={`rough-notes__chevron${notesOpen ? ' rough-notes__chevron--open' : ''}`}>
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span className="rough-notes__title">Rough Notes</span>
+          </button>
+          <div className="rough-notes__dsl">
+            <PanelDSLControls
+              label="Rough Notes"
+              onExport={() => exportNotesDSL(node.data.notes ?? '')}
+              onImport={handleImportNotes}
+            />
+          </div>
+        </div>
+
+        {notesOpen && (
+          <>
+            <div
+              className="rough-notes__resize"
+              onPointerDown={startResizeNotes}
+              role="separator"
+              aria-orientation="horizontal"
+              aria-label="Resize rough notes"
+            />
+            <textarea
+              className="rough-notes__pad"
+              style={{ height: notesHeight }}
+              value={node.data.notes ?? ''}
+              placeholder="Jot down rough notes…"
+              onChange={(e) => updateNode(node.id, { notes: e.target.value })}
+            />
+          </>
+        )}
+      </div>
     </div>
   )
 }
