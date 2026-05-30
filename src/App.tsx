@@ -2,12 +2,14 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactFlow, {
   Background,
   ReactFlowProvider,
+  useStore,
 } from 'reactflow'
 
 import { NarrativeCardNode } from './components/NarrativeCardNode'
 import { MovableEdge } from './components/edges/MovableEdge'
 import { BiDirectionalEdge, BiDirectionalEdgeMarkerDef } from './components/edges/BiDirectionalEdge'
 import { useTidyLines, useSyncEdgeColors } from './components/edges/useTidyLines'
+import { useAutoArrange } from './components/useAutoArrange'
 import { NarrativeBodyPanel as NarrativeBodyPanelBase } from './components/NarrativeBodyPanel'
 import { PuzzleFillPanel as PuzzleFillPanelBase } from './components/PuzzleFillPanel'
 import { PuzzleReorderPanel as PuzzleReorderPanelBase } from './components/PuzzleReorderPanel'
@@ -139,10 +141,9 @@ function BoardCanvas() {
       // Default fanning for clarity: e.g. 3 edges → offsets -12, 0, +12
       const lateralShift = (indexInGroup - (groupSize - 1) / 2) * LANE_SPACING
 
-      const isBidir = edge.data?.bidirectional === true
       const isOutgoingFromSelected =
         selectedNodeId !== null &&
-        (edge.source === selectedNodeId || (isBidir && edge.target === selectedNodeId))
+        (edge.source === selectedNodeId || edge.target === selectedNodeId)
 
       return {
         ...edge,
@@ -188,6 +189,7 @@ function BoardCanvas() {
   // user clicks "Tidy Lines" (it can pick worse entry sides than the elbow, so
   // it is opt-in rather than automatic).
   const tidyLines = useTidyLines()
+  const autoArrange = useAutoArrange()
   // Edge colors recompute only when the edge list or palette identity changes
   // (see useSyncEdgeColors) — never on a drag/pan, where neither changes.
   useSyncEdgeColors(edges, slipTypes)
@@ -209,6 +211,20 @@ function BoardCanvas() {
     }
     clearRoutedPaths()
   }, [highlightSignature, clearRoutedPaths])
+
+  // When crossing the far-zoom threshold the cards switch between a 200px fixed
+  // tile and the variable-height overview card, so anchor points shift. Drop any
+  // routed paths so edges immediately fall back to the live floating elbow (which
+  // always tracks the current rect). No need to re-run A* — clearing is instant.
+  const isFarZoom = useStore((state) => state.transform[2] < 0.2)
+  const didMountFar = useRef(false)
+  useEffect(() => {
+    if (!didMountFar.current) {
+      didMountFar.current = true
+      return
+    }
+    clearRoutedPaths()
+  }, [isFarZoom, clearRoutedPaths])
 
   const performMarqueeSelection = useCallback((box: {
     startX: number
@@ -411,6 +427,20 @@ function BoardCanvas() {
     return () => observer.disconnect()
   }, [])
 
+  // Auto-arrange after an import so freshly created cards land in a clear flow
+  // instead of stacked in a diagonal cascade. Two animation frames let the new
+  // cards mount and get measured, so the layout reserves their real footprints.
+  const handleImportAIFormat = useCallback(
+    async (text: string) => {
+      const result = await applyAIFormatImport(text)
+      // autoArrange waits for the new cards to be measured before laying out, so
+      // a single frame to let them mount is enough — no need to guess the delay.
+      requestAnimationFrame(() => { void autoArrange() })
+      return result
+    },
+    [applyAIFormatImport, autoArrange]
+  )
+
   const activeNode = useMemo(
     () => (selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) ?? null : null),
     [selectedNodeId, nodes]
@@ -459,7 +489,7 @@ function BoardCanvas() {
         slipTypes={slipTypes}
         onToggleSidebar={toggleSidebar}
         onToggleSection={toggleSection}
-        onImportAIFormat={applyAIFormatImport}
+        onImportAIFormat={handleImportAIFormat}
         onAddSlipType={addSlipType}
         onRenameSlipType={renameSlipType}
         onDeleteSlipType={deleteSlipType}
@@ -636,6 +666,15 @@ function BoardCanvas() {
             aria-label="Add Card"
           >
             Add Card
+          </button>
+          <div className="history-bar__divider" />
+          <button
+            onClick={autoArrange}
+            className="history-bar__btn"
+            aria-label="Auto-arrange cards into a tidy flow"
+            title="Arrange cards into a clear left-to-right flow with generous spacing"
+          >
+            Arrange
           </button>
           <div className="history-bar__divider" />
           <button

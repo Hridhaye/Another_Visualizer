@@ -320,17 +320,18 @@ function NarrativeCardNodeImpl({ id, data, selected }: NodeProps<CardData>) {
   // view stays legible.
   if (isFar) {
     const farRing = isSelected || isGroupSelected
-      ? 'inset 0 0 0 6px rgba(255,255,255,0.85)'
+      ? `0 0 0 ${r(3)} rgba(255,255,255,0.85)`
       : isHighlighted
-        ? 'inset 0 0 0 6px rgba(255,255,255,0.6)'
-        : undefined
+        ? `0 0 0 ${r(3)} rgba(255,255,255,0.6)`
+        : `0 0 0 ${r(2)} rgba(255,255,255,0.04)`
     return (
       <div
         ref={divRef}
         data-card-id={id}
-        className="card-shell card-far"
+        className={`card-shell overview minimized card-far ${isSelected ? 'card-selected' : ''} ${isHighlighted ? 'card-highlighted' : ''} ${isDimmed ? 'card-dimmed' : ''} ${hasPuzzle ? 'has-puzzle' : ''}`}
         style={{
-          background: slipColor,
+          border: `7px solid ${slipColor}`,
+          backgroundColor: '#14151c',
           boxShadow: farRing,
           opacity: isDimmed ? 0.4 : undefined,
           cursor: isPendingTarget ? 'crosshair' : undefined,
@@ -340,9 +341,15 @@ function NarrativeCardNodeImpl({ id, data, selected }: NodeProps<CardData>) {
         onTouchEnd={handleTouchTap}
       >
         <Handle type="target" position={Position.Left} />
-        <div className="card-far__title" style={{ color: getContrastText(slipColor) }}>
-          {data.title}
-        </div>
+        <MinimizedContent
+          data={data}
+          slipTypes={slipTypes}
+          tags={tags}
+          refs={refs}
+          slipColor={slipColor}
+          hasPuzzle={hasPuzzle}
+          noSummary
+        />
         <Handle type="source" position={Position.Right} />
       </div>
     )
@@ -411,6 +418,7 @@ type OverviewContentProps = {
   refs: ResolvedRef[]
   slipColor: string
   hasPuzzle: boolean
+  noSummary?: boolean
 }
 
 function OverviewContent({ data, slipTypes, tags, refs, slipColor, hasPuzzle }: OverviewContentProps) {
@@ -490,7 +498,13 @@ function OverviewContent({ data, slipTypes, tags, refs, slipColor, hasPuzzle }: 
  * title, slips given, reference titles (no codes), puzzle type (no summary),
  * and tag. No summary, no card code.
  */
-function MinimizedContent({ data, slipTypes, tags, refs, slipColor, hasPuzzle }: OverviewContentProps) {
+function capSummary(text: string, maxWords = 15): string {
+  const words = text.trim().split(/\s+/)
+  if (words.length <= maxWords) return text.trim()
+  return words.slice(0, maxWords).join(' ') + '…'
+}
+
+function MinimizedContent({ data, slipTypes, tags, refs, slipColor, hasPuzzle, noSummary }: OverviewContentProps) {
   const given = data.slipGivenTypeIds ?? []
   const slipEntries = slipTypes
     .map((slip) => ({ slip, count: given.filter((id) => id === slip.id).length }))
@@ -507,6 +521,7 @@ function MinimizedContent({ data, slipTypes, tags, refs, slipColor, hasPuzzle }:
   const tagLogos = assignedTags.length > 0 ? getTagLogos(tags) : null
   const contrastText = getContrastText(slipColor)
   const hasBody = slipEntries.length > 0 || refItems.length > 0 || hasPuzzle
+  const summarySnippet = !noSummary && (data.summary?.trim() ? capSummary(data.summary) : null)
 
   return (
     <div className="card-minimized">
@@ -521,6 +536,9 @@ function MinimizedContent({ data, slipTypes, tags, refs, slipColor, hasPuzzle }:
           </div>
         )}
         <div className="card-minimized__title" style={{ color: contrastText }}>{data.title}</div>
+        {summarySnippet && (
+          <div className="card-minimized__summary" style={{ color: contrastText }}>{summarySnippet}</div>
+        )}
       </div>
 
       {hasBody && (

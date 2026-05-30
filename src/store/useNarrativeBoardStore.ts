@@ -178,6 +178,7 @@ type NarrativeBoardActions = {
   setEdgeColors: (colors: Record<string, string>) => void
   setBundleEdges: (enabled: boolean) => void
   addCard: () => void
+  applyAutoLayout: (positions: Record<string, { x: number; y: number }>) => void
   deleteCard: (nodeId: string) => void
   updateNode: (nodeId: string, patch: Partial<CardData>) => void
   createReferenceConnection: (sourceNodeId: string, targetNodeId: string) => void
@@ -648,6 +649,30 @@ export const useNarrativeBoardStore = create<NarrativeBoardStore>((set, get) => 
         nodes: [...state.nodes, newNode],
         selectedNodeId: newNode.id,
         selectedNodeIds: [newNode.id],
+        hasUnsavedChanges: true
+      }
+    })
+  },
+
+  // Applies precomputed tidy positions (see graph/autoLayout) as a single
+  // undoable edit. Positions are computed in a hook that has the measured card
+  // sizes; the store just commits them so the move lands on the undo stack and
+  // any stale A* routed paths are dropped (they'd otherwise point at old boxes).
+  applyAutoLayout: (positions) => {
+    set((state) => {
+      if (Object.keys(positions).length === 0) {
+        return {}
+      }
+      return {
+        historyPast: [...state.historyPast, createSnapshot(state)],
+        historyFuture: [],
+        canUndo: true,
+        canRedo: false,
+        nodes: state.nodes.map((node) => {
+          const next = positions[node.id]
+          return next ? { ...node, position: { x: next.x, y: next.y } } : node
+        }),
+        routedPaths: {},
         hasUnsavedChanges: true
       }
     })
