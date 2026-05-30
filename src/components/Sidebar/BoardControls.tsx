@@ -2,7 +2,14 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { User } from 'firebase/auth'
 
-import { exportAIFormat, type ExportMode } from '../../ai/exportAIFormat'
+import { exportAIFormat } from '../../ai/exportAIFormat'
+import {
+  DSL_ELEMENTS,
+  DSL_PRESETS,
+  matchPreset,
+  type DSLElementKey,
+  type DSLPresetKey,
+} from '../../ai/dslElements'
 import { signInWithGoogle, signOut } from '../../firebase/auth'
 import { useNarrativeBoardStore } from '../../store/useNarrativeBoardStore'
 import type { NarrativeNode, SlipType } from '../../types/narrative'
@@ -52,9 +59,42 @@ export function BoardControls({
   const clearAllHighlightFilters = useNarrativeBoardStore((state) => state.clearAllHighlightFilters)
   const activeGroupId = useNarrativeBoardStore((state) => state.activeGroupId)
   const [showAIImportModal, setShowAIImportModal] = useState(false)
+  const [showExportModal, setShowExportModal] = useState(false)
   const [importText, setImportText] = useState('')
   const [feedback, setFeedback] = useState('')
-  const [exportMode, setExportMode] = useState<ExportMode>('standard')
+  const [selectedElements, setSelectedElements] = useState<Set<DSLElementKey>>(
+    () => new Set(DSL_PRESETS[0].elements)
+  )
+
+  const activePreset: DSLPresetKey | null = matchPreset(selectedElements)
+
+  const applyPreset = (preset: DSLPresetKey) => {
+    const found = DSL_PRESETS.find((p) => p.key === preset)
+    if (found) setSelectedElements(new Set(found.elements))
+  }
+
+  const toggleElement = (key: DSLElementKey) => {
+    setSelectedElements((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  const exportPreview = (() => {
+    const nodesToExport =
+      selectedNodeIds.length > 1
+        ? nodes.filter((node) => selectedNodeIds.includes(node.id))
+        : nodes
+    return exportAIFormat(
+      nodesToExport,
+      slipTypes,
+      tags,
+      'standard',
+      DSL_ELEMENTS.map((el) => el.key).filter((key) => selectedElements.has(key))
+    )
+  })()
 
   const handleCopyDSL = async () => {
     try {
@@ -62,7 +102,13 @@ export function BoardControls({
         selectedNodeIds.length > 1
           ? nodes.filter((node) => selectedNodeIds.includes(node.id))
           : nodes
-      const text = exportAIFormat(nodesToExport, slipTypes, tags, exportMode)
+      const text = exportAIFormat(
+        nodesToExport,
+        slipTypes,
+        tags,
+        'standard',
+        DSL_ELEMENTS.map((el) => el.key).filter((key) => selectedElements.has(key))
+      )
       await navigator.clipboard.writeText(text)
       setFeedback(
         selectedNodeIds.length > 1
@@ -180,21 +226,15 @@ export function BoardControls({
       </div>
 
       <div className="dsl-export">
-        <div className="dsl-export__modes">
-          {(['standard', 'narrative', 'narrative-puzzle'] as ExportMode[]).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => setExportMode(mode)}
-              className={`dsl-export__mode${exportMode === mode ? ' dsl-export__mode--active' : ''}`}
-            >
-              {mode === 'standard' ? 'Standard' : mode === 'narrative' ? 'Narrative' : '+ Puzzle'}
-            </button>
-          ))}
-        </div>
         <div className="dsl-export__actions">
-          <button onClick={handleCopyDSL} className="sidebar-btn sidebar-btn--violet">Copy DSL</button>
+          <button onClick={() => setShowExportModal(true)} className="sidebar-btn sidebar-btn--violet">Export DSL…</button>
           <button onClick={() => setShowAIImportModal(true)} className="sidebar-btn sidebar-btn--amber">Import DSL</button>
         </div>
+        <span className="sidebar-meta sidebar-meta--hint">
+          {activePreset
+            ? DSL_PRESETS.find((p) => p.key === activePreset)?.label
+            : `Custom · ${selectedElements.size} element${selectedElements.size !== 1 ? 's' : ''}`}
+        </span>
       </div>
 
       {feedback && <p className="sidebar-feedback">{feedback}</p>}
@@ -315,13 +355,81 @@ export function BoardControls({
         </button>
       )}
 
+      {showExportModal && createPortal(
+        <div className="dsl-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) setShowExportModal(false) }}>
+          <div className="dsl-modal dsl-modal--wide">
+            <div className="dsl-modal__header">
+              <div>
+                <p className="dsl-modal__title">Export DSL</p>
+                <p className="dsl-modal__subtitle">
+                  Pick a preset or toggle exactly which elements to include. Helper lines and the example follow your selection.
+                </p>
+              </div>
+              <button onClick={() => setShowExportModal(false)} className="dsl-modal__close">Close</button>
+            </div>
+
+            <div className="dsl-export__presets">
+              {DSL_PRESETS.map((preset) => (
+                <button
+                  key={preset.key}
+                  onClick={() => applyPreset(preset.key)}
+                  className={`dsl-export__mode${activePreset === preset.key ? ' dsl-export__mode--active' : ''}`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="dsl-export__elements">
+              {DSL_ELEMENTS.map((element) => {
+                const on = selectedElements.has(element.key)
+                return (
+                  <button
+                    key={element.key}
+                    onClick={() => toggleElement(element.key)}
+                    className={`dsl-element${on ? ' dsl-element--on' : ''}`}
+                    aria-pressed={on}
+                  >
+                    <span className="dsl-element__check">{on ? '✓' : ''}</span>
+                    <span className="dsl-element__label">{element.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            <p className="dsl-modal__subtitle">Preview</p>
+            <textarea
+              value={exportPreview}
+              readOnly
+              rows={10}
+              className="dsl-modal__textarea"
+            />
+
+            <div className="dsl-modal__footer">
+              <button onClick={() => setShowExportModal(false)} className="dsl-modal__btn-cancel">Close</button>
+              <button
+                onClick={async () => {
+                  await handleCopyDSL()
+                  setShowExportModal(false)
+                }}
+                disabled={selectedElements.size === 0}
+                className="dsl-modal__btn-import"
+              >
+                Copy DSL
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {showAIImportModal && createPortal(
         <div className="dsl-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) setShowAIImportModal(false) }}>
           <div className="dsl-modal">
             <div className="dsl-modal__header">
               <div>
                 <p className="dsl-modal__title">Import DSL</p>
-                <p className="dsl-modal__subtitle">Paste DSL text. Existing codes are updated; new codes are created.</p>
+                <p className="dsl-modal__subtitle">Paste DSL text. Existing codes are updated; new codes are created. Missing or unrecognized fields are skipped — never an error.</p>
               </div>
               <button onClick={() => setShowAIImportModal(false)} className="dsl-modal__close">Close</button>
             </div>

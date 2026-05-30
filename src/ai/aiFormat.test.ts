@@ -177,6 +177,34 @@ REFERENCES:
     expect(reimported?.data.tagIds).toHaveLength(2)
   })
 
+  it('exports only the selected elements', () => {
+    const nodes = [
+      { id: 'a', type: 'narrativeCard', position: { x: 0, y: 0 }, data: { code: 'AA01', title: 'First', summary: 'A summary', body: 'A body', slipTypeId: 'blue', slipGivenTypeIds: [], referencesText: '', tagIds: [], puzzleType: 'none' } },
+    ] as never
+
+    const text = exportAIFormat(nodes, [{ id: 'blue', name: 'Blue Slip', color: '#3b82f6' }], [], 'standard', ['title', 'body'])
+
+    expect(text).toContain('TITLE: First')
+    expect(text).toContain('BODY:')
+    expect(text).toContain('A body')
+    // Not selected → absent from both the card block and the helper lines.
+    expect(text).not.toContain('CARD_SLIP')
+    expect(text).not.toContain('SUMMARY')
+  })
+
+  it('imports leniently: missing TITLE and unknown puzzle type do not throw', () => {
+    const slipTypes = [{ id: 'blue', name: 'Blue Slip', color: '#3b82f6' }]
+    // ZZ99 has no title and a bogus puzzle type — both must be tolerated.
+    const raw = `@CARD ZZ99\nPUZZLE: wizardry: nonsense\nBODY:\nrough notes here\nEND_BODY\n`
+
+    const result = importAIFormat(raw, [], slipTypes)
+    const created = result.updatedNodes.find((n) => n.data.code === 'ZZ99')
+    expect(created).toBeTruthy()
+    expect(created?.data.title).toBe('')
+    expect(created?.data.puzzleType).toBe('none')
+    expect(created?.data.body).toContain('rough notes here')
+  })
+
   it('parses legacy SLIP: field as card slip', () => {
     const raw = `
 @CARD AA01

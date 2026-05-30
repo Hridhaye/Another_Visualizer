@@ -13,7 +13,7 @@ export type AIBlock = {
   rawLines: string[]
 }
 
-const SECTION_PREFIXES = ['TITLE:', 'CARD_SLIP:', 'SLIP:', 'SLIP_GIVEN:', 'TAGS:', 'PUZZLE:', 'SUMMARY:', 'REFERENCES:', 'CONTENT:']
+const SECTION_PREFIXES = ['TITLE:', 'CARD_SLIP:', 'SLIP:', 'SLIP_GIVEN:', 'TAGS:', 'PUZZLE:', 'SUMMARY:', 'REFERENCES:', 'CONTENT:', 'BODY:']
 
 function normalizeLineEndings(value: string): string {
   return value.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
@@ -31,7 +31,7 @@ function collectSummary(lines: string[], startIndex: number): { text: string; ne
     const raw = lines[index]
     const trimmed = raw.trim()
 
-    if (/^@CARD\b/i.test(trimmed) || /^(TITLE|CARD_SLIP|SLIP_GIVEN|SLIP|TAGS|PUZZLE|SUMMARY|REFERENCES|CONTENT)\s*:/i.test(trimmed)) {
+    if (/^@CARD\b/i.test(trimmed) || /^(TITLE|CARD_SLIP|SLIP_GIVEN|SLIP|TAGS|PUZZLE|SUMMARY|REFERENCES|CONTENT|BODY)\s*:/i.test(trimmed)) {
       break
     }
 
@@ -50,7 +50,7 @@ function collectReferences(lines: string[], startIndex: number): { references: s
     const raw = lines[index]
     const trimmed = raw.trim()
 
-    if (/^@CARD\b/i.test(trimmed) || /^(TITLE|CARD_SLIP|SLIP_GIVEN|SLIP|TAGS|PUZZLE|SUMMARY|REFERENCES|CONTENT)\s*:/i.test(trimmed)) {
+    if (/^@CARD\b/i.test(trimmed) || /^(TITLE|CARD_SLIP|SLIP_GIVEN|SLIP|TAGS|PUZZLE|SUMMARY|REFERENCES|CONTENT|BODY)\s*:/i.test(trimmed)) {
       break
     }
 
@@ -156,13 +156,13 @@ export function parseAIBlocks(rawText: string): AIBlock[] {
         }
         index = referencesResult.nextIndex
         continue
-      } else if (/^CONTENT\s*:/i.test(currentTrimmed)) {
+      } else if (/^(CONTENT|BODY)\s*:/i.test(currentTrimmed)) {
         const contentLines: string[] = []
         let contentIndex = index + 1
 
         while (contentIndex < lines.length) {
           const candidate = lines[contentIndex]
-          if (/^END_CONTENT\s*$/i.test(candidate.trim())) {
+          if (/^END_(CONTENT|BODY)\s*$/i.test(candidate.trim())) {
             blockLines.push(candidate)
             contentIndex += 1
             break
