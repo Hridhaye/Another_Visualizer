@@ -15,6 +15,14 @@ type DragState = {
   fromIndex: number
 } | null
 
+// Touch drag state for handle-only dragging on mobile
+type TouchDragState = {
+  section: SectionKey
+  fromIndex: number
+  startY: number
+  currentDropIndex: number
+} | null
+
 export function PuzzleReorderPanel() {
   const puzzleBodyOpen = useNarrativeBoardStore((s) => s.puzzleBodyOpen)
   const closePuzzleBody = useNarrativeBoardStore((s) => s.closePuzzleBody)
@@ -34,9 +42,13 @@ export function PuzzleReorderPanel() {
   const [editText, setEditText] = useState('')
   const editRef = useRef<HTMLTextAreaElement | null>(null)
 
-  // drag state
+  // HTML5 drag state (desktop)
   const dragRef = useRef<DragState>(null)
   const [dropTarget, setDropTarget] = useState<{ section: SectionKey; index: number } | null>(null)
+
+  // Touch/pointer drag state (mobile & tablet handle dragging)
+  const touchDragRef = useRef<TouchDragState>(null)
+  const boxRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
   useEffect(() => {
     if (!puzzleBodyOpen) { setEditingId(null); setEditingSection(null) }
@@ -153,6 +165,50 @@ export function PuzzleReorderPanel() {
     save({ [key]: reorderIds(reorder[key], drag.fromIndex, drop.index) })
   }
 
+  // ── Touch / pointer drag helpers (handle-only, mobile-friendly) ──────
+
+  function onHandlePointerDown(e: React.PointerEvent, section: SectionKey, index: number) {
+    // Only start touch drag on non-mouse pointers to avoid interfering with desktop HTML5 drag
+    if (e.pointerType === 'mouse') return
+    e.preventDefault()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    touchDragRef.current = { section, fromIndex: index, startY: e.clientY, currentDropIndex: index }
+    setDropTarget({ section, index })
+  }
+
+  function onHandlePointerMove(e: React.PointerEvent, section: SectionKey, order: string[]) {
+    const drag = touchDragRef.current
+    if (!drag || drag.section !== section) return
+    e.preventDefault()
+
+    // Find which box the pointer is currently over by checking Y positions
+    let closestIndex = drag.fromIndex
+    let closestDist = Infinity
+    order.forEach((id, i) => {
+      const el = boxRefs.current.get(id)
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const midY = rect.top + rect.height / 2
+      const dist = Math.abs(e.clientY - midY)
+      if (dist < closestDist) { closestDist = dist; closestIndex = i }
+    })
+
+    if (closestIndex !== drag.currentDropIndex) {
+      touchDragRef.current = { ...drag, currentDropIndex: closestIndex }
+      setDropTarget({ section, index: closestIndex })
+    }
+  }
+
+  function onHandlePointerUp(e: React.PointerEvent, section: SectionKey) {
+    const drag = touchDragRef.current
+    if (!drag || drag.section !== section) return
+    touchDragRef.current = null
+    setDropTarget(null)
+    if (drag.fromIndex === drag.currentDropIndex) return
+    const key = section === 'scrambled' ? 'scrambledOrder' : 'solutionOrder'
+    save({ [key]: reorderIds(reorder[key], drag.fromIndex, drag.currentDropIndex) })
+  }
+
   function orderedBoxes(order: string[]): ReorderBox[] {
     return order.map((id) => reorder.boxes.find((b) => b.id === id)).filter(Boolean) as ReorderBox[]
   }
@@ -169,25 +225,39 @@ export function PuzzleReorderPanel() {
         <div
           className="puzzle-reorder-panel__boxes"
           onDragOver={(e) => e.preventDefault()}
+          onPointerMove={(e) => onHandlePointerMove(e as React.PointerEvent, section, order)}
+          onPointerUp={(e) => onHandlePointerUp(e as React.PointerEvent, section)}
+          onPointerCancel={(e) => onHandlePointerUp(e as React.PointerEvent, section)}
         >
           {boxes.map((box, i) => {
             const isDragOver = dropTarget?.section === section && dropTarget.index === i
-            const isDragging = dragRef.current?.section === section && dragRef.current.fromIndex === i
+            const isDragging =
+              (dragRef.current?.section === section && dragRef.current.fromIndex === i) ||
+              (touchDragRef.current?.section === section && touchDragRef.current.fromIndex === i)
 
             return (
               <div
                 key={box.id}
-                draggable={editingId !== box.id}
-                onDragStart={() => onDragStart(section, i)}
-                onDragEnter={() => onDragEnter(section, i)}
-                onDragEnd={onDragEnd}
+                ref={(el) => {
+                  if (el) boxRefs.current.set(box.id, el)
+                  else boxRefs.current.delete(box.id)
+                }}
                 className={[
                   'puzzle-reorder-panel__box',
                   isDragOver ? 'puzzle-reorder-panel__box--drop-target' : '',
                   isDragging ? 'puzzle-reorder-panel__box--dragging' : '',
                 ].join(' ').trim()}
               >
-                <span className="puzzle-reorder-panel__box-handle" aria-hidden>⠿</span>
+                {/* Handle: draggable on desktop via HTML5, touch-draggable on mobile via pointer events */}
+                <span
+                  className="puzzle-reorder-panel__box-handle"
+                  aria-hidden
+                  draggable={editingId !== box.id}
+                  onDragStart={() => onDragStart(section, i)}
+                  onDragEnter={() => onDragEnter(section, i)}
+                  onDragEnd={onDragEnd}
+                  onPointerDown={(e) => onHandlePointerDown(e, section, i)}
+                >⠿</span>
 
                 {editingId === box.id && editingSection === section ? (
                   <textarea
@@ -208,10 +278,10 @@ export function PuzzleReorderPanel() {
                 ) : (
                   <span
                     className="puzzle-reorder-panel__box-text"
-                    onDoubleClick={() => startEdit(box, section)}
-                    title="Double-click to edit"
+                    onClick={() => startEdit(box, section)}
+                    title="Click to edit"
                   >
-                    {box.text || <span className="puzzle-reorder-panel__box-placeholder">empty — double-click to edit</span>}
+                    {box.text || <span className="puzzle-reorder-panel__box-placeholder">click to edit</span>}
                   </span>
                 )}
 

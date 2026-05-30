@@ -7,9 +7,16 @@ import { PanelDSLControls } from './PanelDSLControls'
 const BLANK_TAG = 'span'
 const BLANK_ATTR = 'data-blank-id'
 const BLANK_CLASS = 'puzzle-fill-blank'
+// Zero-width non-breaking space used as a non-selectable cursor landing pad after each blank.
+// This prevents the browser from snapping the caret back into the blank when tapping just after it.
+const BLANK_PAD = '​'
+const BLANK_PAD_CLASS = 'puzzle-fill-blank-pad'
 
 function makeBlankHtml(id: string): string {
-  return `<${BLANK_TAG} ${BLANK_ATTR}="${id}" class="${BLANK_CLASS}" contenteditable="false"> </${BLANK_TAG}>`
+  return (
+    `<${BLANK_TAG} ${BLANK_ATTR}="${id}" class="${BLANK_CLASS}" contenteditable="false"> </${BLANK_TAG}>` +
+    `<span class="${BLANK_PAD_CLASS}" contenteditable="true" data-pad="1">${BLANK_PAD}</span>`
+  )
 }
 
 function emptyFill(): FillPuzzleContent {
@@ -81,16 +88,35 @@ export function PuzzleFillPanel() {
   function syncBodyHtml() {
     const editor = editorRef.current
     if (!editor || !node) return
-    // Only save in "blank" mode — in showAnswers mode the HTML is derived, not authoritative
     if (fill.showAnswers) return
+    // Normalise pad spans: ensure each blank is followed by exactly one pad span
+    // and that stray pads (e.g. from copy-paste) are cleaned up.
+    editor.querySelectorAll<HTMLElement>(`.${BLANK_PAD_CLASS}`).forEach((pad) => {
+      const prev = pad.previousSibling
+      const isAfterBlank =
+        prev instanceof HTMLElement && prev.hasAttribute(BLANK_ATTR)
+      if (!isAfterBlank) pad.remove()
+    })
+    editor.querySelectorAll<HTMLElement>(`[${BLANK_ATTR}]`).forEach((blank) => {
+      const next = blank.nextSibling
+      const hasPad =
+        next instanceof HTMLElement && next.classList.contains(BLANK_PAD_CLASS)
+      if (!hasPad) {
+        const pad = document.createElement('span')
+        pad.className = BLANK_PAD_CLASS
+        pad.setAttribute('data-pad', '1')
+        pad.contentEditable = 'true'
+        pad.textContent = BLANK_PAD
+        blank.after(pad)
+      }
+    })
+
     const nextHtml = editor.innerHTML
-    // Reconcile blanks: find all blank spans in the current DOM
     const presentIds = new Set<string>()
     editor.querySelectorAll<HTMLElement>(`[${BLANK_ATTR}]`).forEach((el) => {
       presentIds.add(el.getAttribute(BLANK_ATTR)!)
     })
     const nextBlanks: FillBlank[] = fill.blanks.filter((b) => presentIds.has(b.id))
-    // Add any newly present ids (shouldn't happen but defensive)
     presentIds.forEach((id) => {
       if (!nextBlanks.find((b) => b.id === id)) {
         nextBlanks.push({ id, assignedWord: null })
@@ -263,29 +289,58 @@ export function PuzzleFillPanel() {
         suppressContentEditableWarning
         onInput={syncBodyHtml}
         onKeyDown={(e) => {
+          // Enter while cursor is inside a blank pad span: jump to after the pad
+          if (e.key === 'Enter') {
+            const sel = window.getSelection()
+            if (sel && sel.rangeCount > 0) {
+              const anchor = sel.anchorNode
+              const padEl =
+                anchor instanceof HTMLElement && anchor.classList.contains(BLANK_PAD_CLASS)
+                  ? anchor
+                  : anchor?.parentElement?.classList.contains(BLANK_PAD_CLASS)
+                    ? anchor.parentElement
+                    : null
+              if (padEl) {
+                e.preventDefault()
+                // Move cursor to after the pad span
+                const range = document.createRange()
+                range.setStartAfter(padEl)
+                range.collapse(true)
+                sel.removeAllRanges()
+                sel.addRange(range)
+                return
+              }
+            }
+          }
+
           const isMod = e.ctrlKey || e.metaKey
           if (!isMod) return
           const key = e.key.toLowerCase()
-          if (key === 'b') { e.preventDefault(); applyFormat('bold') }
+          if (e.shiftKey && key === 'b') { e.preventDefault(); insertBlank() }
+          else if (key === 'b') { e.preventDefault(); applyFormat('bold') }
           else if (key === 'i') { e.preventDefault(); applyFormat('italic') }
           else if (key === 'u') { e.preventDefault(); applyFormat('underline') }
-          else if (key === 'shift' || (e.shiftKey && key === 'b')) {
-            // Ctrl+Shift+B = insert blank
-          }
-        }}
-        onKeyUp={(e) => {
-          const isMod = e.ctrlKey || e.metaKey
-          if (isMod && e.shiftKey && e.key.toLowerCase() === 'b') {
-            e.preventDefault()
-            insertBlank()
-          }
         }}
         onClick={(e) => {
-          // Click on a blank to select it
           const target = e.target as HTMLElement
+          // Click on a blank to select it (for word assignment)
           if (target.hasAttribute?.(BLANK_ATTR)) {
             const id = target.getAttribute(BLANK_ATTR)!
             setSelectedBlankId((prev) => prev === id ? null : id)
+            e.preventDefault()
+            return
+          }
+          // Tap on a pad span: move cursor to after the pad so it doesn't snap back into blank
+          if (target.classList?.contains(BLANK_PAD_CLASS)) {
+            e.preventDefault()
+            const sel = window.getSelection()
+            if (sel) {
+              const range = document.createRange()
+              range.setStartAfter(target)
+              range.collapse(true)
+              sel.removeAllRanges()
+              sel.addRange(range)
+            }
           }
         }}
         className={`narrative-body-panel__editor puzzle-fill-panel__editor${fill.showAnswers ? ' puzzle-fill-panel__editor--readonly' : ''}`}

@@ -652,6 +652,22 @@
   opacity: 0.85;
 }
 
+/* Invisible cursor landing-pad injected after each blank; keeps caret out of the blank on mobile */
+.puzzle-fill-blank-pad {
+  display: inline;
+  font-size: inherit;
+  line-height: inherit;
+  /* zero-width — visually invisible */
+  width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: transparent;
+  caret-color: auto;
+  user-select: text;
+  -webkit-user-select: text;
+  pointer-events: none;
+}
+
 /* Blank placeholders inside the editor */
 .puzzle-fill-blank {
   display: inline-block;
@@ -971,6 +987,13 @@
   line-height: 1.6;
   cursor: grab;
   user-select: none;
+  touch-action: none;
+  -webkit-user-select: none;
+}
+
+.puzzle-reorder-panel__box-handle:active {
+  cursor: grabbing;
+  color: #a78bfa;
 }
 
 .puzzle-reorder-panel__box-text {
@@ -979,6 +1002,7 @@
   line-height: 1.55;
   color: #e4e4e7;
   white-space: pre-wrap;
+  cursor: text;
   word-break: break-word;
   min-height: 20px;
 }
