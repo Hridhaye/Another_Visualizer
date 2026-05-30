@@ -199,7 +199,7 @@ export function PuzzleReorderPanel() {
     }
   }
 
-  function onHandlePointerUp(e: React.PointerEvent, section: SectionKey) {
+  function onHandlePointerUp(_e: React.PointerEvent, section: SectionKey) {
     const drag = touchDragRef.current
     if (!drag || drag.section !== section) return
     touchDragRef.current = null
