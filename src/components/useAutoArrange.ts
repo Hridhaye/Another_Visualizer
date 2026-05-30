@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { useReactFlow, useStoreApi } from 'reactflow'
+import { useStoreApi } from 'reactflow'
 
 import { useNarrativeBoardStore } from '../store/useNarrativeBoardStore'
 import { computeAutoLayout, type NodeSizes } from '../graph/autoLayout'
@@ -45,7 +45,6 @@ function readMeasuredSizes(
  * and their neighbours overlap them. We wait for measurement before laying out.
  */
 export function useAutoArrange() {
-  const { fitView } = useReactFlow()
   const storeApi = useStoreApi()
   const applyAutoLayout = useNarrativeBoardStore((state) => state.applyAutoLayout)
 
@@ -74,10 +73,5 @@ export function useAutoArrange() {
 
     const positions = await computeAutoLayout(nodes, edges, sizes)
     applyAutoLayout(positions)
-
-    // Let the position commit flush to the DOM before framing it.
-    requestAnimationFrame(() => {
-      fitView({ padding: 0.15, duration: 400 })
-    })
-  }, [applyAutoLayout, fitView, storeApi])
+  }, [applyAutoLayout, storeApi])
 }
